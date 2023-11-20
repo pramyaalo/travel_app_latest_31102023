@@ -88,11 +88,6 @@ class _WalletStatementReportState extends State<LedgerSttementReport> {
                                 ),
                                 Row(
                                   children: [
-                                    Icon(
-                                      IconData(0xefc6,
-                                          fontFamily: 'MaterialIcons'),
-                                      size: 15,
-                                    ),
                                     SizedBox(
                                       width: 5,
                                     ),
@@ -230,11 +225,6 @@ class _WalletStatementReportState extends State<LedgerSttementReport> {
                                 ),
                                 Row(
                                   children: [
-                                    Icon(
-                                      IconData(0xefc6,
-                                          fontFamily: 'MaterialIcons'),
-                                      size: 15,
-                                    ),
                                     SizedBox(
                                       width: 5,
                                     ),
@@ -372,11 +362,6 @@ class _WalletStatementReportState extends State<LedgerSttementReport> {
                                 ),
                                 Row(
                                   children: [
-                                    Icon(
-                                      IconData(0xefc6,
-                                          fontFamily: 'MaterialIcons'),
-                                      size: 15,
-                                    ),
                                     SizedBox(
                                       width: 5,
                                     ),
@@ -514,11 +499,6 @@ class _WalletStatementReportState extends State<LedgerSttementReport> {
                                 ),
                                 Row(
                                   children: [
-                                    Icon(
-                                      IconData(0xefc6,
-                                          fontFamily: 'MaterialIcons'),
-                                      size: 15,
-                                    ),
                                     SizedBox(
                                       width: 5,
                                     ),
@@ -656,11 +636,6 @@ class _WalletStatementReportState extends State<LedgerSttementReport> {
                                 ),
                                 Row(
                                   children: [
-                                    Icon(
-                                      IconData(0xefc6,
-                                          fontFamily: 'MaterialIcons'),
-                                      size: 15,
-                                    ),
                                     SizedBox(
                                       width: 5,
                                     ),
@@ -798,11 +773,6 @@ class _WalletStatementReportState extends State<LedgerSttementReport> {
                                 ),
                                 Row(
                                   children: [
-                                    Icon(
-                                      IconData(0xefc6,
-                                          fontFamily: 'MaterialIcons'),
-                                      size: 15,
-                                    ),
                                     SizedBox(
                                       width: 5,
                                     ),

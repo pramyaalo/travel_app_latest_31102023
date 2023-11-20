@@ -87,11 +87,6 @@ class _UnTicketReportState extends State<UnTicketReport> {
                             ),
                             Row(
                               children: [
-                                Icon(
-                                  IconData(0xf053c,
-                                      fontFamily: 'MaterialIcons'),
-                                  size: 15,
-                                ),
                                 SizedBox(
                                   width: 5,
                                 ),
@@ -307,11 +302,6 @@ class _UnTicketReportState extends State<UnTicketReport> {
                             ),
                             Row(
                               children: [
-                                Icon(
-                                  IconData(0xf053c,
-                                      fontFamily: 'MaterialIcons'),
-                                  size: 15,
-                                ),
                                 SizedBox(
                                   width: 5,
                                 ),
@@ -527,11 +517,6 @@ class _UnTicketReportState extends State<UnTicketReport> {
                             ),
                             Row(
                               children: [
-                                Icon(
-                                  IconData(0xf053c,
-                                      fontFamily: 'MaterialIcons'),
-                                  size: 15,
-                                ),
                                 SizedBox(
                                   width: 5,
                                 ),
@@ -747,11 +732,6 @@ class _UnTicketReportState extends State<UnTicketReport> {
                             ),
                             Row(
                               children: [
-                                Icon(
-                                  IconData(0xf053c,
-                                      fontFamily: 'MaterialIcons'),
-                                  size: 15,
-                                ),
                                 SizedBox(
                                   width: 5,
                                 ),
@@ -967,11 +947,6 @@ class _UnTicketReportState extends State<UnTicketReport> {
                             ),
                             Row(
                               children: [
-                                Icon(
-                                  IconData(0xf053c,
-                                      fontFamily: 'MaterialIcons'),
-                                  size: 15,
-                                ),
                                 SizedBox(
                                   width: 5,
                                 ),

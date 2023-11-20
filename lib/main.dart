@@ -143,15 +143,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         ElevatedButton(
                           onPressed: () {
-                            /*Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (BuildContext context) => HomeContainer()
-                                  )
-                              );*/
                             print('JSON Response: ${_userNameController.text}');
                             __futureLogin = ResponseHandler.performPost(
-                                "B2cLogin",
+                                "B2bLogin",
                                 'Username=' +
                                     _userNameController.text +
                                     '&Password=' +

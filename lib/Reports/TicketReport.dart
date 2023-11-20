@@ -61,10 +61,7 @@ class _TicketReportState extends State<TicketReport> {
                           ),
                           Row(
                             children: [
-                              Icon(
-                                IconData(0xf053c, fontFamily: 'MaterialIcons'),
-                                size: 15,
-                              ),
+
                               SizedBox(
                                 width: 5,
                               ),
@@ -279,10 +276,7 @@ class _TicketReportState extends State<TicketReport> {
                           ),
                           Row(
                             children: [
-                              Icon(
-                                IconData(0xf053c, fontFamily: 'MaterialIcons'),
-                                size: 15,
-                              ),
+
                               SizedBox(
                                 width: 5,
                               ),
@@ -497,10 +491,7 @@ class _TicketReportState extends State<TicketReport> {
                           ),
                           Row(
                             children: [
-                              Icon(
-                                IconData(0xf053c, fontFamily: 'MaterialIcons'),
-                                size: 15,
-                              ),
+
                               SizedBox(
                                 width: 5,
                               ),
@@ -715,10 +706,7 @@ class _TicketReportState extends State<TicketReport> {
                           ),
                           Row(
                             children: [
-                              Icon(
-                                IconData(0xf053c, fontFamily: 'MaterialIcons'),
-                                size: 15,
-                              ),
+
                               SizedBox(
                                 width: 5,
                               ),
@@ -933,10 +921,7 @@ class _TicketReportState extends State<TicketReport> {
                           ),
                           Row(
                             children: [
-                              Icon(
-                                IconData(0xf053c, fontFamily: 'MaterialIcons'),
-                                size: 15,
-                              ),
+
                               SizedBox(
                                 width: 5,
                               ),
