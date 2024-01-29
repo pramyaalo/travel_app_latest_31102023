@@ -145,7 +145,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           onPressed: () {
                             print('JSON Response: ${_userNameController.text}');
                             __futureLogin = ResponseHandler.performPost(
-                                "B2bLogin",
+                                "B2CLogin",
                                 'Username=' +
                                     _userNameController.text +
                                     '&Password=' +
@@ -195,7 +195,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 Prefs.saveStringValue(
                                     Prefs.PREFS_TIME_OUT, fm.Timeout);
                                 Prefs.saveStringValue(
-                                    Prefs.PREFS_IS_ACTIVE, fm.IsActive);
+                                    Prefs.PREFS_IS_ACTIVE, fm.Status);
 
                                 Prefs.saveStringValue(Prefs.PREFS_TWO, fm.Two);
                                 Prefs.saveStringValue(
@@ -203,8 +203,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                                 Prefs.saveStringValue(
                                     Prefs.PREFS_PAYPAL, fm.Paypal);
-                                Prefs.saveStringValue(
-                                    Prefs.PREFS_PAYZA, fm.Payza);
+
                                 Prefs.saveStringValue(
                                     Prefs.PREFS_DATE_CREATED, fm.Datecreated);
                                 Prefs.saveStringValue(

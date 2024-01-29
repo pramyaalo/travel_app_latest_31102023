@@ -19,7 +19,7 @@ class ResponseHandler {
       //Uri.parse('https://gorehla.com/api/corporate.asmx/$functionName'),
       //Uri.parse('http://gorehla.d4demo.com/api/corporate.asmx/$functionName'),
       //Uri.parse('https://d4demo.com/api/corporate.asmx/$functionName'),
-      Uri.parse('https://traveldemo.org/travelapp/b2badmin.asmx/$functionName'),
+      Uri.parse('https://traveldemo.org/travelapp/b2c.asmx/$functionName'),
       //Uri.parse('https://api.d4demo.com/corporate.asmx/$functionName'),
       headers: <String, String>{
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -29,7 +29,7 @@ class ResponseHandler {
         'Access-Control-Allow-Methods': 'POST, OPTIONS'
       },
       //body: '$params&UID=35510b94-5476-GoRehlaCorporate-a2e3-2e728ce8',
-      body: '$params&UID=35510b94-5342-TDemoB2BAdmin-a2e3-2e7997',
+      body: '$params&UID=35510b94-5342-TDemoB2C-a2e3-2e722772',
       //body: '$params&UID=35510b94-5476-TDemoCorporate-a2e3-2e786ce8',
     );
   }
