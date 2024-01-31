@@ -646,6 +646,15 @@ class _TwoWayBoardingFlightsListState extends State<TwoWayBoardingFlightsList> {
                                     ),
                                     GestureDetector(
                                       onTap: () {
+                                        //TwoWayBooking
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => TwoWayBooking(
+                                              flightDetails: resultList[index],
+                                            ),
+                                          ),
+                                        );
                                         print(
                                           "degftwr3ey" + resultList[index],
                                         );

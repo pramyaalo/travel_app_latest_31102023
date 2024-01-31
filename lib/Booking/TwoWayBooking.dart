@@ -276,7 +276,7 @@ class _TwoWayBookingState extends State<TwoWayBooking> {
         body: {
           'ResultIndex': resultIndex,
           'TraceId': traceId,
-          'TripType': 'Oneway'
+          'TripType': 'RoundTrip'
         },
       );
       setState(() {
@@ -815,5 +815,11 @@ class _TwoWayBookingState extends State<TwoWayBooking> {
               ),
             ),
     );
+  }
+
+  @override
+  void initState() {
+    getAdivahaFlightDetails();
+    super.initState();
   }
 }
