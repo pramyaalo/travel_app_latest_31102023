@@ -5,6 +5,9 @@ import 'package:http/http.dart' as http;
 import 'dart:developer' as developer;
 
 import '../../utils/response_handler.dart';
+import '../bookings/flight/FlightBookNow.dart';
+import '../bookings/flight/RoundTripBookNowFlight.dart';
+import '../utils/commonutils.dart';
 
 class TwoWayBooking extends StatefulWidget {
   final flightDetails;
@@ -307,21 +310,40 @@ class _TwoWayBookingState extends State<TwoWayBooking> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          "Flight Booking",
-          style: TextStyle(fontFamily: "Montserrat"),
+        automaticallyImplyLeading: false,
+        titleSpacing: 1,
+        title: Row(
+          children: [
+            IconButton(
+              icon: Icon(
+                Icons.arrow_back,
+                color: Colors.black,
+                size: 27,
+              ),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            ),
+
+            SizedBox(width: 1), // Set the desired width
+            Text(
+              "Flight Booking",
+              style: TextStyle(
+                  color: Colors.black, fontFamily: "Montserrat", fontSize: 19),
+            ),
+          ],
         ),
-        //title: Image.asset('assets/images/logo.png', width: 150, height: 30,),
         actions: [
           Image.asset(
             'assets/images/logo.png',
             width: 120,
-            height: 30,
+            height: 50,
           ),
-          const SizedBox(
+          SizedBox(
             width: 10,
           )
         ],
+        backgroundColor: Colors.white,
       ),
       body: isLoading
           ? Center(
@@ -329,485 +351,548 @@ class _TwoWayBookingState extends State<TwoWayBooking> {
             )
           : SingleChildScrollView(
               child: Container(
-                padding: EdgeInsets.all(10),
+                padding: EdgeInsets.all(15),
+                color: Color(0xffd9dce1),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      decoration: BoxDecoration(color: Colors.white),
-                      padding: EdgeInsets.all(10),
-                      child: Column(
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Column(
+                    resultFlightData.length > 1
+                        ? ListView.builder(
+                            shrinkWrap: true,
+                            physics: NeverScrollableScrollPhysics(),
+                            itemCount: resultFlightData.length > 1
+                                ? resultFlightData.length - 1
+                                : 0, //Ipo non stio kuduthu paarunga
+                            itemBuilder: (BuildContext context, index) {
+                              return Column(
                                 children: [
-                                  ClipRRect(
-                                      borderRadius: BorderRadius.circular(25),
-                                      child: Image.asset(
-                                        'assets/images/img.png',
-                                        height: 50,
-                                        width: 50,
-                                      )),
-                                  Text(
-                                    'Aksaa Air',
-                                    style: TextStyle(color: Color(0xff777777)),
-                                  )
+                                  Container(
+                                    color: Colors.white,
+                                    padding: EdgeInsets.all(20),
+                                    width: double.infinity,
+                                    child: Column(
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Image.asset(
+                                                'assets/images/img.png'),
+                                            SizedBox(
+                                              width: 20,
+                                            ),
+                                            Text(
+                                              resultFlightData[index + 1]
+                                                  ['CarrierName'],
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 18),
+                                            ),
+                                            SizedBox(
+                                              width: 10,
+                                            ),
+                                            /* Text(
+                                              'Air Asia',
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.normal,
+                                                  fontSize: 15,
+                                                  color: Colors.grey),
+                                            ),*/
+                                          ],
+                                        ),
+                                        SizedBox(
+                                          height: 20,
+                                        ),
+                                        Row(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  resultFlightData[index + 1]
+                                                          ['DepartureDate']
+                                                      .toString()
+                                                      .substring(0, 10),
+                                                ),
+                                                Text(
+                                                  '${CommonUtils.convertToFormattedTime(resultFlightData[index + 1]['DepartureDate']).toString().toUpperCase()} ',
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 18),
+                                                ),
+                                                Text(resultFlightData[index + 1]
+                                                    ['DepartCityName']),
+                                                SizedBox(
+                                                  height: 2,
+                                                ),
+                                                Container(
+                                                  width: 75,
+                                                  child: Text(
+                                                    resultFlightData[index + 1]
+                                                        ['DepartAirportName'],
+                                                    style: TextStyle(
+                                                        color: Colors.grey,
+                                                        fontSize: 12),
+                                                  ),
+                                                ),
+                                                SizedBox(
+                                                  height: 2,
+                                                ),
+                                                Text(
+                                                    'Terminal' +
+                                                        " " +
+                                                        resultFlightData[
+                                                                index + 1][
+                                                            'DepartureTerminal'],
+                                                    style: TextStyle(
+                                                        color: Colors.orange,
+                                                        fontSize: 12)),
+                                              ],
+                                            ),
+                                            Container(
+                                              width: 65,
+                                              child: Text(
+                                                CommonUtils
+                                                    .convertMinutesToHoursMinutes(
+                                                        resultFlightData[index +
+                                                            1]['TravelTime']),
+                                                style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 16),
+                                              ),
+                                            ),
+                                            Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  resultFlightData[index + 1]
+                                                          ['ArrivalDate']
+                                                      .toString()
+                                                      .substring(0, 10),
+                                                ),
+                                                Text(
+                                                  '${CommonUtils.convertToFormattedTime(resultFlightData[index + 1]['ArrivalDate']).toString().toUpperCase()} ',
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 18),
+                                                ),
+                                                Text(resultFlightData[index + 1]
+                                                    ['ArriveCityName']),
+                                                SizedBox(
+                                                  height: 2,
+                                                ),
+                                                Container(
+                                                  width: 75,
+                                                  child: Text(
+                                                    resultFlightData[index + 1]
+                                                        ['ArrivalAirportName'],
+                                                    style: TextStyle(
+                                                        color: Colors.grey,
+                                                        fontSize: 12),
+                                                  ),
+                                                ),
+                                                SizedBox(
+                                                  height: 2,
+                                                ),
+                                                SizedBox(
+                                                  height: 2,
+                                                ),
+                                                Text(
+                                                    'Terminal' +
+                                                        " " +
+                                                        resultFlightData[
+                                                                index + 1]
+                                                            ['ArrivalTerminal'],
+                                                    style: TextStyle(
+                                                        color: Colors.orange,
+                                                        fontSize: 12)),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                        SizedBox(
+                                          height: 20,
+                                        ),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Column(
+                                              children: [
+                                                Icon(
+                                                  Icons.shopping_bag,
+                                                  color: Colors.blue,
+                                                ),
+                                                SizedBox(
+                                                  height: 5,
+                                                ),
+                                                Text(
+                                                  resultFlightData[index + 1]
+                                                      ['Baggage'],
+                                                  style: TextStyle(
+                                                      color: Colors.black,
+                                                      fontSize: 13),
+                                                ),
+                                                Text(
+                                                  'CheckIn\nBaggage',
+                                                  style: TextStyle(
+                                                      color: Colors.grey,
+                                                      fontSize: 13),
+                                                ),
+                                              ],
+                                            ),
+                                            SizedBox(
+                                              width: 40,
+                                            ),
+                                            Column(
+                                              children: [
+                                                Icon(
+                                                  Icons.shopping_bag,
+                                                  color: Colors.blue,
+                                                ),
+                                                SizedBox(
+                                                  height: 5,
+                                                ),
+                                                Text(
+                                                  resultFlightData[index + 1]
+                                                      ['CabinBaggage'],
+                                                  style: TextStyle(
+                                                      color: Colors.black,
+                                                      fontSize: 13),
+                                                ),
+                                                Text(
+                                                  'Cabin Baggage',
+                                                  style: TextStyle(
+                                                      color: Colors.grey,
+                                                      fontSize: 13),
+                                                ),
+                                              ],
+                                            ),
+                                            SizedBox(
+                                              width: 40,
+                                            ),
+                                            Column(
+                                              children: [
+                                                Icon(
+                                                  Icons.shopping_bag,
+                                                  color: Colors.blue,
+                                                ),
+                                                SizedBox(
+                                                  height: 5,
+                                                ),
+                                                Text(
+                                                  '',
+                                                  style: TextStyle(
+                                                      color: Colors.black,
+                                                      fontSize: 13),
+                                                ),
+                                                Text(
+                                                  'Meal',
+                                                  style: TextStyle(
+                                                      color: Colors.grey,
+                                                      fontSize: 13),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        )
+                                      ],
+                                      //empty screen hello varutha?
+                                    ),
+                                  ), //Oruka stop pannitu run panni one stop varutha nnu confirm pannunga ok run se aagala list load aagathu ine epdi check pana
+                                  index + 1 < (resultFlightData.length - 1)
+                                      ? Container(
+                                          width: double.infinity,
+                                          color: Color(0xfff7f7f7),
+                                          margin: EdgeInsets.symmetric(
+                                              horizontal: 10),
+                                          padding: EdgeInsets.all(10),
+                                          child: Column(
+                                            children: [
+                                              SizedBox(
+                                                height: 20,
+                                              ),
+                                              Text(
+                                                CommonUtils
+                                                        .convertMinutesToHoursMinutes(
+                                                            resultFlightData[
+                                                                    index + 1][
+                                                                'TravelTime']) +
+                                                    " " +
+                                                    "Layover",
+                                                style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.black,
+                                                    fontSize: 18),
+                                              ),
+                                              SizedBox(
+                                                height: 20,
+                                              ),
+                                            ],
+                                          ),
+                                        )
+                                      : Container(), //Run anathum screenshot anupunga ok
                                 ],
-                              ),
-                              Column(
-                                children: [
-                                  Text(
-                                    '06:00 AM - 09:25 AM',
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 13),
-                                  ),
-                                  Row(
-                                    children: [
-                                      Text('DEL',
-                                          style: TextStyle(
-                                              color: Color(0xff777777),
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 13)),
-                                      Icon(Icons.arrow_right_alt),
-                                      Text('MAA',
-                                          style: TextStyle(
-                                              color: Color(0xff777777),
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 13))
-                                    ],
-                                  )
-                                ],
-                              ),
-                              Column(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '3 hr 25 min',
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 13),
-                                  ),
-                                  SizedBox(
-                                    height: 5,
-                                  ),
-                                  Text(
-                                    '1 Stop',
-                                    style: TextStyle(fontSize: 13),
-                                  )
-                                ],
-                              ),
-                              Container(
-                                height: 60,
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
+                              );
+                            })
+                        : Container(
+                            color: Colors.white,
+                            padding: EdgeInsets.all(20),
+                            width: double.infinity,
+                            child: Column(
+                              children: [
+                                Row(
                                   children: [
+                                    Image.asset('assets/images/img.png'),
+                                    SizedBox(
+                                      width: 20,
+                                    ),
                                     Text(
-                                      'INR 1,444',
+                                      resultFlightData[0]['CarrierName'],
                                       style: TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 18),
                                     ),
+                                    SizedBox(
+                                      width: 10,
+                                    ),
+                                    /* Text(
+                                      'Air Asia',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.normal,
+                                          fontSize: 15,
+                                          color: Colors.grey),
+                                    ),*/
                                   ],
                                 ),
-                              )
-                            ],
-                          ),
-                          SizedBox(
-                            height: 5,
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Refundable',
-                                style: TextStyle(
-                                    color: Color(0xff11A578), fontSize: 13),
-                              ),
-                              Text(
-                                'Fare Details',
-                                style: TextStyle(
-                                    color: Theme.of(context).primaryColor,
-                                    fontSize: 13),
-                              ),
-                              Text(
-                                'More Details',
-                                style: TextStyle(
-                                    color: Color(0xffdf7417), fontSize: 13),
-                              ),
-                            ],
-                          )
-                        ],
-                      ),
-                    ),
-                    Container(
-                      decoration: BoxDecoration(color: Colors.white),
-                      padding: EdgeInsets.all(10),
-                      child: Column(
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Column(
-                                children: [
-                                  ClipRRect(
-                                      borderRadius: BorderRadius.circular(25),
-                                      child: Image.asset(
-                                        'assets/images/img.png',
-                                        height: 50,
-                                        width: 50,
-                                      )),
-                                  Text(
-                                    'Aksaa Air',
-                                    style: TextStyle(color: Color(0xff777777)),
-                                  )
-                                ],
-                              ),
-                              Column(
-                                children: [
-                                  Text(
-                                    '06:00 AM - 09:25 AM',
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 13),
-                                  ),
-                                  Row(
-                                    children: [
-                                      Text('DEL',
-                                          style: TextStyle(
-                                              color: Color(0xff777777),
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 13)),
-                                      Icon(Icons.arrow_right_alt),
-                                      Text('MAA',
-                                          style: TextStyle(
-                                              color: Color(0xff777777),
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 13))
-                                    ],
-                                  )
-                                ],
-                              ),
-                              Column(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '3 hr 25 min',
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 13),
-                                  ),
-                                  SizedBox(
-                                    height: 5,
-                                  ),
-                                  Text(
-                                    '1 Stop',
-                                    style: TextStyle(fontSize: 13),
-                                  )
-                                ],
-                              ),
-                              Container(
-                                height: 60,
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
+                                SizedBox(
+                                  height: 20,
+                                ),
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Text(
-                                      'INR 1,444',
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 18),
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          resultFlightData[0]['DepartureDate']
+                                              .toString()
+                                              .substring(0, 10),
+                                        ),
+                                        Text(
+                                          '${CommonUtils.convertToFormattedTime(resultFlightData[0]['DepartureDate']).toString().toUpperCase()} ',
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 18),
+                                        ),
+                                        Text(resultFlightData[0]
+                                            ['DepartCityName']),
+                                        SizedBox(
+                                          height: 2,
+                                        ),
+                                        Text(
+                                          resultFlightData[0]
+                                              ['DepartAirportName'],
+                                          style: TextStyle(
+                                              color: Colors.grey, fontSize: 12),
+                                        ),
+                                        SizedBox(
+                                          height: 2,
+                                        ),
+                                        SizedBox(
+                                          height: 2,
+                                        ),
+                                        Text(
+                                            'Terminal' +
+                                                " " +
+                                                resultFlightData[0]
+                                                    ['DepartureTerminal'],
+                                            style: TextStyle(
+                                                color: Colors.orange,
+                                                fontSize: 12)),
+                                      ],
+                                    ),
+                                    Container(
+                                      width: 65,
+                                      child: Text(
+                                        CommonUtils
+                                            .convertMinutesToHoursMinutes(
+                                                resultFlightData[0]
+                                                    ['TravelTime']),
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16),
+                                      ),
+                                    ),
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          resultFlightData[0]['ArrivalDate']
+                                              .toString()
+                                              .substring(0, 10),
+                                        ),
+                                        Text(
+                                          '${CommonUtils.convertToFormattedTime(resultFlightData[0]['ArrivalDate']).toString().toUpperCase()} ',
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 18),
+                                        ),
+                                        Text(resultFlightData[0]
+                                            ['ArriveCityName']),
+                                        SizedBox(
+                                          height: 2,
+                                        ),
+                                        Text(
+                                          resultFlightData[0]
+                                              ['ArrivalAirportName'],
+                                          style: TextStyle(
+                                              color: Colors.grey, fontSize: 12),
+                                        ),
+                                        SizedBox(
+                                          height: 2,
+                                        ),
+                                        SizedBox(
+                                          height: 2,
+                                        ),
+                                        Text(
+                                            'Terminal' +
+                                                " " +
+                                                resultFlightData[0]
+                                                    ['ArrivalTerminal'],
+                                            style: TextStyle(
+                                                color: Colors.orange,
+                                                fontSize: 12)),
+                                      ],
                                     ),
                                   ],
                                 ),
-                              )
-                            ],
+                                SizedBox(
+                                  height: 20,
+                                ),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Column(
+                                      children: [
+                                        Icon(
+                                          Icons.shopping_bag,
+                                          color: Colors.blue,
+                                        ),
+                                        SizedBox(
+                                          height: 5,
+                                        ),
+                                        Text(
+                                          resultFlightData[0]['Baggage'],
+                                          style: TextStyle(
+                                              color: Colors.black,
+                                              fontSize: 13),
+                                        ),
+                                        Text(
+                                          'CheckIn\n Baggage',
+                                          style: TextStyle(
+                                              color: Colors.grey, fontSize: 13),
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(
+                                      width: 40,
+                                    ),
+                                    Column(
+                                      children: [
+                                        Icon(
+                                          Icons.shopping_bag,
+                                          color: Colors.blue,
+                                        ),
+                                        SizedBox(
+                                          height: 5,
+                                        ),
+                                        Text(
+                                          resultFlightData[0]['CabinBaggage'],
+                                          style: TextStyle(
+                                              color: Colors.black,
+                                              fontSize: 13),
+                                        ),
+                                        Text(
+                                          'Cabin Baggage',
+                                          style: TextStyle(
+                                              color: Colors.grey, fontSize: 13),
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(
+                                      width: 40,
+                                    ),
+                                    Column(
+                                      children: [
+                                        Icon(
+                                          Icons.shopping_bag,
+                                          color: Colors.blue,
+                                        ),
+                                        SizedBox(
+                                          height: 5,
+                                        ),
+                                        Text(
+                                          '',
+                                          style: TextStyle(
+                                              color: Colors.black,
+                                              fontSize: 13),
+                                        ),
+                                        Text(
+                                          'Meal',
+                                          style: TextStyle(
+                                              color: Colors.grey, fontSize: 13),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                )
+                              ],
+                            ),
                           ),
-                          SizedBox(
-                            height: 5,
+                    Container(
+                      width: double.infinity,
+                      height: 70,
+                      padding: EdgeInsets.only(top: 20),
+                      alignment: Alignment.bottomCenter,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (BuildContext context) =>
+                                      RoundTripBookNowFlight(
+                                          flightDetails:
+                                              widget.flightDetails)));
+                        },
+                        style: ElevatedButton.styleFrom(
+                          primary: Color(0xff74206b),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                                10.0), // Adjust the radius as needed
                           ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Refundable',
-                                style: TextStyle(
-                                    color: Color(0xff11A578), fontSize: 13),
-                              ),
-                              Text(
-                                'Fare Details',
-                                style: TextStyle(
-                                    color: Theme.of(context).primaryColor,
-                                    fontSize: 13),
-                              ),
-                              Text(
-                                'More Details',
-                                style: TextStyle(
-                                    color: Color(0xffdf7417), fontSize: 13),
-                              ),
-                            ],
-                          )
-                        ],
-                      ),
-                    ),
-                    SizedBox(
-                      height: 50,
-                    ),
-                    Text(
-                      'Traveller Details',
-                      style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(
-                      height: 30,
-                    ),
-                    Text(
-                      'First Name',
-                      style: TextStyle(
-                          color: Colors.black, fontWeight: FontWeight.normal),
-                    ),
-                    SizedBox(
-                      height: 10,
-                    ),
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 10),
-                      decoration: BoxDecoration(
-                          border: Border.all(width: 0.1, color: Colors.black),
-                          borderRadius: BorderRadius.circular(5)),
-                      child: TextField(
-                        decoration: InputDecoration(border: InputBorder.none),
-                      ),
-                    ),
-                    SizedBox(
-                      height: 20,
-                    ),
-                    Text(
-                      'Last Name',
-                      style: TextStyle(
-                          color: Colors.black, fontWeight: FontWeight.normal),
-                    ),
-                    SizedBox(
-                      height: 10,
-                    ),
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 10),
-                      decoration: BoxDecoration(
-                          border: Border.all(width: 0.1, color: Colors.black),
-                          borderRadius: BorderRadius.circular(5)),
-                      child: TextField(
-                        decoration: InputDecoration(border: InputBorder.none),
-                      ),
-                    ),
-                    SizedBox(
-                      height: 20,
-                    ),
-                    Text(
-                      'Date of birth',
-                      style: TextStyle(
-                          color: Colors.black, fontWeight: FontWeight.normal),
-                    ),
-                    SizedBox(
-                      height: 10,
-                    ),
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 10),
-                      decoration: BoxDecoration(
-                          border: Border.all(width: 0.1, color: Colors.black),
-                          borderRadius: BorderRadius.circular(5)),
-                      child: TextField(
-                        decoration: InputDecoration(border: InputBorder.none),
-                      ),
-                    ),
-                    SizedBox(
-                      height: 20,
-                    ),
-                    Text(
-                      'Nationality',
-                      style: TextStyle(
-                          color: Colors.black, fontWeight: FontWeight.normal),
-                    ),
-                    SizedBox(
-                      height: 10,
-                    ),
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 10),
-                      decoration: BoxDecoration(
-                          border: Border.all(width: 0.1, color: Colors.black),
-                          borderRadius: BorderRadius.circular(5)),
-                      child: TextField(
-                        decoration: InputDecoration(border: InputBorder.none),
-                      ),
-                    ),
-                    SizedBox(
-                      height: 20,
-                    ),
-                    Text(
-                      'Document Number',
-                      style: TextStyle(
-                          color: Colors.black, fontWeight: FontWeight.normal),
-                    ),
-                    SizedBox(
-                      height: 10,
-                    ),
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 10),
-                      decoration: BoxDecoration(
-                          border: Border.all(width: 0.1, color: Colors.black),
-                          borderRadius: BorderRadius.circular(5)),
-                      child: TextField(
-                        decoration: InputDecoration(border: InputBorder.none),
-                      ),
-                    ),
-                    SizedBox(
-                      height: 20,
-                    ),
-                    Text(
-                      'Expiry Date',
-                      style: TextStyle(
-                          color: Colors.black, fontWeight: FontWeight.normal),
-                    ),
-                    SizedBox(
-                      height: 10,
-                    ),
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 10),
-                      decoration: BoxDecoration(
-                          border: Border.all(width: 0.1, color: Colors.black),
-                          borderRadius: BorderRadius.circular(5)),
-                      child: TextField(
-                        decoration: InputDecoration(border: InputBorder.none),
-                      ),
-                    ),
-                    SizedBox(
-                      height: 50,
-                    ),
-                    Text(
-                      'Contact Details',
-                      style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(
-                      height: 30,
-                    ),
-                    Text(
-                      'Email Address',
-                      style: TextStyle(
-                          color: Colors.black, fontWeight: FontWeight.normal),
-                    ),
-                    SizedBox(
-                      height: 10,
-                    ),
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 10),
-                      decoration: BoxDecoration(
-                          border: Border.all(width: 0.1, color: Colors.black),
-                          borderRadius: BorderRadius.circular(5)),
-                      child: TextField(
-                        decoration: InputDecoration(border: InputBorder.none),
-                      ),
-                    ),
-                    SizedBox(
-                      height: 20,
-                    ),
-                    Text(
-                      'Mobile Number',
-                      style: TextStyle(
-                          color: Colors.black, fontWeight: FontWeight.normal),
-                    ),
-                    SizedBox(
-                      height: 10,
-                    ),
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 10),
-                      decoration: BoxDecoration(
-                          border: Border.all(width: 0.1, color: Colors.black),
-                          borderRadius: BorderRadius.circular(5)),
-                      child: TextField(
-                        decoration: InputDecoration(border: InputBorder.none),
-                      ),
-                    ),
-                    SizedBox(
-                      height: 20,
-                    ),
-                    Text(
-                      'Address',
-                      style: TextStyle(
-                          color: Colors.black, fontWeight: FontWeight.normal),
-                    ),
-                    SizedBox(
-                      height: 10,
-                    ),
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 10),
-                      decoration: BoxDecoration(
-                          border: Border.all(width: 0.1, color: Colors.black),
-                          borderRadius: BorderRadius.circular(5)),
-                      child: TextField(
-                        decoration: InputDecoration(border: InputBorder.none),
-                      ),
-                    ),
-                    SizedBox(
-                      height: 20,
-                    ),
-                    Text(
-                      'City',
-                      style: TextStyle(
-                          color: Colors.black, fontWeight: FontWeight.normal),
-                    ),
-                    SizedBox(
-                      height: 10,
-                    ),
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 10),
-                      decoration: BoxDecoration(
-                          border: Border.all(width: 0.1, color: Colors.black),
-                          borderRadius: BorderRadius.circular(5)),
-                      child: TextField(
-                        decoration: InputDecoration(border: InputBorder.none),
-                      ),
-                    ),
-                    SizedBox(
-                      height: 20,
-                    ),
-                    Text(
-                      'Country',
-                      style: TextStyle(
-                          color: Colors.black, fontWeight: FontWeight.normal),
-                    ),
-                    SizedBox(
-                      height: 10,
-                    ),
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 10),
-                      decoration: BoxDecoration(
-                          border: Border.all(width: 0.1, color: Colors.black),
-                          borderRadius: BorderRadius.circular(5)),
-                      child: TextField(
-                        decoration: InputDecoration(border: InputBorder.none),
-                      ),
-                    ),
-                    SizedBox(
-                      height: 30,
-                    ),
-                    ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        elevation: 10.0,
-                        backgroundColor: Theme.of(context).primaryColor,
-                        shadowColor: Theme.of(context).primaryColor,
-                        padding: const EdgeInsets.all(10.0),
-                        minimumSize: const Size(double.infinity, 50.0),
-                      ),
-                      child: const Text(
-                        "Continue Booking",
-                        style: TextStyle(fontFamily: "Montserrat"),
+                        ),
+                        child: Container(
+                          width: 320,
+                          height: 45,
+                          alignment: Alignment.center,
+                          child: Text(
+                            'Book Flight',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ],

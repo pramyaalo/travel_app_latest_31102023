@@ -10,13 +10,13 @@ import 'package:rounded_loading_button/rounded_loading_button.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../Booking/FamilyMembersModel.dart';
-import '../../Booking/MultiCityFlightsList.dart';
 import '../../Booking/TwoWayBoardingFlightsList.dart';
 import '../../Models/passenger_ddl_model.dart';
 import '../../models/hotel_destination_models.dart';
 
 import '../../utils/response_handler.dart';
 import 'AddTravellers_Flight.dart';
+import 'multicity_flight_list.dart';
 import 'one_way_flight_list.dart';
 
 class FlightScreen extends StatefulWidget {
@@ -1316,20 +1316,21 @@ class _FlightsScreenState extends State<FlightScreen> {
                                                               selectedDate),
                                                 ));
                                           } else
-                                            navigate(MultiCityFlightsList(
-                                                adult: AdultCount.toString(),
-                                                children:
-                                                    childrenCount.toString(),
-                                                infants:
-                                                    infantsCount.toString(),
-                                                orgin: orginController.text,
-                                                destination:
-                                                    destinationController.text,
-                                                orgin1: orginController1.text,
-                                                destination1:
-                                                    destinationController1.text,
-                                                returnDate: selectedReturnDate,
-                                                departDate: selectedDate));
+                                            print("destinationController1:" +
+                                                destinationController1.text);
+                                          navigate(MultiCityFlightsList(
+                                              adult: AdultCount.toString(),
+                                              children:
+                                                  childrenCount.toString(),
+                                              infants: infantsCount.toString(),
+                                              orgin: orginController.text,
+                                              destination:
+                                                  destinationController.text,
+                                              orgin1: orginController1.text,
+                                              destination1:
+                                                  destinationController1.text,
+                                              returnDate: selectedReturnDate,
+                                              departDate: selectedDate));
                                         },
                                         child: Text(
                                           "SEARCH",

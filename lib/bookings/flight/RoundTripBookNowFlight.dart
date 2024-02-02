@@ -10,15 +10,15 @@ import 'dart:developer' as developer;
 import 'package:xml/xml.dart' as xml;
 import '../../utils/response_handler.dart';
 
-class FlightBookNow extends StatefulWidget {
+class RoundTripBookNowFlight extends StatefulWidget {
   final flightDetails;
-  const FlightBookNow({super.key, required this.flightDetails});
+  const RoundTripBookNowFlight({super.key, required this.flightDetails});
 
   @override
-  State<FlightBookNow> createState() => _OneWayBookingState();
+  State<RoundTripBookNowFlight> createState() => _OneWayBookingState();
 }
 
-class _OneWayBookingState extends State<FlightBookNow> {
+class _OneWayBookingState extends State<RoundTripBookNowFlight> {
   bool isLoading = false;
   bool isBookingLoading = false;
   String selectedCountryCode = '+91';
