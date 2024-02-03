@@ -69,6 +69,23 @@ class _MultiCityFlightsListState extends State<MultiCityFlightsList> {
       'Class': '1',
       'DefaultCurrency': 'INR'
     };
+    print('OriginFirst: ${widget.orgin}');
+    print('DestinationFirst: ${widget.destination}');
+    print('OriginSecond: ${widget.orgin1}');
+    print('DestinationSecond: ${widget.destination1}');
+    print('DepartDateFirst: $fin_date');
+    print('DepartDateSecond: $fin_date1');
+    print('OriginThird: ');
+    print('DestinationThird: ');
+    print('DepartDateThird: ');
+    print('OriginFourth: ');
+    print('DestinationFourth: ');
+    print('DepartDateFourth: ');
+    print('AdultCount: ${widget.adult}');
+    print('ChildrenCount: ${widget.children}');
+    print('InfantCount: ${widget.infants}');
+    print('Class: 1');
+    print('DefaultCurrency: INR');
 
     final url = Uri.parse(
         'https://traveldemo.org/travelapp/b2capi.asmx/AdivahaSearchFlightMultiWay'); //Arivu  sorry
@@ -193,7 +210,8 @@ class _MultiCityFlightsListState extends State<MultiCityFlightsList> {
                                           width: 65,
                                           padding: EdgeInsets.only(left: 5),
                                           child: Text(
-                                            myResult[index]['CarrierNameFirst'],
+                                            myResult[index]['CarrierNameFirst']
+                                                .toString(),
                                             style: TextStyle(
                                                 fontWeight: FontWeight.bold,
                                                 color: Colors.black),
@@ -224,7 +242,8 @@ class _MultiCityFlightsListState extends State<MultiCityFlightsList> {
                                           width: 65,
                                           padding: EdgeInsets.only(left: 5),
                                           child: Text(
-                                            myResult[index]['CarrierNameFirst'],
+                                            myResult[index]['CarrierNameFirst']
+                                                .toString(),
                                             style: TextStyle(
                                                 fontWeight: FontWeight.bold,
                                                 color: Colors.black),
@@ -286,8 +305,9 @@ class _MultiCityFlightsListState extends State<MultiCityFlightsList> {
                                                       CommonUtils
                                                           .convertMinutesToHoursMinutes(
                                                               myResult[index +
-                                                                      1][
-                                                                  'TravelTimeFirst']),
+                                                                          1][
+                                                                      'TravelTimeFirst']
+                                                                  .toString()),
                                                       style: TextStyle(
                                                           fontWeight:
                                                               FontWeight.bold,
@@ -331,7 +351,8 @@ class _MultiCityFlightsListState extends State<MultiCityFlightsList> {
                                             ),
                                             Text(
                                                 myResult[index]
-                                                    ['DepartCityCodeFirst'],
+                                                        ['DepartCityCodeFirst']
+                                                    .toString(),
                                                 style: TextStyle(
                                                     color: Color(0xff777777),
                                                     fontWeight: FontWeight.bold,
@@ -366,7 +387,8 @@ class _MultiCityFlightsListState extends State<MultiCityFlightsList> {
                                             ),
                                             Text(
                                                 myResult[index]
-                                                    ['ArriveCityCodeFirst'],
+                                                        ['ArriveCityCodeFirst']
+                                                    .toString(),
                                                 style: TextStyle(
                                                     color: Color(0xff777777),
                                                     fontWeight: FontWeight.bold,
@@ -404,7 +426,7 @@ class _MultiCityFlightsListState extends State<MultiCityFlightsList> {
                                                       .spaceBetween,
                                               children: [
                                                 Text(
-                                                  '${CommonUtils.convertToFormattedTime(myResult[index]['DepartureDateFirst']).toString().toUpperCase()} ',
+                                                  '${CommonUtils.convertToFormattedTime(myResult[index]['DepartureDateSecond']).toString().toUpperCase()} ',
                                                   style: TextStyle(
                                                       fontWeight:
                                                           FontWeight.bold,
@@ -414,7 +436,7 @@ class _MultiCityFlightsListState extends State<MultiCityFlightsList> {
                                                   width: 100,
                                                 ),
                                                 Text(
-                                                  ' ${CommonUtils.convertToFormattedTime(myResult[index]['ArrivalDateFirst']).toString().toUpperCase()}',
+                                                  ' ${CommonUtils.convertToFormattedTime(myResult[index]['ArrivalDateSecond']).toString().toUpperCase()}',
                                                   style: TextStyle(
                                                       fontWeight:
                                                           FontWeight.bold,
@@ -436,8 +458,9 @@ class _MultiCityFlightsListState extends State<MultiCityFlightsList> {
                                                       CommonUtils
                                                           .convertMinutesToHoursMinutes(
                                                               myResult[index +
-                                                                      1][
-                                                                  'TravelTimeFirst']),
+                                                                          1][
+                                                                      'TravelTimeSecond']
+                                                                  .toString()),
                                                       style: TextStyle(
                                                           fontWeight:
                                                               FontWeight.bold,
@@ -452,13 +475,13 @@ class _MultiCityFlightsListState extends State<MultiCityFlightsList> {
                                                                   left: 20),
                                                           child: Image.asset(
                                                             (myResult[index][
-                                                                        'StopCountFirst'] ==
+                                                                        'StopCountSecond'] ==
                                                                     '0')
                                                                 ? "assets/images/NonStop.png"
                                                                 : (myResult[index +
                                                                                 1]
                                                                             [
-                                                                            'StopCountFirst'] ==
+                                                                            'StopCountSecond'] ==
                                                                         '1')
                                                                     ? "assets/images/oneStop.png"
                                                                     : "assets/images/TwoStop.png",
@@ -480,8 +503,9 @@ class _MultiCityFlightsListState extends State<MultiCityFlightsList> {
                                               width: 10,
                                             ),
                                             Text(
-                                                myResult[index]
-                                                    ['DepartCityCodeFirst'],
+                                                myResult[index][
+                                                        'DepartCityCodeSecond'] //Puriutha?ama.. Ithu pola elathukum change pannunga ithuku keela ulathula thne
+                                                    .toString(),
                                                 style: TextStyle(
                                                     color: Color(0xff777777),
                                                     fontWeight: FontWeight.bold,
@@ -492,7 +516,7 @@ class _MultiCityFlightsListState extends State<MultiCityFlightsList> {
                                             Column(
                                               children: [
                                                 Text(
-                                                  '${myResult[index]['StopCountFirst']} stops',
+                                                  '${myResult[index]['StopCountSecond']} stops',
                                                   style:
                                                       TextStyle(fontSize: 13),
                                                 ),
@@ -516,7 +540,8 @@ class _MultiCityFlightsListState extends State<MultiCityFlightsList> {
                                             ),
                                             Text(
                                                 myResult[index]
-                                                    ['ArriveCityCodeFirst'],
+                                                        ['ArriveCityCodeSecond']
+                                                    .toString(),
                                                 style: TextStyle(
                                                     color: Color(0xff777777),
                                                     fontWeight: FontWeight.bold,
@@ -638,7 +663,8 @@ class _MultiCityFlightsListState extends State<MultiCityFlightsList> {
                                         size: 14,
                                       ),
                                       Text(
-                                        myResult[index]['Refundable'],
+                                        myResult[index]['Refundable']
+                                            .toString(),
                                         style: TextStyle(
                                             fontFamily: "Montserrat",
                                             fontWeight: FontWeight.w500,
@@ -663,14 +689,15 @@ class _MultiCityFlightsListState extends State<MultiCityFlightsList> {
                                   GestureDetector(
                                     onTap: () {
                                       //TwoWayBooking
-                                      /*  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => TwoWayBooking(
-                                        flightDetails: myResult[index+1],
-                                      ),
-                                    ),
-                                  );*/
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              MultiCityBooking(
+                                            flightDetail: myResult[index],
+                                          ),
+                                        ),
+                                      );
                                       print(
                                         "degftwr3ey" + myResult[index],
                                       );
@@ -699,6 +726,8 @@ class _MultiCityFlightsListState extends State<MultiCityFlightsList> {
     );
   }
 
+//length bvarudhu aana enaku wait screenshot podure
+//Entha line la antha error?....hello????
   @override
   void initState() {
     // TODO: implement initState
@@ -706,3 +735,5 @@ class _MultiCityFlightsListState extends State<MultiCityFlightsList> {
     super.initState();
   }
 }
+//vanthu vanthu aana inum iruku Intha error nalae .toString podunga...ini marakathinga...ithoda100000000000 times solliyachu....musari sari ine maraka maten ine sli tharathenga intha error vantha
+//Goof paapom...ana nambika illa ha haa tata...nila ila inum iruku whatsup parunha
