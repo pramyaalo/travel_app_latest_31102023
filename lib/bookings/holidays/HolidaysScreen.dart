@@ -12,6 +12,7 @@ import 'package:http/http.dart' as http;
 
 import '../flight/family_members_model.dart';
 import 'holiday_detail_screen.dart';
+import 'holiday_list_screen.dart';
 
 class Holidays extends StatefulWidget {
   const Holidays({Key? key}) : super(key: key);
@@ -345,7 +346,7 @@ class _HolidaysState extends State<Holidays> {
                                 children: [
                                   ElevatedButton(
                                     onPressed: () {
-                                      navigate(HolidayDetailScreen());
+                                      navigate(HolidayListScreen());
                                     },
                                     child: Text(
                                       "SEARCH HOLIDAY PACKAGES",

@@ -652,6 +652,9 @@ class _TwoWayBoardingFlightsListState extends State<TwoWayBoardingFlightsList> {
                                           MaterialPageRoute(
                                             builder: (context) => TwoWayBooking(
                                               flightDetails: resultList[index],
+                                              adultCount: widget.adult,
+                                              childrenCount: widget.children,
+                                              infantCount: widget.infants,
                                             ),
                                           ),
                                         );

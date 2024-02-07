@@ -414,9 +414,19 @@ class _OnewayFlightsListState extends State<OnewayFlightsList> {
                                                               builder: (BuildContext
                                                                       context) =>
                                                                   OneWayBooking(
-                                                                      flightDetails:
-                                                                          resultList[
-                                                                              index])));
+                                                                    flightDetails:
+                                                                        resultList[
+                                                                            index],
+                                                                    adultCount:
+                                                                        widget
+                                                                            .adult,
+                                                                    childrenCount:
+                                                                        widget
+                                                                            .children,
+                                                                    infantCount:
+                                                                        widget
+                                                                            .infants,
+                                                                  )));
                                                     },
                                                     child: Padding(
                                                       padding:

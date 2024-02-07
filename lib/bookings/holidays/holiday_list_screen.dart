@@ -5,34 +5,47 @@ import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:http/http.dart' as http;
 import 'dart:developer' as developer;
-
-import '../../utils/response_handler.dart';
-import 'holiday_detail_screen.dart';
+import 'package:xml/xml.dart' as xml;
 
 class HolidayListScreen extends StatefulWidget {
   const HolidayListScreen({super.key});
 
   @override
-  State<HolidayListScreen> createState() => _HolidayListScreenState();
+  State<HolidayListScreen> createState() => _HolidayListNewState();
 }
 
-class _HolidayListScreenState extends State<HolidayListScreen> {
+class _HolidayListNewState extends State<HolidayListScreen> {
   bool isLoading = false;
 
-  var holidaysList = [];
+  var holidayList = [];
 
-  void navigate(Widget screen) {
-    Navigator.push(
-        context, MaterialPageRoute(builder: (BuildContext context) => screen));
+  List<Map<String, dynamic>> extractJsonFromXml(String xmlString) {
+    // Parse the XML string
+    var document = xml.XmlDocument.parse(xmlString);
+
+    // Extract the JSON string from the XML string
+    String jsonString = document.findAllElements('string').first.text;
+
+    // Decode the JSON string into a list of maps
+    List<Map<String, dynamic>> jsonList =
+        json.decode(jsonString).cast<Map<String, dynamic>>();
+
+    return jsonList;
   }
 
-  Future<void> getHolidayList(String destinationName, String holidayDate,
-      String defaultCurrency) async {
-    final url = Uri.parse(
-        'https://traveldemo.org/travelapp/b2capi.asmx/HolidayGetList');
+  Future<void> fetchTourList() async {
+    final url =
+        Uri.parse('https://traveldemo.org/travelapp/b2capi.asmx/TourGetList');
     final headers = {'Content-Type': 'application/x-www-form-urlencoded'};
-    final body =
-        'DestinationName=$destinationName&HolidayDate=$holidayDate&DefaultCurrency=$defaultCurrency';
+    final body = {
+      'DestinationName': 'DXB',
+      'FromDate': '2024-02-07',
+      'ToDate': '2024-02-09',
+      'AdultCount': '1',
+      'ChildCount': '0',
+      'DefaultCurrency': 'KES',
+      'UserId': '1002',
+    };
 
     setState(() {
       isLoading = true;
@@ -45,18 +58,15 @@ class _HolidayListScreenState extends State<HolidayListScreen> {
       );
 
       if (response.statusCode == 200) {
-        // Handle the successful response here
-        //print('Request successful! Response: ${response.body}');
-
-        String parsedJsonString = ResponseHandler.parseData(response.body);
-        //developer.log(parsedJsonString);
+        // Request successful, handle the response data
+        //print('Response: ${response.body}');
         setState(() {
-          holidaysList = json.decode(parsedJsonString);
+          holidayList = extractJsonFromXml(response.body).toList();
+          print('holidayList length: ');
+          print(holidayList.length);
         });
-
-        developer.log('holidaysList.length : ${holidaysList.length}');
       } else {
-        // Handle the failure scenario
+        // Request failed, handle the failure scenario
         print('Request failed with status: ${response.statusCode}');
       }
     } catch (error) {
@@ -72,64 +82,131 @@ class _HolidayListScreenState extends State<HolidayListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        iconTheme: IconThemeData(
-            size: 35, weight: 800.0, color: Theme.of(context).primaryColor),
-        //titleSpacing: 0,
-        title: const Text(
-          "Holidays",
-          style: TextStyle(fontSize: 23, fontWeight: FontWeight.bold),
-        ),
-        //title: Image.asset('assets/images/logo.png', width: 150, height: 30,),
-        actions: [
-          Image.asset(
-            'assets/images/logo.png',
-            width: 120,
-            height: 30,
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          titleSpacing: 1,
+          title: Row(
+            children: [
+              IconButton(
+                icon: Icon(
+                  Icons.arrow_back,
+                  color: Colors.black,
+                  size: 27,
+                ),
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+              ),
+
+              SizedBox(width: 1), // Set the desired width
+              Text(
+                "Holiday List",
+                style: TextStyle(
+                    color: Colors.black,
+                    fontFamily: "Montserrat",
+                    fontSize: 19),
+              ),
+            ],
           ),
-          const SizedBox(
-            width: 10,
-          )
-        ],
-      ),
-      body: isLoading
-          ? Center(
-              child: CircularProgressIndicator(),
+          actions: [
+            Image.asset(
+              'assets/images/logo.png',
+              width: 150,
+              height: 50,
+            ),
+            SizedBox(
+              width: 10,
             )
-          : ListView.builder(
-              itemCount: holidaysList.length,
-              itemBuilder: (BuildContext context, index) {
-                return InkWell(
-                  child: Container(
-                    margin: const EdgeInsets.all(10.0),
-                    child: Material(
-                      elevation: 10,
-                      child: Container(
-                        padding: const EdgeInsets.all(10.0),
-                        child: Column(
-                          children: [
-                            Container(
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                children: [
-                                  SizedBox(
-                                    width: 140,
-                                    height: 220,
-                                    child: CachedNetworkImage(
-                                      imageUrl: holidaysList[index]['ImgUrl'],
-                                      placeholder: (context, url) => const Center(
-                                          child: SizedBox(
-                                              height: 40,
-                                              width: 40,
-                                              child:
-                                                  CircularProgressIndicator())),
-                                      errorWidget: (context, url, error) =>
-                                          const Icon(Icons.error),
-                                      fit: BoxFit.cover,
+          ],
+          backgroundColor: Colors.white,
+        ),
+        body: isLoading
+            ? Center(
+                child: CircularProgressIndicator(),
+              )
+            : ListView.builder(
+                itemCount: holidayList.length,
+                itemBuilder: (context, index) {
+                  //return Text(snapshot.data?[index].LabelName ?? "got null");
+                  return InkWell(
+                    child: Container(
+                      margin: const EdgeInsets.all(10.0),
+                      child: Material(
+                        elevation: 10,
+                        child: Container(
+                          padding: const EdgeInsets.all(10.0),
+                          child: Column(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(2),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(15),
+                                  color: const Color(0xFFFAE8FA),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(5),
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(15),
+                                        color: const Color(0xFF870987),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.local_offer,
+                                            color: Colors.white,
+                                            size: 16,
+                                          ),
+                                          Text(
+                                            (holidayList[index]
+                                                    ['durationvalue'] +
+                                                holidayList[index]
+                                                    ['durationmetric']),
+                                            style: TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 10),
+                                          ),
+                                        ],
+                                      ),
                                     ),
-                                  ),
-                                  /*Image(
+                                    const SizedBox(
+                                      width: 10,
+                                    ),
+                                    Text(
+                                      'Duration',
+                                      style: TextStyle(
+                                          color: Colors.black, fontSize: 13),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(
+                                height: 10,
+                              ),
+                              Container(
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  children: [
+                                    SizedBox(
+                                      width: 110,
+                                      height: 180,
+                                      child: CachedNetworkImage(
+                                        imageUrl: holidayList[index]['imgUrl'],
+                                        placeholder: (context, url) => const Center(
+                                            child: SizedBox(
+                                                height: 30,
+                                                width: 35,
+                                                child:
+                                                    CircularProgressIndicator())),
+                                        errorWidget: (context, url, error) =>
+                                            const Icon(Icons.error),
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                    /*Image(
                                       //image: AssetImage('assets/images/hotel_list_1.jpg'),
                                       image: NetworkImage(snapshot.data![index].ImageUrl, ),
                                       width: 120,
@@ -137,350 +214,193 @@ class _HolidayListScreenState extends State<HolidayListScreen> {
                                       fit: BoxFit.cover,
                                     ),*/
 
-                                  const SizedBox(
-                                    width: 10,
-                                  ),
-                                  Expanded(
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.start,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            RatingBar.builder(
-                                              initialRating: double.tryParse(
-                                                  holidaysList[index]
-                                                      ['StarCategory'])!,
-                                              minRating: 1,
-                                              direction: Axis.horizontal,
-                                              allowHalfRating: true,
-                                              itemCount: 5,
-                                              itemSize: 15,
-                                              itemPadding:
-                                                  const EdgeInsets.symmetric(
-                                                      horizontal: 0),
-                                              itemBuilder: (context, _) =>
-                                                  const Icon(
-                                                Icons.star,
-                                                color: Colors.amber,
+                                    const SizedBox(
+                                      width: 10,
+                                    ),
+                                    Expanded(
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              SizedBox(
+                                                  width: 200,
+                                                  child: Text(
+                                                    holidayList[index]['name'],
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    maxLines: 1,
+                                                    softWrap: false,
+                                                    style: const TextStyle(
+                                                        fontSize: 18,
+                                                        fontWeight:
+                                                            FontWeight.bold),
+                                                  )),
+                                              const SizedBox(
+                                                height: 3,
                                               ),
-                                              onRatingUpdate: (rating) {
-                                                print(rating);
-                                              },
-                                            ),
-                                            const SizedBox(
-                                              width: 10,
-                                            ),
-                                            const Icon(
-                                              Icons.business_center_rounded,
-                                              size: 16,
-                                            ),
-                                            Text(
-                                              '0',
-                                              style: const TextStyle(
-                                                  fontFamily: "Montserrat",
-                                                  color: Colors.black87,
-                                                  fontSize: 12),
-                                            ),
-
-                                            const SizedBox(
-                                              width: 20,
-                                            ),
-                                            const Icon(
-                                              Icons.meeting_room_sharp,
-                                              size: 16,
-                                            ),
-                                            //Marquee(text: snapshot.data![index].RoomOffer, style: TextStyle(fontFamily: "Montserrat", color: Colors.black87, fontSize: 12 ),)
-                                            SizedBox(
-                                                width: 80,
-                                                child: Text(
-                                                  '6',
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  maxLines: 1,
-                                                  softWrap: false,
-                                                  style: const TextStyle(
-                                                      fontFamily: "Montserrat",
-                                                      fontSize: 12),
-                                                )),
-                                          ],
-                                        ),
-                                        const SizedBox(
-                                          height: 10,
-                                        ),
-                                        Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            SizedBox(
+                                              Row(
+                                                children: [
+                                                  const Icon(
+                                                    IconData(0xf053c,
+                                                        fontFamily:
+                                                            'MaterialIcons'),
+                                                    size: 15,
+                                                  ),
+                                                  const SizedBox(
+                                                    width: 3,
+                                                  ),
+                                                  SizedBox(
+                                                      width: 150,
+                                                      child: Text(
+                                                        holidayList[index]
+                                                            ['countryname'],
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                        maxLines: 1,
+                                                        softWrap: false,
+                                                        style: const TextStyle(
+                                                            fontWeight:
+                                                                FontWeight.w500,
+                                                            fontSize: 12),
+                                                      )),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(
+                                            height: 3,
+                                          ),
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text(
+                                                '${holidayList[index]['currency']} ${holidayList[index]['amount']}',
+                                                style: const TextStyle(
+                                                    color: Colors.red,
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 16),
+                                              ),
+                                            ],
+                                          ),
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Container(
                                                 width: 200,
                                                 child: Text(
-                                                  holidaysList[index]['Title'],
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  maxLines: 1,
-                                                  softWrap: false,
-                                                  style: const TextStyle(
-                                                      fontSize: 18,
-                                                      fontWeight:
-                                                          FontWeight.bold),
-                                                )),
-                                            const SizedBox(
-                                              height: 5,
-                                            ),
-                                            Row(
-                                              children: [
-                                                const Icon(
-                                                  IconData(0xf053c,
-                                                      fontFamily:
-                                                          'MaterialIcons'),
-                                                  size: 15,
-                                                ),
-                                                const SizedBox(
-                                                  width: 5,
-                                                ),
-                                                SizedBox(
-                                                    width: 200,
-                                                    child: Text(
-                                                      holidaysList[index]
-                                                          ['Country'],
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                      maxLines: 1,
-                                                      softWrap: false,
-                                                      style: const TextStyle(
-                                                          fontWeight:
-                                                              FontWeight.normal,
-                                                          fontSize: 12),
-                                                    )),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(
-                                          height: 10,
-                                        ),
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Row(
-                                              children: [
-                                                Container(
-                                                  width: 45,
-                                                  height: 25,
-                                                  decoration: BoxDecoration(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            10),
-                                                    color:
-                                                        const Color(0xFF00AF80),
-                                                  ),
-                                                  child: Center(
-                                                    child: Text(
-                                                      '${holidaysList[index]['StarCategory']} /5',
-                                                      style: const TextStyle(
-                                                          color: Colors.white,
-                                                          fontSize: 11),
-                                                    ),
-                                                  ),
-                                                ),
-                                                const SizedBox(
-                                                  width: 10,
-                                                ),
-                                                const Text(
-                                                  "487 ratings",
-                                                  style: TextStyle(
-                                                      fontFamily: "Montserrat",
-                                                      color: Colors.grey,
-                                                      fontSize: 12),
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(
-                                              width: 10,
-                                            ),
-                                            Stack(
-                                              alignment: Alignment.center,
-                                              children: [
-                                                Container(
-                                                  width: 65,
-                                                  height: 30,
-                                                  decoration: BoxDecoration(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            10),
-                                                    //color: const Color(0xFFFADEE0),
-                                                    color:
-                                                        const Color(0xFFFADEE0),
-                                                  ),
-                                                ),
-                                                const Text(
-                                                  "27% Off",
-                                                  style: TextStyle(
-                                                      color: Colors.red,
-                                                      fontSize: 11),
-                                                )
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(
-                                          height: 10,
-                                        ),
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Row(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.center,
-                                              children: [
-                                                Text(
-                                                  '${holidaysList[index]['Currency']} ${holidaysList[index]['Price']}',
+                                                  '${holidayList[index]['featuresInclusion']}',
                                                   style: const TextStyle(
                                                       color: Colors.black,
                                                       fontWeight:
-                                                          FontWeight.bold,
-                                                      fontSize: 18),
-                                                ),
-                                                Text(
-                                                  " / Adult",
-                                                  style: TextStyle(
-                                                      color: Colors.grey,
-                                                      fontSize: 13),
-                                                )
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(
-                                          height: 10,
-                                        ),
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Text(
-                                              'Tour ID: ${holidaysList[index]['TourID']}',
-                                              style: const TextStyle(
-                                                  color: Colors.black,
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 16),
-                                            ),
-                                            const SizedBox(
-                                              width: 50,
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(
-                                          height: 10,
-                                        ),
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  'Inpolicy',
-                                                  style: const TextStyle(
-                                                      color: Colors.red,
-                                                      fontSize: 12),
-                                                ),
-                                                const SizedBox(
-                                                  height: 5,
-                                                ),
-                                                Text(
-                                                  'Active',
-                                                  style: TextStyle(
-                                                      color: Color(0xFF00AF80),
-                                                      fontSize: 12),
-                                                )
-                                              ],
-                                            ),
-                                            Container(
-                                              width: 100,
-                                              height: 40,
-                                              decoration: BoxDecoration(
-                                                  borderRadius:
-                                                      BorderRadius.circular(10),
-                                                  color: Theme.of(context)
-                                                      .primaryColor),
-                                              child: Center(
-                                                child: Text(
-                                                  'Book Now',
-                                                  style: TextStyle(
-                                                      color: Colors.white,
-                                                      fontWeight:
-                                                          FontWeight.bold),
+                                                          FontWeight.w500,
+                                                      fontSize: 14),
                                                 ),
                                               ),
-                                            )
-                                          ],
-                                        )
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(
-                              height: 10,
-                            ),
-                            Container(
-                              color: const Color(0xFFFAE8FA),
-                              child: Row(
-                                children: [
-                                  Stack(
-                                    alignment: Alignment.center,
-                                    children: [
-                                      Container(
-                                        height: 40,
-                                        width: 40,
-                                        decoration: const BoxDecoration(
-                                          shape: BoxShape.circle,
-                                        ),
+                                            ],
+                                          ),
+                                          const SizedBox(
+                                            height: 5,
+                                          ),
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text(
+                                                'Code: ${holidayList[index]['code']}',
+                                                style: const TextStyle(
+                                                    color: Colors.black,
+                                                    fontWeight: FontWeight.w500,
+                                                    fontSize: 14),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(
+                                            height: 5,
+                                          ),
+                                          SizedBox(
+                                            width: 250,
+                                            height: 1,
+                                            child: DecoratedBox(
+                                              decoration: const BoxDecoration(
+                                                  color: Color(0xffededed)),
+                                            ),
+                                          ),
+                                          const SizedBox(
+                                            height: 5,
+                                          ),
+                                          Row(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.center,
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text(
+                                                holidayList[index]
+                                                    ['activityFactsheetType'],
+                                                style: TextStyle(
+                                                    color: Color(0xFF00AF80),
+                                                    fontWeight: FontWeight.w500,
+                                                    fontSize: 12),
+                                              ),
+                                              GestureDetector(
+                                                onTap: () {
+                                                  /* navigate(HotelDescription(
+                                                hotelDetail:
+                                                hotelResult[index],
+                                                Starcategory:
+                                                StarCategory,
+                                                RoomCount:
+                                                widget.RoomCount,
+                                                adultCount: widget
+                                                    .AdultCountRoom1,
+                                                childrenCount: widget
+                                                    .ChildrenCountRoom1,
+                                                Checkindate:
+                                                widget.checkinDate,
+                                                CheckoutDate:
+                                                widget.checkoutDate));*/
+                                                },
+                                                child: Text(
+                                                  'View Details',
+                                                  style: TextStyle(
+                                                      color: Color(0xFF00AF80),
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                      fontSize: 14),
+                                                ),
+                                              ),
+                                            ],
+                                          )
+                                        ],
                                       ),
-                                      const Image(
-                                        image: AssetImage(
-                                            "assets/images/handsanitizer.png"),
-                                        width: 30,
-                                        height: 30,
-                                      )
-                                    ],
-                                  ),
-                                  Flexible(
-                                      child: Text(
-                                    holidaysList[index]['Description'],
-                                    style: TextStyle(fontSize: 12),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ))
-                                ],
+                                    ),
+                                  ],
+                                ),
                               ),
-                            )
-                          ],
+                              const SizedBox(
+                                height: 10,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  onTap: () {
-                    navigate(HolidayDetailScreen());
-                  },
-                );
-              }),
-    );
+                  );
+                },
+              ));
   }
 
   @override
   void initState() {
-    // TODO: implement initState
-    getHolidayList('Dubai', '2024/01/02', 'INR');
+    fetchTourList();
     super.initState();
   }
 }

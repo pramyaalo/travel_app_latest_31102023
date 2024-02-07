@@ -64,13 +64,14 @@ class _FlightsScreenState extends State<FlightScreen> {
     orginController1.text = 'MAA';
     destinationController1.text = 'DXB';
     //searchBookingTravellers();
+    tTripType = '1';
     isSelected = true;
     __shouldShowReturn = false;
     //_loadSavedString();
     if (selectedClass == '') {
       selectedClass = 'Economy';
     }
-    tTripType = '1';
+
     super.initState();
   }
 
@@ -1315,22 +1316,24 @@ class _FlightsScreenState extends State<FlightScreen> {
                                                           departDate:
                                                               selectedDate),
                                                 ));
-                                          } else
+                                          } else if (tTripType == "2") {
                                             print("destinationController1:" +
                                                 destinationController1.text);
-                                          navigate(MultiCityFlightsList(
-                                              adult: AdultCount.toString(),
-                                              children:
-                                                  childrenCount.toString(),
-                                              infants: infantsCount.toString(),
-                                              orgin: orginController.text,
-                                              destination:
-                                                  destinationController.text,
-                                              orgin1: orginController1.text,
-                                              destination1:
-                                                  destinationController1.text,
-                                              returnDate: selectedReturnDate,
-                                              departDate: selectedDate));
+                                            navigate(MultiCityFlightsList(
+                                                adult: AdultCount.toString(),
+                                                children:
+                                                    childrenCount.toString(),
+                                                infants:
+                                                    infantsCount.toString(),
+                                                orgin: orginController.text,
+                                                destination:
+                                                    destinationController.text,
+                                                orgin1: orginController1.text,
+                                                destination1:
+                                                    destinationController1.text,
+                                                returnDate: selectedReturnDate,
+                                                departDate: selectedDate));
+                                          }
                                         },
                                         child: Text(
                                           "SEARCH",

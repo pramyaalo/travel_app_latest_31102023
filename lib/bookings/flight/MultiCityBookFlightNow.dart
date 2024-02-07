@@ -4,15 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
-import '../../utils/commonutils.dart';
+import '../../../utils/commonutils.dart';
 import 'package:http/http.dart' as http;
 import 'dart:developer' as developer;
 import 'package:xml/xml.dart' as xml;
-import '../../utils/response_handler.dart';
+import '../../../utils/response_handler.dart';
 
-class RoundTripBookNowFlight extends StatefulWidget {
+class MultiCityBookFlightNow extends StatefulWidget {
   final flightDetails, resultFlightData, adultCount, childrenCount, infantCount;
-  const RoundTripBookNowFlight(
+  const MultiCityBookFlightNow(
       {super.key,
       required this.flightDetails,
       required this.resultFlightData,
@@ -21,10 +21,10 @@ class RoundTripBookNowFlight extends StatefulWidget {
       required this.adultCount});
 
   @override
-  State<RoundTripBookNowFlight> createState() => _OneWayBookingState();
+  State<MultiCityBookFlightNow> createState() => _OneWayBookingState();
 }
 
-class _OneWayBookingState extends State<RoundTripBookNowFlight> {
+class _OneWayBookingState extends State<MultiCityBookFlightNow> {
   bool isLoading = false;
   bool isBookingLoading = false;
   String selectedCountryCode = '+91';
@@ -86,7 +86,7 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
       'ResultIndex': resultIndex,
       'TraceId': traceId,
       'LCC': resultFlightData[0]['IsLCC'].toString(),
-      'TripType': 'Roundtrip',
+      'TripType': 'Multiway',
       'UserId': '',
       'AdultCount': '1',
       'ChildCount': '0',
@@ -447,7 +447,7 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                             physics: NeverScrollableScrollPhysics(),
                             itemCount: resultFlightData.length > 1
                                 ? resultFlightData.length - 1
-                                : 0,
+                                : 0, //Ipo non stio kuduthu paarunga
                             itemBuilder: (BuildContext context, index) {
                               return Column(
                                 children: [

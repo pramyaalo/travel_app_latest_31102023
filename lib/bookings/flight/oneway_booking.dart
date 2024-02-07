@@ -14,8 +14,13 @@ import 'FlightBookNow.dart';
 
 class OneWayBooking extends StatefulWidget {
   //same error
-  final dynamic flightDetails;
-  const OneWayBooking({super.key, required this.flightDetails});
+  final dynamic flightDetails, adultCount, childrenCount, infantCount;
+  const OneWayBooking(
+      {super.key,
+      required this.flightDetails,
+      required this.infantCount,
+      required this.childrenCount,
+      required this.adultCount});
 
   @override
   State<OneWayBooking> createState() => _OneWayBookingState();
@@ -895,8 +900,12 @@ class _OneWayBookingState extends State<OneWayBooking> {
                               MaterialPageRoute(
                                   builder: (BuildContext context) =>
                                       FlightBookNow(
-                                          flightDetails:
-                                              widget.flightDetails)));
+                                        flightDetails: widget.flightDetails,
+                                        resultFlightData: resultFlightData,
+                                        adultCount: widget.adultCount,
+                                        childrenCount: widget.childrenCount,
+                                        infantCount: widget.infantCount,
+                                      )));
                         },
                         style: ElevatedButton.styleFrom(
                           primary: Color(0xff74206b),

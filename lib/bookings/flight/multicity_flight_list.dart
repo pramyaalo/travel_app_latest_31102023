@@ -694,7 +694,10 @@ class _MultiCityFlightsListState extends State<MultiCityFlightsList> {
                                         MaterialPageRoute(
                                           builder: (context) =>
                                               MultiCityBooking(
-                                            flightDetail: myResult[index],
+                                            flightDetails: myResult[index],
+                                            adultCount: widget.adult,
+                                            childrenCount: widget.children,
+                                            infantCount: widget.infants,
                                           ),
                                         ),
                                       );

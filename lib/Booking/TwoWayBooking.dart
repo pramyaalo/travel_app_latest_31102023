@@ -10,11 +10,13 @@ import '../bookings/flight/RoundTripBookNowFlight.dart';
 import '../utils/commonutils.dart';
 
 class TwoWayBooking extends StatefulWidget {
-  final flightDetails;
-  const TwoWayBooking({
-    super.key,
-    required this.flightDetails,
-  });
+  final dynamic flightDetails, adultCount, childrenCount, infantCount;
+  const TwoWayBooking(
+      {super.key,
+      required this.flightDetails,
+      required this.infantCount,
+      required this.childrenCount,
+      required this.adultCount});
 
   @override
   State<TwoWayBooking> createState() => _TwoWayBookingState();
@@ -37,7 +39,7 @@ class _TwoWayBookingState extends State<TwoWayBooking> {
       'ResultIndex': resultIndex,
       'TraceId': traceId,
       'LCC': resultFlightData[0]['IsLCC'].toString(),
-      'TripType': 'Oneway',
+      'TripType': 'RoundTrip',
       'UserId': "" /*widget.selectedPassenger.Id.toString(),*/,
       'TravelPolicy': 'InPolicy',
       'TravelPolicyId': "" /*widget.policyId.toString()*/,
@@ -871,8 +873,12 @@ class _TwoWayBookingState extends State<TwoWayBooking> {
                               MaterialPageRoute(
                                   builder: (BuildContext context) =>
                                       RoundTripBookNowFlight(
-                                          flightDetails:
-                                              widget.flightDetails)));
+                                        flightDetails: widget.flightDetails,
+                                        resultFlightData: resultFlightData,
+                                        adultCount: widget.adultCount,
+                                        childrenCount: widget.childrenCount,
+                                        infantCount: widget.infantCount,
+                                      )));
                         },
                         style: ElevatedButton.styleFrom(
                           primary: Color(0xff74206b),
