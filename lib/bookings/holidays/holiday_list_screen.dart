@@ -2,8 +2,7 @@ import 'dart:convert';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_rating_bar/flutter_rating_bar.dart';
-import 'package:http/http.dart' as http;
+ import 'package:http/http.dart' as http;
 import 'dart:developer' as developer;
 import 'package:xml/xml.dart' as xml;
 

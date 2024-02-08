@@ -10,6 +10,9 @@ import 'HotelReviewBooking.dart';
 
 class HotelDescription extends StatefulWidget {
   final dynamic hotelDetail,
+      hotelid,
+      resultindex,
+      traceid,
       Starcategory,
       RoomCount,
       adultCount,
@@ -19,10 +22,13 @@ class HotelDescription extends StatefulWidget {
   const HotelDescription(
       {super.key,
       required this.hotelDetail,
+      required this.hotelid,
+      required this.resultindex,
+      required this.traceid,
       required this.Starcategory,
       required this.RoomCount,
-      required this.childrenCount,
       required this.adultCount,
+      required this.childrenCount,
       required this.Checkindate,
       required this.CheckoutDate});
 
@@ -32,18 +38,31 @@ class HotelDescription extends StatefulWidget {
 
 class _HotelDescriptionState extends State<HotelDescription> {
   bool isDetailsLoading = false;
+  bool isRoomDetailsLoading = false;
   var hotelResult = [];
   var RoomResult = [];
+// Method to get hotel details
+  // Call both API methods in sequence
+  void loadData() async {
+    try {
+      print('object');
+      await getHotelDetailsByHotelID();
+      await getRoomDetails();
+    } catch (error) {
+      // Handle errors if any
+      print('Error loading data: $error');
+    }
+  }
 
-  Future<void> getHotelDetailsByHotelID(
-      String hotelID, String resultIndex, String traceId) async {
+  Future<void> getHotelDetailsByHotelID() async {
     final url = Uri.parse(
         'https://traveldemo.org/travelapp/b2capi.asmx/AdivahaHotelGetDetailsByHotelID');
     final headers = {'Content-Type': 'application/x-www-form-urlencoded'};
-    final body = 'HotelID=$hotelID&ResultIndex=$resultIndex&TraceId=$traceId';
-    print('HotelID' + hotelID);
-    print('resultIndex' + resultIndex);
-    print('traceId' + traceId);
+    final body =
+        'HotelID=${widget.hotelid}&ResultIndex=${widget.resultindex}&TraceId=${widget.traceid}';
+    print('HotelID' + widget.hotelid);
+    print('resultIndex' + widget.resultindex);
+
     try {
       setState(() {
         isDetailsLoading = true;
@@ -58,13 +77,16 @@ class _HotelDescriptionState extends State<HotelDescription> {
       });
 
       if (response.statusCode == 200) {
+        print('tracsdfereId');
         // Handle the successful response here
-        print('Request successful!');
+        print('Request successfrwul!');
         developer.log(response.body);
         var jsonResult = json.decode(ResponseHandler.parseData(response.body));
         setState(() {
           hotelResult = jsonResult;
         });
+        // Call the second API after receiving the response from the first API
+        getRoomDetails();
         print('hotelResult length ${hotelResult.length}');
       } else {
         // Handle the failure scenario
@@ -76,18 +98,17 @@ class _HotelDescriptionState extends State<HotelDescription> {
     }
   }
 
-  Future<void> getRoomDetails(
-      String hotelID, String resultIndex, String traceId) async {
+// Method to get room details
+  Future<void> getRoomDetails() async {
     final url = Uri.parse(
         'https://traveldemo.org/travelapp/b2capi.asmx/AdivahaHotelGetRoomTypesByHotelID');
     final headers = {'Content-Type': 'application/x-www-form-urlencoded'};
-    final body = 'HotelID=$hotelID&ResultIndex=$resultIndex&TraceId=$traceId';
-    print('HotelID' + hotelID);
-    print('resultIndex' + resultIndex);
-    print('traceId' + traceId);
+    final body =
+        'HotelID=${widget.hotelid}&ResultIndex=${widget.resultindex}&TraceId=${widget.traceid}';
+
     try {
       setState(() {
-        isDetailsLoading = true;
+        isRoomDetailsLoading = true;
       });
       final response = await http.post(
         url,
@@ -95,17 +116,18 @@ class _HotelDescriptionState extends State<HotelDescription> {
         body: body,
       );
       setState(() {
-        isDetailsLoading = false;
+        isRoomDetailsLoading = false;
       });
 
       if (response.statusCode == 200) {
         // Handle the successful response here
-        print('Request successful!');
+        print('Request successfasdweul!');
         developer.log(response.body);
         var jsonResult = json.decode(ResponseHandler.parseData(response.body));
         setState(() {
           RoomResult = jsonResult;
         });
+
         print('RoomResult length ${RoomResult.length}');
       } else {
         // Handle the failure scenario
@@ -125,16 +147,16 @@ class _HotelDescriptionState extends State<HotelDescription> {
   @override
   void initState() {
     // TODO: implement initState
-    getHotelDetailsByHotelID(widget.hotelDetail['ItemID'],
-        widget.hotelDetail['ResultIndex'], widget.hotelDetail['TraceId']);
-    getRoomDetails(widget.hotelDetail['ItemID'],
-        widget.hotelDetail['ResultIndex'], widget.hotelDetail['TraceId']);
+    loadData();
+
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    String amenities = hotelResult[0]['HotelFacilities'];
+    String amenities = hotelResult != null && hotelResult.isNotEmpty
+        ? hotelResult[0]['HotelFacilities']
+        : '';
 
     List<String> amenityList = amenities.split(', ');
 
@@ -177,342 +199,400 @@ class _HotelDescriptionState extends State<HotelDescription> {
         ],
         backgroundColor: Colors.white,
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-                width: double.infinity,
-                height: 200,
-                child: CarouselSlider(
-                  items: [
-                    Image.asset(
-                      "assets/images/hotel2.jpg",
-                      fit: BoxFit.cover,
-                    ),
-                    Image.asset(
-                      "assets/images/hotel2.jpg",
-                      fit: BoxFit.cover,
-                    ),
-                    Image.asset(
-                      "assets/images/hotel2.jpg",
-                      fit: BoxFit.fill,
-                    ),
-                  ],
-                  options: CarouselOptions(
-                    autoPlay: true,
-                    viewportFraction: 1,
-                    enlargeCenterPage: false,
-                  ),
-                )),
-            Container(
-              padding: EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    hotelResult[0]['HotelName'],
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                        fontSize: 22),
-                  ),
-                  SizedBox(
-                    height: 5,
-                  ),
-                  RatingBar.builder(
-                    initialRating: double.parse(widget.Starcategory.toString()),
-                    minRating: 1,
-                    direction: Axis.horizontal,
-                    allowHalfRating: true,
-                    itemCount: 5,
-                    itemSize: 15,
-                    itemPadding: EdgeInsets.symmetric(horizontal: 0),
-                    itemBuilder: (context, _) => Icon(
-                      Icons.star,
-                      color: Colors.amber,
-                    ),
-                    onRatingUpdate: (rating) {
-                      print(rating);
-                    },
-                  ),
-                  SizedBox(
-                    height: 5,
-                  ),
-                  Text(
-                    hotelResult[0]['HotelAddress'],
-                    style: TextStyle(),
-                  ),
-                  SizedBox(
-                    height: 8,
-                  ),
-                  Row(
+      body: isDetailsLoading // Show loading indicator if data is loading
+          ? Center(child: CircularProgressIndicator())
+          : hotelResult != null && hotelResult.isNotEmpty
+              ? SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(
-                        Icons.monetization_on_rounded,
-                        color: Colors.green,
-                      ),
                       SizedBox(
-                        width: 10,
-                      ),
-                      Text(
-                        ' Non-refundable',
-                        style: TextStyle(fontSize: 18, color: Colors.green),
-                      )
-                    ],
-                  )
-                ],
-              ),
-            ),
-            Divider(),
-            Padding(
-              padding: const EdgeInsets.only(right: 15, left: 15),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('CheckIn',
-                          style: TextStyle(
-                              fontWeight: FontWeight.w500, color: Colors.red)),
-                      Text('CheckOut',
-                          style: TextStyle(
-                              fontWeight: FontWeight.w500, color: Colors.red))
-                    ],
-                  ),
-                  SizedBox(
-                    height: 5,
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(widget.Checkindate.toString().substring(0, 10),
-                          style: TextStyle(fontWeight: FontWeight.w500)),
-                      Text(widget.CheckoutDate.toString().substring(0, 10),
-                          style: TextStyle(fontWeight: FontWeight.w500)),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            Divider(),
-            Padding(
-              padding: const EdgeInsets.only(right: 15, left: 15),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Rooms & Guests',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w500,
-                          )),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 5,
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      Text(widget.RoomCount.toString() + "Room",
-                          style: TextStyle(fontWeight: FontWeight.w500)),
-                      Text(widget.adultCount.toString() + "Guests",
-                          style: TextStyle(fontWeight: FontWeight.w500)),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            Divider(),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              child: Text(
-                'Available Rooms & Rates',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-              ),
-            ),
-            ListView.builder(
-                shrinkWrap: true,
-                physics: NeverScrollableScrollPhysics(),
-                itemCount: RoomResult.length,
-                itemBuilder: (BuildContext context, index) {
-                  return Container(
-                    decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.grey, width: 1)),
-                    margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    padding: EdgeInsets.all(10),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          width: MediaQuery.of(context).size.width - 150,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                RoomResult[index]['RoomTypeName'],
-                                style: TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.normal),
+                          width: double.infinity,
+                          height: 200,
+                          child: CarouselSlider(
+                            items: [
+                              Image.asset(
+                                "assets/images/hotel2.jpg",
+                                fit: BoxFit.cover,
                               ),
-                              SizedBox(
-                                height: 10,
+                              Image.asset(
+                                "assets/images/hotel2.jpg",
+                                fit: BoxFit.cover,
                               ),
-                              Text(
-                                RoomResult[index]['RatePlanName'],
-                                style: TextStyle(
-                                    color: Colors.green,
-                                    fontWeight: FontWeight.normal),
-                              )
+                              Image.asset(
+                                "assets/images/hotel2.jpg",
+                                fit: BoxFit.fill,
+                              ),
                             ],
-                          ),
-                        ),
-                        Column(
+                            options: CarouselOptions(
+                              autoPlay: true,
+                              viewportFraction: 1,
+                              enlargeCenterPage: false,
+                            ),
+                          )),
+                      Container(
+                        padding: EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              RoomResult[index]['RoomPrice'],
+                              hotelResult[0]['HotelName'],
                               style: TextStyle(
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 20,
-                                  color: Colors.green),
+                                  color: Colors.black,
+                                  fontSize: 22),
                             ),
                             SizedBox(
-                              height: 10,
+                              height: 5,
                             ),
-                            GestureDetector(
-                              onTap: () {
-                                String HotelName =
-                                    hotelResult[index]['HotelName'].toString();
-                                String HotelAddress = hotelResult[index]
-                                        ['HotelAddress']
-                                    .toString();
-                                String RoomTypeName = RoomResult[index]
-                                        ['RoomTypeName']
-                                    .toString();
-                                String RoomPrice =
-                                    RoomResult[index]['RoomPrice'].toString();
-                                navigate(HotelReviewBooking(
-                                  hotelDetail: hotelResult[index],
-                                  RoomDetail: RoomResult[index],
-                                  Roomtypename: RoomTypeName,
-                                  Roomprice: RoomPrice,
-                                  hotelname: HotelName,
-                                  hoteladdress: HotelAddress,
-                                  RoomCount: widget.RoomCount,
-                                  adultCount: widget.adultCount,
-                                  childrenCount: widget.childrenCount,
-                                  Checkindate: widget.Checkindate,
-                                  CheckoutDate: widget.CheckoutDate,
-                                  Starcategory: widget.Starcategory,
-                                ));
-                                print('Container tapped!');
+                            RatingBar.builder(
+                              initialRating:
+                                  double.parse(widget.Starcategory.toString()),
+                              minRating: 1,
+                              direction: Axis.horizontal,
+                              allowHalfRating: true,
+                              itemCount: 5,
+                              itemSize: 15,
+                              itemPadding: EdgeInsets.symmetric(horizontal: 0),
+                              itemBuilder: (context, _) => Icon(
+                                Icons.star,
+                                color: Colors.amber,
+                              ),
+                              onRatingUpdate: (rating) {
+                                print(rating);
                               },
-                              child: Container(
-                                decoration: BoxDecoration(
-                                    color: Color(0xff3093c7),
-                                    borderRadius: BorderRadius.circular(10)),
-                                padding: EdgeInsets.symmetric(
-                                    vertical: 10, horizontal: 20),
-                                child: Center(
-                                  child: Text(
-                                    'Book Now',
-                                    style: TextStyle(color: Colors.white),
+                            ),
+                            SizedBox(
+                              height: 5,
+                            ),
+                            Text(
+                              hotelResult[0]['HotelAddress'],
+                              style: TextStyle(),
+                            ),
+                            SizedBox(
+                              height: 8,
+                            ),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.monetization_on_rounded,
+                                  color: Colors.green,
+                                ),
+                                SizedBox(
+                                  width: 10,
+                                ),
+                                Text(
+                                  ' Non-refundable',
+                                  style: TextStyle(
+                                      fontSize: 18, color: Colors.green),
+                                )
+                              ],
+                            )
+                          ],
+                        ),
+                      ),
+                      Divider(),
+                      Padding(
+                        padding: const EdgeInsets.only(right: 15, left: 15),
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text('CheckIn',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.red)),
+                                Text('CheckOut',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.red))
+                              ],
+                            ),
+                            SizedBox(
+                              height: 5,
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                    widget.Checkindate.toString()
+                                        .substring(0, 10),
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.w500)),
+                                Text(
+                                    widget.CheckoutDate.toString()
+                                        .substring(0, 10),
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.w500)),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      Divider(),
+                      Padding(
+                        padding: const EdgeInsets.only(right: 15, left: 15),
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text('Rooms & Guests',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                    )),
+                              ],
+                            ),
+                            SizedBox(
+                              height: 5,
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: [
+                                Text(widget.RoomCount.toString() + "Room",
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.w500)),
+                                Text(widget.adultCount.toString() + "Guests",
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.w500)),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      Divider(),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 10),
+                        child: Text(
+                          'Available Rooms & Rates',
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 20),
+                        ),
+                      ),
+                      (isDetailsLoading == false &&
+                              isRoomDetailsLoading == false)
+                          ? ListView.builder(
+                              shrinkWrap: true,
+                              physics: NeverScrollableScrollPhysics(),
+                              itemCount: RoomResult.length,
+                              itemBuilder: (BuildContext context, index) {
+                                return Container(
+                                  decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(
+                                          color: Colors.grey, width: 1)),
+                                  margin: EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 5),
+                                  padding: EdgeInsets.all(10),
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Container(
+                                        width:
+                                            MediaQuery.of(context).size.width -
+                                                150,
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              RoomResult[index]['RoomTypeName'],
+                                              style: TextStyle(
+                                                  fontSize: 15,
+                                                  fontWeight:
+                                                      FontWeight.normal),
+                                            ),
+                                            SizedBox(
+                                              height: 10,
+                                            ),
+                                            Text(
+                                              RoomResult[index]['RatePlanName'],
+                                              style: TextStyle(
+                                                  color: Colors.green,
+                                                  fontWeight:
+                                                      FontWeight.normal),
+                                            )
+                                          ],
+                                        ),
+                                      ),
+                                      Column(
+                                        children: [
+                                          Text(
+                                            RoomResult[index]['RoomPrice'],
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 20,
+                                                color: Colors.green),
+                                          ),
+                                          SizedBox(
+                                            height: 10,
+                                          ),
+                                          GestureDetector(
+                                            onTap: () {
+                                              String HotelName =
+                                                  hotelResult[index]
+                                                          ['HotelName']
+                                                      .toString();
+                                              String HotelAddress =
+                                                  hotelResult[index]
+                                                          ['HotelAddress']
+                                                      .toString();
+                                              String RoomTypeName =
+                                                  RoomResult[index]
+                                                          ['RoomTypeName']
+                                                      .toString();
+                                              String RoomPrice =
+                                                  RoomResult[index]['RoomPrice']
+                                                      .toString();
+                                              navigate(HotelReviewBooking(
+                                                hotelDetail: hotelResult[index],
+                                                RoomDetail: RoomResult[index],
+                                                Roomtypename: RoomTypeName,
+                                                Roomprice: RoomPrice,
+                                                hotelname: HotelName,
+                                                hoteladdress: HotelAddress,
+                                                RoomCount: widget.RoomCount,
+                                                adultCount: widget.adultCount,
+                                                childrenCount:
+                                                    widget.childrenCount,
+                                                Checkindate: widget.Checkindate,
+                                                CheckoutDate:
+                                                    widget.CheckoutDate,
+                                                Starcategory:
+                                                    widget.Starcategory,
+                                              ));
+                                              print('Container tapped!');
+                                            },
+                                            child: Container(
+                                              decoration: BoxDecoration(
+                                                  color: Color(0xff3093c7),
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                          10)),
+                                              padding: EdgeInsets.symmetric(
+                                                  vertical: 10, horizontal: 20),
+                                              child: Center(
+                                                child: Text(
+                                                  'Book Now',
+                                                  style: TextStyle(
+                                                      color: Colors.white),
+                                                ),
+                                              ),
+                                            ),
+                                          )
+                                        ],
+                                      )
+                                    ],
                                   ),
+                                );
+                              },
+                            )
+                          : Center(
+                              child: Text(
+                                'No rooms available.',
+                                style: TextStyle(
+                                    fontSize: 18, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                      Divider(),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 10),
+                        child: Text(
+                          'Hotel Facilities',
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 20),
+                        ),
+                      ),
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: amenityList
+                            .map(
+                              (amenity) => Padding(
+                                padding: const EdgeInsets.only(left: 30),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.check),
+                                    SizedBox(width: 10),
+                                    Text(
+                                      amenity
+                                          .trim(), // Remove leading and trailing spaces
+                                      style: TextStyle(fontSize: 14),
+                                    ),
+                                  ],
                                 ),
                               ),
                             )
-                          ],
-                        )
-                      ],
-                    ),
-                  );
-                }),
-            Divider(),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              child: Text(
-                'Hotel Facilities',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-              ),
-            ),
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: amenityList
-                  .map(
-                    (amenity) => Padding(
-                      padding: const EdgeInsets.only(left: 30),
-                      child: Row(
-                        children: [
-                          Icon(Icons.check),
-                          SizedBox(width: 10),
-                          Text(
-                            amenity
-                                .trim(), // Remove leading and trailing spaces
-                            style: TextStyle(fontSize: 14),
-                          ),
-                        ],
+                            .toList(),
                       ),
-                    ),
-                  )
-                  .toList(),
-            ),
-            Divider(),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              child: Text(
-                'Nearest Attractions',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-              ),
-            ),
-            Container(
-              padding: EdgeInsets.fromLTRB(20, 0, 20, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 300,
+                      Divider(),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 10),
                         child: Text(
-                          hotelResult[0]['Attractions'].toString(),
-                          style: TextStyle(color: Colors.black),
+                          'Nearest Attractions',
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 20),
                         ),
-                      )
+                      ),
+                      Container(
+                        padding: EdgeInsets.fromLTRB(20, 0, 20, 0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  width: 300,
+                                  child: Text(
+                                    hotelResult[0]['Attractions'].toString(),
+                                    style: TextStyle(color: Colors.black),
+                                  ),
+                                )
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      Divider(),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 10),
+                        child: Text(
+                          'Hotel Description',
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 20),
+                        ),
+                      ),
+                      Container(
+                          padding: EdgeInsets.all(20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('HeadLine : ' +
+                                  hotelResult[0]['HotelDescription']),
+                            ],
+                          )),
+                      Container(
+                          padding: EdgeInsets.only(
+                              left: 20, right: 20, top: 5, bottom: 10),
+                          child: Text(
+                            'Disclaimer notification: Amenities are subject to availability and may be chargeable as per the hotel policy. ',
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black),
+                          ))
                     ],
                   ),
-                ],
-              ),
-            ),
-            Divider(),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              child: Text(
-                'Hotel Description',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-              ),
-            ),
-            Container(
-                padding: EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('HeadLine : ' + hotelResult[0]['HotelDescription']),
-                  ],
-                )),
-            Container(
-                padding:
-                    EdgeInsets.only(left: 20, right: 20, top: 5, bottom: 10),
-                child: Text(
-                  'Disclaimer notification: Amenities are subject to availability and may be chargeable as per the hotel policy. ',
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold, color: Colors.black),
-                ))
-          ],
-        ),
-      ),
+                )
+              : Center(
+                  // Display error message if data failed to load
+                  child: Text('Failed to load data.'),
+                ),
     );
   }
 }

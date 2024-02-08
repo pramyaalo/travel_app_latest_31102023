@@ -441,9 +441,23 @@ class _HotelDetailState extends State<HotelDetail> {
                                                   String StarCategory =
                                                       hotelResult[index]
                                                           ['StarCategory'];
+                                                  String HotelId =
+                                                      hotelResult[index]
+                                                          ['ItemID'];
+                                                  String ResultIndex =
+                                                      hotelResult[index]
+                                                              ['ResultIndex']
+                                                          .toString();
+                                                  String TraceId =
+                                                      hotelResult[index]
+                                                              ['TraceId']
+                                                          .toString();
                                                   navigate(HotelDescription(
                                                       hotelDetail:
                                                           hotelResult[index],
+                                                      hotelid: HotelId,
+                                                      resultindex: ResultIndex,
+                                                      traceid: TraceId,
                                                       Starcategory:
                                                           StarCategory,
                                                       RoomCount:

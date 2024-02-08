@@ -2,12 +2,10 @@ import 'dart:convert';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_rating_bar/flutter_rating_bar.dart';
-import 'dart:developer' as developer;
+ import 'dart:developer' as developer;
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import '../../utils/response_handler.dart';
-import '../hotels/HotelReviewBooking.dart';
 
 class HolidayDescription extends StatefulWidget {
   final dynamic holidayList,
