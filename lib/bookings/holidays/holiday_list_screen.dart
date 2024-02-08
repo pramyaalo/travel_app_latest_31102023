@@ -7,8 +7,31 @@ import 'package:http/http.dart' as http;
 import 'dart:developer' as developer;
 import 'package:xml/xml.dart' as xml;
 
+import 'holiday_detail_screen.dart';
+
 class HolidayListScreen extends StatefulWidget {
-  const HolidayListScreen({super.key});
+  final checkinDate,
+      RoomCount,
+      AdultCountRoom1,
+      ChildrenCountRoom1,
+      AdultCountRoom2,
+      ChildrenCountRoom2,
+      AdultCountRoom3,
+      ChildrenCountRoom3,
+      AdultCountRoom4,
+      ChildrenCountRoom4;
+  const HolidayListScreen(
+      {super.key,
+      required this.checkinDate,
+      required this.RoomCount,
+      required this.AdultCountRoom1,
+      required this.ChildrenCountRoom1,
+      required this.AdultCountRoom2,
+      required this.ChildrenCountRoom2,
+      required this.AdultCountRoom3,
+      required this.ChildrenCountRoom3,
+      required this.AdultCountRoom4,
+      required this.ChildrenCountRoom4});
 
   @override
   State<HolidayListScreen> createState() => _HolidayListNewState();
@@ -33,18 +56,23 @@ class _HolidayListNewState extends State<HolidayListScreen> {
     return jsonList;
   }
 
+  void navigate(Widget screen) {
+    Navigator.push(
+        context, MaterialPageRoute(builder: (BuildContext context) => screen));
+  }
+
   Future<void> fetchTourList() async {
     final url =
         Uri.parse('https://traveldemo.org/travelapp/b2capi.asmx/TourGetList');
     final headers = {'Content-Type': 'application/x-www-form-urlencoded'};
     final body = {
       'DestinationName': 'DXB',
-      'FromDate': '2024-02-07',
-      'ToDate': '2024-02-09',
+      'FromDate': '2024-02-10',
+      'ToDate': '2024-02-12',
       'AdultCount': '1',
       'ChildCount': '0',
       'DefaultCurrency': 'KES',
-      'UserId': '1002',
+      'UserId': '1107',
     };
 
     setState(() {
@@ -352,21 +380,39 @@ class _HolidayListNewState extends State<HolidayListScreen> {
                                               ),
                                               GestureDetector(
                                                 onTap: () {
-                                                  /* navigate(HotelDescription(
-                                                hotelDetail:
-                                                hotelResult[index],
-                                                Starcategory:
-                                                StarCategory,
-                                                RoomCount:
-                                                widget.RoomCount,
-                                                adultCount: widget
-                                                    .AdultCountRoom1,
-                                                childrenCount: widget
-                                                    .ChildrenCountRoom1,
-                                                Checkindate:
-                                                widget.checkinDate,
-                                                CheckoutDate:
-                                                widget.checkoutDate));*/
+                                                  String TourCode =
+                                                      holidayList[index]['code']
+                                                          .toString();
+                                                  String SightSeeingMarkup =
+                                                      holidayList[index][
+                                                              'sightSeeingMarkup']
+                                                          .toString();
+                                                  String defaultCurrency =
+                                                      holidayList[index][
+                                                              'defaultCurrency']
+                                                          .toString();
+                                                  String DefaultyCurrencyvalue =
+                                                      holidayList[index][
+                                                              'defaultCurrencyvalue']
+                                                          .toString();
+                                                  navigate(HolidayDescription(
+                                                    holidayList:
+                                                        holidayList[index],
+                                                    Tourcode: TourCode,
+                                                    SightSeeingMarkup:
+                                                        SightSeeingMarkup,
+                                                    defaultCurrency:
+                                                        defaultCurrency,
+                                                    DefaultyCurrencyvalue:
+                                                        DefaultyCurrencyvalue,
+                                                    RoomCount: widget.RoomCount,
+                                                    adultCount:
+                                                        widget.AdultCountRoom1,
+                                                    childrenCount: widget
+                                                        .ChildrenCountRoom1,
+                                                    Checkindate:
+                                                        widget.checkinDate,
+                                                  ));
                                                 },
                                                 child: Text(
                                                   'View Details',

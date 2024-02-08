@@ -391,10 +391,13 @@ class _HotelDescriptionState extends State<HotelDescription> {
                                 String RoomTypeName = RoomResult[index]
                                         ['RoomTypeName']
                                     .toString();
+                                String RoomPrice =
+                                    RoomResult[index]['RoomPrice'].toString();
                                 navigate(HotelReviewBooking(
                                   hotelDetail: hotelResult[index],
                                   RoomDetail: RoomResult[index],
                                   Roomtypename: RoomTypeName,
+                                  Roomprice: RoomPrice,
                                   hotelname: HotelName,
                                   hoteladdress: HotelAddress,
                                   RoomCount: widget.RoomCount,

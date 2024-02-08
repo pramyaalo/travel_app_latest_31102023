@@ -1,226 +1,80 @@
-import 'dart:async';
-import 'dart:convert';
-
-import 'package:flutter/cupertino.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
-import 'package:rounded_loading_button/rounded_loading_button.dart';
-
-import '../../Models/holidays_models.dart';
-import '../../Models/passenger_ddl_model.dart';
-import '../../utils/response_handler.dart';
-import 'package:http/http.dart' as http;
-
-import '../flight/family_members_model.dart';
-import 'holiday_detail_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:async';
+import '../../models/hotel_destination_models.dart';
+import '../flight/AddGuestes_Hotel.dart';
+import '../flight/AddTravellers_Flight.dart';
+import 'AddGuestsHolidays.dart';
 import 'holiday_list_screen.dart';
 
 class Holidays extends StatefulWidget {
-  const Holidays({Key? key}) : super(key: key);
-
   @override
-  _HolidaysState createState() => _HolidaysState();
+  _HotelsScreenState createState() => _HotelsScreenState();
 }
 
-class _HolidaysState extends State<Holidays> {
-  List holidayData = [
-    HolidayModel(
-        title: "Alaska",
-        subTitle: "516 Tours",
+class _HotelsScreenState extends State<Holidays> {
+  DateTime? checkInDate;
+  DateTime? checkOutDate;
+  int AdultCount = 1, childrenCount = 0;
+  int AdultCount1 = 1, childrenCount1 = 0;
+  int AdultCount2 = 1, childrenCount2 = 0;
+  int AdultCount3 = 1, childrenCount3 = 0;
+  String selecteddate = '', selecteddate1 = '';
+  String RoomType = '1';
+  int TotAdultCount = 1;
+  int TotChildrenCount = 0;
+  TextEditingController orginController = new TextEditingController();
+  List hotelDestination = [
+    HotelDestination(
+        title: "Pondicherry",
+        subtitle: "10 great deals",
+        image: "https://i.ytimg.com/vi/HPY8OJDZDqc/maxresdefault.jpg"),
+    HotelDestination(
+        title: "Mahabalipuram",
+        subtitle: "7 great deals",
         image:
-            "https://media-cdn.tripadvisor.com/media/attractions-splice-spp-240x160/0a/5d/e9/51.jpg"),
-    HolidayModel(
-        title: "Agra",
-        subTitle: "774 Tours",
+            "https://www.worldhistory.org/img/r/p/500x600/4127.jpg?v=1618794907"),
+    HotelDestination(
+        title: "Ooty",
+        subtitle: "4 great deals",
         image:
-            "https://media-cdn.tripadvisor.com/media/attractions-splice-spp-240x160/07/3a/67/5c.jpg"),
-    HolidayModel(
-        title: "Singapore",
-        subTitle: "630 Tours",
-        image:
-            "https://media-cdn.tripadvisor.com/media/attractions-splice-spp-240x160/09/1f/96/ad.jpg"),
-    HolidayModel(
-        title: "Malaysia",
-        subTitle: "2986 Tours",
-        image:
-            "https://media-cdn.tripadvisor.com/media/attractions-splice-spp-240x160/06/6a/d6/93.jpg"),
-    HolidayModel(
-        title: "Dubai",
-        subTitle: "3987 Tours",
-        image:
-            "https://media-cdn.tripadvisor.com/media/attractions-splice-spp-240x160/09/99/28/a3.jpg"),
-    HolidayModel(
-        title: "France",
-        subTitle: "6243 Tours",
-        image:
-            "https://media-cdn.tripadvisor.com/media/attractions-splice-spp-240x160/06/fb/77/66.jpg"),
-    HolidayModel(
-        title: "Abu-Dhabi",
-        subTitle: "399 Tours",
-        image:
-            "https://media-cdn.tripadvisor.com/media/attractions-splice-spp-240x160/0a/90/b1/ed.jpg"),
-    HolidayModel(
-        title: "Australia",
-        subTitle: "4167 Tours",
-        image:
-            "https://media-cdn.tripadvisor.com/media/attractions-splice-spp-240x160/06/6f/02/29.jpg"),
-    HolidayModel(
-        title: "London",
-        subTitle: "2727 Tours",
-        image:
-            "https://media-cdn.tripadvisor.com/media/attractions-splice-spp-240x160/0e/18/b9/8a.jpg"),
-    HolidayModel(
-        title: "Mumbai",
-        subTitle: "809 Tours",
-        image:
-            "https://media-cdn.tripadvisor.com/media/attractions-splice-spp-240x160/06/6a/d2/67.jpg"),
-    HolidayModel(
-        title: "Italy",
-        subTitle: "25892 Tours",
-        image:
-            "https://media-cdn.tripadvisor.com/media/attractions-splice-spp-240x160/06/f9/f6/a6.jpg"),
-    HolidayModel(
-        title: "China",
-        subTitle: "11738 Tours",
-        image:
-            "https://media-cdn.tripadvisor.com/media/attractions-splice-spp-240x160/0a/cd/f7/00.jpg"),
+            "https://www.tourismnewslive.com/wp-content/uploads/2021/09/Mettupalayam-Ooty-train-service-.jpg"),
   ];
+  @override
+  void initState() {
+    // TODO: implement initState
+    orginController.text = 'CHENNAI';
+    setState(() {});
 
-  var tpolicyID = '-1';
-  List<PassengerDDL> passengers = [];
-  List<FamilyMembersModel> passengersFamily = [];
-  late PassengerDDL selectedPassenger;
-
-  bool _isPassengersLoading = false;
-  final RoundedLoadingButtonController _btnAddController =
-      RoundedLoadingButtonController();
-  static String _displayOptionForPassengerDDl(PassengerDDL passengerDDL) =>
-      passengerDDL.Name;
-
-  Future<void> searchBookingTravellers() async {
-    var requestBody = {
-      'CorporateId': '1001', // Replace with your corporate ID
-      'UID': '35510b94-5342-TDemoB2C-a2e3-2e722772' // Replace with your UID
-    };
-
-    final url = Uri.parse(
-        'https://traveldemo.org/travelapp/b2capi.asmx/BookingSearchTravellers');
-    final headers = {'Content-Type': 'application/x-www-form-urlencoded'};
-
-    final body = Uri(queryParameters: requestBody).query;
-
-    try {
-      var response = await http.post(
-        url,
-        headers: headers,
-        body: body,
-      );
-
-      setState(() {
-        _isPassengersLoading = false;
-      });
-
-      if (response.statusCode == 200) {
-        List<dynamic> responseData =
-            json.decode(ResponseHandler.parseData(response.body))['Table'];
-
-        List<PassengerDDL> tmpPassengerDDL = responseData
-            .where((passenger) =>
-                passenger['Name'] != null &&
-                passenger['Name'].toString().trim().isNotEmpty)
-            .map((passenger) {
-          return PassengerDDL(
-            Id: passenger['Id'].toString(),
-            Name: passenger['Name'],
-            Age: passenger['Age'].toString(),
-          );
-        }).toList();
-
-        /*List<PassengerDDL> tmpPassengerDDL = responseData.map((passenger){
-          return PassengerDDL(Id: passenger['Id'].toString(), Name: passenger['Name'], Age: passenger['Age'].toString());
-        }).toList();*/
-
-        print('Size: ${tmpPassengerDDL.length}');
-        setState(() {
-          passengers = tmpPassengerDDL;
-        });
-      } else {
-        print(
-            'Failed to search booking travellers. Error ${response.statusCode} : ${response.body}');
-        // Handle failure here
-      }
-    } catch (error) {
-      print('Error sending request: $error');
-      // Handle error here
-    }
-  }
-
-  Future<void> searchDependentTravellers() async {
-    var requestBody = {
-      'CorporateId': '1001', // Replace with your corporate ID
-      'TravellerID':
-          selectedPassenger.Id, // Replace with the ID of the traveller
-      'UID': '35510b94-5342-TDemoB2C-a2e3-2e722772', // Replace with your UID
-    };
-
-    final url = Uri.parse(
-        'https://traveldemo.org/travelapp/b2capi.asmx/BookingSearchTravellersDependant');
-    final headers = {'Content-Type': 'application/x-www-form-urlencoded'};
-
-    final body = Uri(queryParameters: requestBody).query;
-
-    try {
-      var response = await http.post(
-        url,
-        headers: headers,
-        body: body,
-      );
-
-      if (response.statusCode == 200) {
-        //print('Dependent travellers searched! Response: ${response.body}');
-
-        List<dynamic> tmpFamilyList =
-            json.decode(ResponseHandler.parseData(response.body))['Table'];
-
-        List<FamilyMembersModel> tmpFamilyMembers = tmpFamilyList
-            .map((e) => FamilyMembersModel(
-                Id: e['Id'].toString(),
-                Name: e['Name'],
-                DOB: e['DOB'],
-                Age: e['Age'].toString()))
-            .toList();
-
-        setState(() {
-          passengersFamily = tmpFamilyMembers;
-        });
-
-        _btnAddController.success();
-
-        Timer(Duration(seconds: 1), () {
-          _btnAddController.reset();
-        });
-        // Handle success here
-      } else {
-        print(
-            'Failed to search dependent travellers. Error ${response.statusCode} : ${response.body}');
-        _btnAddController.error();
-        Timer(Duration(seconds: 1), () {
-          _btnAddController.reset();
-        });
-        // Handle failure here
-      }
-    } catch (error) {
-      print('Error sending request: $error');
-      _btnAddController.error();
-      Timer(Duration(seconds: 1), () {
-        _btnAddController.reset();
-      });
-      // Handle error here
-    }
+    super.initState();
   }
 
   void navigate(Widget screen) {
     Navigator.push(
         context, MaterialPageRoute(builder: (BuildContext context) => screen));
+  }
+
+  DateTime selectedDate = DateTime.now();
+  DateTime selectedReturnDate = DateTime.now();
+  Future<void> _selectDate(BuildContext context, int type) async {
+    final DateTime? picked = await showDatePicker(
+        context: context,
+        initialDate: selectedDate,
+        firstDate: DateTime(2015, 8),
+        lastDate: DateTime(2101));
+    if (picked != null && picked != selectedDate) {
+      setState(() {
+        if (type == 1) {
+          selectedDate = picked;
+          print(selectedDate);
+        } else {
+          selectedReturnDate = picked;
+          print(selectedReturnDate);
+        }
+      });
+    }
   }
 
   @override
@@ -244,7 +98,7 @@ class _HolidaysState extends State<Holidays> {
 
             SizedBox(width: 1), // Set the desired width
             Text(
-              "Holidays",
+              "Holiday Booking",
               style: TextStyle(
                   color: Colors.black, fontFamily: "Montserrat", fontSize: 19),
             ),
@@ -265,175 +119,866 @@ class _HolidaysState extends State<Holidays> {
       body: Container(
         child: Column(
           children: [
-            Stack(
-              children: [
-                Container(
-                  width: double.infinity,
-                  height: 150,
-                  color: Color(0xff74206b),
-                ),
-                Container(
-                  margin: EdgeInsets.fromLTRB(20, 30, 20, 20),
-                  color: Colors.white,
-                  child: Material(
-                    elevation: 5,
-                    child: Container(
-                        width: double.infinity,
-                        padding: EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(15),
-                            color: Colors.white),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              margin: EdgeInsets.all(10),
-                              child: Row(
-                                children: [
-                                  Image(
-                                    image:
-                                        AssetImage("assets/images/holiday.jpg"),
-                                    width: 100,
-                                    height: 100,
-                                  ),
-                                  SizedBox(
-                                    width: 15,
-                                  ),
-                                  Column(
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        "Start holidays from",
-                                        style: TextStyle(
-                                            fontFamily: "Montserrat",
-                                            fontSize: 13,
-                                            color: Colors.grey),
-                                      ),
-                                      SizedBox(
-                                        height: 5,
-                                      ),
-                                      Text(
-                                        "Nagercoil",
-                                        style: TextStyle(
-                                            fontFamily: "Montserrat",
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.bold),
-                                      ),
-                                      SizedBox(
-                                        height: 5,
-                                      ),
-                                      Text(
-                                        "change",
-                                        style: TextStyle(
-                                            fontFamily: "Montserrat",
-                                            fontSize: 13,
-                                            color: Colors.grey),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                            SizedBox(
-                              height: 20,
-                            ),
-                            Container(
-                              width: double.infinity,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      navigate(HolidayListScreen());
-                                    },
-                                    child: Text(
-                                      "SEARCH HOLIDAY PACKAGES",
-                                      style:
-                                          TextStyle(fontFamily: "Montserrat"),
-                                    ),
-                                    style: ElevatedButton.styleFrom(
-                                      elevation: 10.0,
-                                      shadowColor: Color(0xff74206b),
-                                      primary: Color(0xff74206b),
-                                      padding: EdgeInsets.all(10.0),
-                                      minimumSize: Size(150, 50.0),
-                                    ),
-                                  )
-                                ],
-                              ),
-                            ),
-                            SizedBox(
-                              height: 20,
-                            ),
-                          ],
-                        )),
-                  ),
-                )
-              ],
-            ),
-            SizedBox(
-              width: double.infinity,
-              height: 300,
-              child: GridView(
-                  scrollDirection: Axis.horizontal,
-                  gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                      maxCrossAxisExtent: 200,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10),
-                  children: List.generate(
-                      holidayData.length,
-                      (index) => SizedBox(
-                          width: 150,
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Stack(
+                      children: [
+                        Container(
+                          width: double.infinity,
                           height: 150,
-                          child: Stack(
-                            alignment: Alignment.bottomCenter,
-                            children: [
-                              SizedBox(
-                                  width: 150,
-                                  height: 150,
-                                  child: Image.network(
-                                    holidayData[index].image,
-                                    fit: BoxFit.fill,
-                                  )),
-                              Container(
-                                color: Colors.black.withOpacity(0.5),
-                                width: 150,
-                                height: 40,
-                                padding: EdgeInsets.fromLTRB(5, 0, 5, 0),
+                          color: Color(0xff74206b),
+                        ),
+                        Container(
+                          margin: const EdgeInsets.fromLTRB(20, 30, 20, 20),
+                          color: Colors.white,
+                          child: Material(
+                            elevation: 5,
+                            child: Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(15),
+                                    color: Colors.white),
                                 child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      holidayData[index].title,
-                                      maxLines: 1,
-                                      style: TextStyle(
-                                          color: Colors.white,
-                                          fontFamily: "Montserrat"),
+                                    Container(
+                                      margin: const EdgeInsets.only(
+                                          right: 10, left: 10, top: 10),
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            "City/Area/Landmark/Hotel",
+                                            style: TextStyle(
+                                                fontFamily: "Montserrat",
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w500,
+                                                color: Colors.black54),
+                                          ),
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Expanded(
+                                                child: TextField(
+                                                  controller: orginController,
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                  decoration: InputDecoration(
+                                                    border: InputBorder.none,
+                                                  ),
+                                                ),
+                                              ),
+                                              Image.asset(
+                                                'assets/images/currentlocation.jpg',
+                                                alignment: Alignment.center,
+                                                width: 35,
+                                                height: 25,
+                                              ),
+                                            ],
+                                          )
+                                        ],
+                                      ),
                                     ),
-                                    Text(
-                                      holidayData[index].subTitle,
-                                      style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.white,
-                                          fontFamily: "Montserrat"),
+                                    Container(
+                                      width: double.infinity,
+                                      height: 0.1,
+                                      color: Colors.grey,
+                                    ),
+                                    Container(
+                                      margin: const EdgeInsets.all(10),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                "CheckIn",
+                                                style: TextStyle(
+                                                  fontFamily: "Montserrat",
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: Colors.black54,
+                                                ),
+                                              ),
+                                              SizedBox(
+                                                height: 5,
+                                              ),
+                                              GestureDetector(
+                                                onTap: () {
+                                                  print('selecteddate' +
+                                                      selecteddate);
+
+                                                  _selectDate(context, 1);
+                                                },
+                                                child: Text(
+                                                  checkInDate != ''
+                                                      ? "${selectedDate.toLocal()}"
+                                                          .split(' ')[0]
+                                                      : "${checkInDate}",
+                                                  style: TextStyle(
+                                                    fontFamily: "Montserrat",
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ),
+                                              SizedBox(
+                                                height: 5,
+                                              ),
+                                              Text(
+                                                "Saturday",
+                                                style: TextStyle(
+                                                  fontFamily: "Montserrat",
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: Colors.black54,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.end,
+                                            children: [
+                                              Text(
+                                                'Rooms/Guests',
+                                                style: TextStyle(
+                                                  fontSize: 13,
+                                                  color: Colors.black54,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                              SizedBox(
+                                                height: 5,
+                                              ),
+                                              Container(
+                                                padding:
+                                                    EdgeInsets.only(bottom: 0),
+                                                margin: EdgeInsets.only(
+                                                    left: 0, right: 0, top: 0),
+                                                child: Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
+                                                  children: [
+                                                    GestureDetector(
+                                                      onTap: () async {
+                                                        print('AdultCount' +
+                                                            AdultCount
+                                                                .toString());
+                                                        final selectedDates = await Navigator
+                                                            .push(
+                                                                context,
+                                                                MaterialPageRoute(
+                                                                    builder: (BuildContext
+                                                                            context) =>
+                                                                        AddGuestsHolidays(
+                                                                          checkInDate:
+                                                                              selectedDate,
+                                                                          checkOutDate:
+                                                                              selectedReturnDate,
+                                                                          roomcount:
+                                                                              RoomType,
+                                                                          adultsCount:
+                                                                              AdultCount,
+                                                                          childrenCount:
+                                                                              childrenCount,
+                                                                          adultsCount1:
+                                                                              AdultCount1,
+                                                                          childrenCount1:
+                                                                              childrenCount1,
+                                                                          adultsCount2:
+                                                                              AdultCount2,
+                                                                          childrenCount2:
+                                                                              childrenCount2,
+                                                                          adultsCount3:
+                                                                              AdultCount3,
+                                                                          childrenCount3:
+                                                                              childrenCount3,
+                                                                        )));
+                                                        if (selectedDates !=
+                                                            null) {
+                                                          setState(() {
+                                                            checkInDate =
+                                                                selectedDates[
+                                                                    'checkInDate'];
+                                                            checkOutDate =
+                                                                selectedDates[
+                                                                    'checkOutDate'];
+                                                            print('checkInDate' +
+                                                                checkInDate!
+                                                                    .toIso8601String());
+                                                            RoomType =
+                                                                selectedDates[
+                                                                    'roomcount'];
+                                                            print('RoomTydffpe' +
+                                                                RoomType!
+                                                                    .toString());
+                                                            if (RoomType ==
+                                                                '1') {
+                                                              AdultCount =
+                                                                  selectedDates[
+                                                                      'adultCount'];
+                                                              childrenCount =
+                                                                  selectedDates[
+                                                                      'childrenCount'];
+                                                              TotAdultCount =
+                                                                  AdultCount;
+                                                              TotChildrenCount =
+                                                                  childrenCount;
+                                                              print('object' +
+                                                                  AdultCount
+                                                                      .toString());
+                                                            }
+                                                            if (RoomType ==
+                                                                '2') {
+                                                              print('object' +
+                                                                  AdultCount
+                                                                      .toString());
+                                                              print('object1' +
+                                                                  AdultCount1
+                                                                      .toString());
+                                                              AdultCount =
+                                                                  selectedDates[
+                                                                      'adultsCount'];
+                                                              childrenCount =
+                                                                  selectedDates[
+                                                                      'childrenCount'];
+                                                              AdultCount1 =
+                                                                  selectedDates[
+                                                                      'adultsCount1'];
+                                                              childrenCount1 =
+                                                                  selectedDates[
+                                                                      'childrenCount1'];
+
+                                                              TotAdultCount =
+                                                                  AdultCount +
+                                                                      AdultCount1;
+                                                              TotChildrenCount =
+                                                                  childrenCount +
+                                                                      childrenCount1;
+                                                            }
+
+                                                            if (RoomType ==
+                                                                '3') {
+                                                              AdultCount =
+                                                                  selectedDates[
+                                                                      'adultsCount'];
+                                                              childrenCount =
+                                                                  selectedDates[
+                                                                      'childrenCount'];
+                                                              AdultCount1 =
+                                                                  selectedDates[
+                                                                      'adultsCount1'];
+                                                              childrenCount1 =
+                                                                  selectedDates[
+                                                                      'childrenCount1'];
+                                                              AdultCount2 =
+                                                                  selectedDates[
+                                                                      'adultsCount2'];
+                                                              childrenCount2 =
+                                                                  selectedDates[
+                                                                      'childrenCount2'];
+
+                                                              TotAdultCount =
+                                                                  AdultCount +
+                                                                      AdultCount1 +
+                                                                      AdultCount2;
+                                                              TotChildrenCount =
+                                                                  childrenCount +
+                                                                      childrenCount1 +
+                                                                      childrenCount2;
+                                                            }
+                                                            AdultCount =
+                                                                selectedDates[
+                                                                    'adultsCount'];
+                                                            print('AdultCoudfnt' +
+                                                                AdultCount
+                                                                    .toString());
+                                                            childrenCount =
+                                                                selectedDates[
+                                                                    'childrenCount'];
+                                                            AdultCount1 =
+                                                                selectedDates[
+                                                                    'adultsCount1'];
+                                                            childrenCount1 =
+                                                                selectedDates[
+                                                                    'childrenCount1'];
+                                                            AdultCount2 =
+                                                                selectedDates[
+                                                                    'adultsCount2'];
+                                                            childrenCount2 =
+                                                                selectedDates[
+                                                                    'childrenCount2'];
+                                                            AdultCount3 =
+                                                                selectedDates[
+                                                                    'adultsCount3'];
+                                                            childrenCount3 =
+                                                                selectedDates[
+                                                                    'childrenCount3'];
+                                                            /* if (RoomType == '4') {
+                                                    AdultCount = selectedDates[
+                                                        'adultCount'];
+                                                    childrenCount =
+                                                        selectedDates[
+                                                            'childrenCount'];
+                                                    AdultCount1 = selectedDates[
+                                                        'adultsCountRoom1'];
+                                                    childrenCount1 =
+                                                        selectedDates[
+                                                            'childrenCountRoom1'];
+                                                    AdultCount2 = selectedDates[
+                                                        'adultsCountRoom2'];
+                                                    childrenCount2 =
+                                                        selectedDates[
+                                                            'childrenCountRoom2'];
+                                                    AdultCount3 = selectedDates[
+                                                        'adultsCountRoom3'];
+                                                    childrenCount3 =
+                                                        selectedDates[
+                                                            'childrenCountRoom3'];
+
+                                                    TotAdultCount = AdultCount +
+                                                        AdultCount1 +
+                                                        AdultCount2 +
+                                                        AdultCount3;
+                                                    TotChildrenCount =
+                                                        childrenCount +
+                                                            childrenCount1 +
+                                                            childrenCount2 +
+                                                            childrenCount3;
+                                                    print(
+                                                        'TotAdultCount Count: $TotAdultCount');
+                                                  }*/
+                                                          });
+                                                        }
+                                                      },
+                                                      child: Text(
+                                                        RoomType.toString() +
+                                                            " " +
+                                                            'Room' +
+                                                            ',' +
+                                                            TotAdultCount
+                                                                .toString() +
+                                                            " " +
+                                                            "Guests",
+                                                        style: TextStyle(
+                                                          fontSize: 16,
+                                                          color: Colors.black,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                              SizedBox(
+                                                height: 5,
+                                              ),
+                                              Container(
+                                                padding:
+                                                    EdgeInsets.only(bottom: 0),
+                                                margin: EdgeInsets.only(
+                                                    left: 0, right: 0, top: 0),
+                                                child: Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
+                                                  children: [
+                                                    Text(
+                                                      TotAdultCount.toString() +
+                                                          " " +
+                                                          "Adult" +
+                                                          "," +
+                                                          " " +
+                                                          TotChildrenCount
+                                                              .toString() +
+                                                          " " +
+                                                          'Children',
+                                                      style: TextStyle(
+                                                        fontSize: 13,
+                                                        color: Colors.black54,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          )
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(
+                                      height: 20,
+                                    ),
+                                    SizedBox(
+                                      width: double.infinity,
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
+                                        children: [
+                                          Container(
+                                            width: 300,
+                                            height: 46,
+                                            child: ElevatedButton(
+                                              onPressed: () {
+                                                print(
+                                                    'adfjhiufhiu$selectedDate$selectedReturnDate$RoomType$AdultCount$childrenCount$AdultCount1$childrenCount1$AdultCount2$childrenCount2$AdultCount3$childrenCount3');
+                                                navigate(HolidayListScreen(
+                                                  checkinDate: selectedDate,
+                                                  RoomCount: RoomType,
+                                                  AdultCountRoom1: AdultCount,
+                                                  ChildrenCountRoom1:
+                                                      childrenCount,
+                                                  AdultCountRoom2: AdultCount1,
+                                                  ChildrenCountRoom2:
+                                                      childrenCount1,
+                                                  AdultCountRoom3: AdultCount2,
+                                                  ChildrenCountRoom3:
+                                                      childrenCount2,
+                                                  AdultCountRoom4: AdultCount3,
+                                                  ChildrenCountRoom4:
+                                                      childrenCount3,
+                                                ));
+                                              },
+                                              style: ElevatedButton.styleFrom(
+                                                primary: Color(0xff74206b),
+
+                                                // Background color of the button
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                          20), // Circular radius of 20
+                                                ),
+                                              ),
+                                              child: const Text(
+                                                "SEARCH HOLIDAYS",
+                                                style: TextStyle(
+                                                    fontFamily: "Montserrat"),
+                                              ),
+                                            ),
+                                          )
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(
+                                      height: 20,
                                     ),
                                   ],
+                                )),
+                          ),
+                        )
+                      ],
+                    ),
+                    SizedBox(
+                      height: 230,
+                      width: double.infinity,
+                      child: ListView.builder(
+                        itemBuilder: (context, index) {
+                          return Container(
+                            width: 330,
+                            height: 200,
+                            margin: const EdgeInsets.fromLTRB(10, 10, 10, 20),
+                            child: Card(
+                              elevation: 10.0,
+                              clipBehavior: Clip.antiAliasWithSaveLayer,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10.0)),
+                              child: Stack(
+                                alignment: Alignment.bottomLeft,
+                                children: [
+                                  SizedBox(
+                                    width: 330,
+                                    height: 200,
+                                    /*child: Image(
+                          image: NetworkImage(hotelDestination[index].image),
+                          fit: BoxFit.fill,
+                        ),*/
+                                    child: CachedNetworkImage(
+                                      imageUrl: hotelDestination[index].image,
+                                      placeholder: (context, url) => const Center(
+                                          child: SizedBox(
+                                              height: 40,
+                                              width: 40,
+                                              child:
+                                                  CircularProgressIndicator())),
+                                      errorWidget: (context, url, error) =>
+                                          const Icon(Icons.error),
+                                      fit: BoxFit.fill,
+                                    ),
+                                  ),
+                                  Container(
+                                      width: 330,
+                                      height: 55,
+                                      color: Colors.black.withOpacity(0.6),
+                                      padding: const EdgeInsets.all(5.0),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                hotelDestination[index].title,
+                                                maxLines: 1,
+                                                style: const TextStyle(
+                                                    fontFamily: "Montserrat",
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.white),
+                                              ),
+                                              const SizedBox(
+                                                height: 5,
+                                              ),
+                                              SizedBox(
+                                                width: 200,
+                                                child: Text(
+                                                  hotelDestination[index]
+                                                      .subtitle,
+                                                  maxLines: 1,
+                                                  style: const TextStyle(
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                      fontFamily: "Montserrat",
+                                                      fontSize: 13,
+                                                      color: Colors.white),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          ElevatedButton(
+                                            onPressed: () {},
+                                            style: ElevatedButton.styleFrom(
+                                                backgroundColor: Colors.red,
+                                                elevation: 16.0),
+                                            child: const Text(
+                                              "Explore",
+                                              style: TextStyle(
+                                                fontFamily: "Montserrat",
+                                              ),
+                                            ),
+                                          )
+                                        ],
+                                      ))
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                        itemCount: hotelDestination.length,
+                        scrollDirection: Axis.horizontal,
+                      ),
+                    ),
+                    SizedBox(
+                        width: double.infinity,
+                        height: 200,
+                        child: CarouselSlider(
+                          items: [
+                            Image.asset(
+                              "assets/images/six-senses-zil-payson-seychelles.webp",
+                              fit: BoxFit.cover,
+                            ),
+                            Image.asset(
+                              "assets/images/hotel_list_2.webp",
+                              fit: BoxFit.cover,
+                            ),
+                            Image.asset(
+                              "assets/images/bg4.jpg",
+                              fit: BoxFit.cover,
+                            ),
+                          ],
+                          options: CarouselOptions(
+                            autoPlay: true,
+                            viewportFraction: 1,
+                            enlargeCenterPage: false,
+                          ),
+                        )),
+                    const SizedBox(
+                      height: 10,
+                    ),
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      child: const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Travel Safely in this pandemic",
+                            style: TextStyle(
+                                fontFamily: "Montserrat",
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600),
+                          ),
+                          SizedBox(
+                            height: 5,
+                          ),
+                          Text(
+                            "Your safety is our priority",
+                            style: TextStyle(
+                                fontFamily: "Montserrat",
+                                fontSize: 12,
+                                color: Colors.black,
+                                fontWeight: FontWeight.normal),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 250,
+                            height: 150,
+                            margin: const EdgeInsets.fromLTRB(10, 10, 10, 20),
+                            child: Card(
+                              elevation: 10.0,
+                              clipBehavior: Clip.antiAliasWithSaveLayer,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10.0)),
+                              child: SizedBox(
+                                width: 250,
+                                height: 150,
+                                /*child: Image(
+                          image: NetworkImage(hotelDestination[index].image),
+                          fit: BoxFit.fill,
+                        ),*/
+                                child: CachedNetworkImage(
+                                  imageUrl:
+                                      'https://img.freepik.com/free-psd/travel-safely-banner-template_23-2149203644.jpg',
+                                  placeholder: (context, url) => const Center(
+                                      child: SizedBox(
+                                          height: 40,
+                                          width: 40,
+                                          child: CircularProgressIndicator())),
+                                  errorWidget: (context, url, error) =>
+                                      const Icon(Icons.error),
+                                  fit: BoxFit.fill,
                                 ),
-                              )
-                            ],
-                          )))),
-            ),
+                              ),
+                            ),
+                          ),
+                          Container(
+                            width: 250,
+                            height: 150,
+                            margin: const EdgeInsets.fromLTRB(10, 10, 10, 20),
+                            child: Card(
+                              elevation: 10.0,
+                              clipBehavior: Clip.antiAliasWithSaveLayer,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10.0)),
+                              child: SizedBox(
+                                width: 250,
+                                height: 150,
+                                /*child: Image(
+                          image: NetworkImage(hotelDestination[index].image),
+                          fit: BoxFit.fill,
+                        ),*/
+                                child: CachedNetworkImage(
+                                  imageUrl:
+                                      'https://cdn5.vectorstock.com/i/1000x1000/58/94/covid-safe-travel-logo-banner-with-passengers-vector-41645894.jpg',
+                                  placeholder: (context, url) => const Center(
+                                      child: SizedBox(
+                                          height: 40,
+                                          width: 40,
+                                          child: CircularProgressIndicator())),
+                                  errorWidget: (context, url, error) =>
+                                      const Icon(Icons.error),
+                                  fit: BoxFit.fill,
+                                ),
+                              ),
+                            ),
+                          ),
+                          Container(
+                            width: 250,
+                            height: 150,
+                            margin: const EdgeInsets.fromLTRB(10, 10, 10, 20),
+                            child: Card(
+                              elevation: 10.0,
+                              clipBehavior: Clip.antiAliasWithSaveLayer,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10.0)),
+                              child: SizedBox(
+                                width: 250,
+                                height: 150,
+                                /*child: Image(
+                          image: NetworkImage(hotelDestination[index].image),
+                          fit: BoxFit.fill,
+                        ),*/
+                                child: CachedNetworkImage(
+                                  imageUrl:
+                                      'https://previews.123rf.com/images/decorwithme/decorwithme1903/decorwithme190300110/124429946-travel-insurance-colorful-flat-design-style-web-banner-on-white-background-with-copy-space-for.jpg',
+                                  placeholder: (context, url) => const Center(
+                                      child: SizedBox(
+                                          height: 40,
+                                          width: 40,
+                                          child: CircularProgressIndicator())),
+                                  errorWidget: (context, url, error) =>
+                                      const Icon(Icons.error),
+                                  fit: BoxFit.fill,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(
+                      height: 10,
+                    ),
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      child: const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "What's new about us?",
+                            style: TextStyle(
+                                fontFamily: "Montserrat",
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600),
+                          ),
+                          SizedBox(
+                            height: 5,
+                          ),
+                          Text(
+                            "We're different from others in terms of service",
+                            style: TextStyle(
+                                fontFamily: "Montserrat",
+                                fontSize: 12,
+                                color: Colors.black,
+                                fontWeight: FontWeight.normal),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 150,
+                            height: 250,
+                            margin: const EdgeInsets.fromLTRB(10, 10, 10, 20),
+                            child: Card(
+                              elevation: 10.0,
+                              clipBehavior: Clip.antiAliasWithSaveLayer,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10.0)),
+                              child: SizedBox(
+                                width: 150,
+                                height: 250,
+                                /*child: Image(
+                          image: NetworkImage(hotelDestination[index].image),
+                          fit: BoxFit.fill,
+                        ),*/
+                                child: CachedNetworkImage(
+                                  imageUrl:
+                                      'https://marketplace.canva.com/EAE-oK6TfmI/1/0/800w/canva-elegant-grand-opening-annoncement-invitation-banner-portrait-ZkcmPUyKFRY.jpg',
+                                  placeholder: (context, url) => const Center(
+                                      child: SizedBox(
+                                          height: 40,
+                                          width: 40,
+                                          child: CircularProgressIndicator())),
+                                  errorWidget: (context, url, error) =>
+                                      const Icon(Icons.error),
+                                  fit: BoxFit.fill,
+                                ),
+                              ),
+                            ),
+                          ),
+                          Container(
+                            width: 150,
+                            height: 250,
+                            margin: const EdgeInsets.fromLTRB(10, 10, 10, 20),
+                            child: Card(
+                              elevation: 10.0,
+                              clipBehavior: Clip.antiAliasWithSaveLayer,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10.0)),
+                              child: SizedBox(
+                                width: 150,
+                                height: 250,
+                                /*child: Image(
+                          image: NetworkImage(hotelDestination[index].image),
+                          fit: BoxFit.fill,
+                        ),*/
+                                child: CachedNetworkImage(
+                                  imageUrl:
+                                      'https://d1csarkz8obe9u.cloudfront.net/posterpreviews/travel-banner-design-template-74c2986da1078a325518f2202d02d74e_screen.jpg?ts=1661668122',
+                                  placeholder: (context, url) => const Center(
+                                      child: SizedBox(
+                                          height: 40,
+                                          width: 40,
+                                          child: CircularProgressIndicator())),
+                                  errorWidget: (context, url, error) =>
+                                      const Icon(Icons.error),
+                                  fit: BoxFit.fill,
+                                ),
+                              ),
+                            ),
+                          ),
+                          Container(
+                            width: 150,
+                            height: 250,
+                            margin: const EdgeInsets.fromLTRB(10, 10, 10, 20),
+                            child: Card(
+                              elevation: 10.0,
+                              clipBehavior: Clip.antiAliasWithSaveLayer,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10.0)),
+                              child: SizedBox(
+                                width: 150,
+                                height: 250,
+                                /*child: Image(
+                          image: NetworkImage(hotelDestination[index].image),
+                          fit: BoxFit.fill,
+                        ),*/
+                                child: CachedNetworkImage(
+                                  imageUrl:
+                                      'https://marketplace.canva.com/EAEbm1h5br4/1/0/1200w/canva-blue-red-clean-%26-corporate-workplace-health-%26-safety-rules-health-explainer-poster-y07YKNJaiQ4.jpg',
+                                  placeholder: (context, url) => const Center(
+                                      child: SizedBox(
+                                          height: 40,
+                                          width: 40,
+                                          child: CircularProgressIndicator())),
+                                  errorWidget: (context, url, error) =>
+                                      const Icon(Icons.error),
+                                  fit: BoxFit.fill,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
           ],
         ),
       ),
     );
-  }
-
-  @override
-  void initState() {
-    // TODO: implement initState
-    searchBookingTravellers();
-    super.initState();
   }
 }

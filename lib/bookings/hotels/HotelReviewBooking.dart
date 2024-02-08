@@ -11,6 +11,7 @@ class HotelReviewBooking extends StatefulWidget {
   final dynamic hotelDetail,
       RoomDetail,
       Roomtypename,
+      Roomprice,
       hotelname,
       hoteladdress,
       Starcategory,
@@ -24,6 +25,7 @@ class HotelReviewBooking extends StatefulWidget {
       required this.hotelDetail,
       required this.RoomDetail,
       required this.Roomtypename,
+      required this.Roomprice,
       required this.hotelname,
       required this.hoteladdress,
       required this.Starcategory,
@@ -222,14 +224,12 @@ class _HotelDescriptionState extends State<HotelReviewBooking> {
                             fontSize: 18,
                           ),
                         ),
-                        SizedBox(
-                            height:
-                                4), // Add some space between hotel name and address
+                        SizedBox(height: 4),
                         // Hotel address
                         Text(
                           widget.hoteladdress
                               .toString(), // Example hotel address
-                          style: TextStyle(fontSize: 16),
+                          style: TextStyle(fontSize: 14),
                         ),
                         Container(
                           padding:
@@ -256,6 +256,31 @@ class _HotelDescriptionState extends State<HotelReviewBooking> {
             Divider(),
             Padding(
               padding: const EdgeInsets.only(left: 15, right: 15),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Checkin',
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: Colors.red,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  Text(
+                    ('CheckOut'),
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: Colors.red,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            Padding(
+              padding: const EdgeInsets.only(left: 15, right: 15,top:5),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -433,7 +458,7 @@ class _HotelDescriptionState extends State<HotelReviewBooking> {
                           ),
                         ),
                         Text(
-                          "TotalPrice",
+                          widget.Roomprice.toString(),
                           style: TextStyle(
                             fontWeight: FontWeight.w500,
                             fontSize: 16,
@@ -451,7 +476,7 @@ class _HotelDescriptionState extends State<HotelReviewBooking> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          "TotalPrice",
+                          widget.Roomprice.toString(),
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 18,
@@ -459,8 +484,7 @@ class _HotelDescriptionState extends State<HotelReviewBooking> {
                         ),
                         ElevatedButton(
                           onPressed: () {
-                            // submitAdivahaFlightBooking();
-                            // Add your continue button functionality here
+                            // submitAdivahaFlightBooking();  // Add your continue button functionality here
                           },
                           child: Text('Continue'),
                         ),
