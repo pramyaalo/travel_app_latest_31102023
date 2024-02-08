@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
- import 'dart:developer' as developer;
+import 'dart:developer' as developer;
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import '../../utils/response_handler.dart';
@@ -155,369 +155,376 @@ class _HotelDescriptionState extends State<HolidayDescription> {
 
   @override
   Widget build(BuildContext context) {
-    List<Widget> iconsForFeaturesInclusion =
-        createIconsForWords(featuresInclusion);
-    List<Widget> iconsForFeaturesExclusion =
-        createIconsForWords1(featuresExclusion);
+    if (hotelResult.isNotEmpty && RoomResult.isNotEmpty) {
+      List<Widget> iconsForFeaturesInclusion =
+          createIconsForWords(featuresInclusion);
+      List<Widget> iconsForFeaturesExclusion =
+          createIconsForWords1(featuresExclusion);
 
-    return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        titleSpacing: 1,
-        title: Row(
-          children: [
-            IconButton(
-              icon: Icon(
-                Icons.arrow_back,
-                color: Colors.black,
-                size: 27,
+      return Scaffold(
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          titleSpacing: 1,
+          title: Row(
+            children: [
+              IconButton(
+                icon: Icon(
+                  Icons.arrow_back,
+                  color: Colors.black,
+                  size: 27,
+                ),
+                onPressed: () {
+                  Navigator.pop(context);
+                },
               ),
-              onPressed: () {
-                Navigator.pop(context);
-              },
-            ),
-            SizedBox(width: 1),
-            Text(
-              "Hotel Description",
-              style: TextStyle(
-                  color: Colors.black, fontFamily: "Montserrat", fontSize: 19),
-            ),
-          ],
-        ),
-        actions: [
-          Image.asset(
-            'assets/images/logo.png',
-            width: 150,
-            height: 50,
+              SizedBox(width: 1),
+              Text(
+                "Holiday Description",
+                style: TextStyle(
+                    color: Colors.black,
+                    fontFamily: "Montserrat",
+                    fontSize: 17),
+              ),
+            ],
           ),
-          SizedBox(
-            width: 10,
-          )
-        ],
-        backgroundColor: Colors.white,
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+          actions: [
+            Image.asset(
+              'assets/images/logo.png',
+              width: 150,
+              height: 50,
+            ),
             SizedBox(
-                width: double.infinity,
-                height: 200,
-                child: CarouselSlider(
-                  items: [
-                    Image.asset(
-                      "assets/images/hotel2.jpg",
-                      fit: BoxFit.cover,
+              width: 10,
+            )
+          ],
+          backgroundColor: Colors.white,
+        ),
+        body: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                  width: double.infinity,
+                  height: 200,
+                  child: CarouselSlider(
+                    items: [
+                      Image.asset(
+                        "assets/images/hotel2.jpg",
+                        fit: BoxFit.cover,
+                      ),
+                      Image.asset(
+                        "assets/images/hotel2.jpg",
+                        fit: BoxFit.cover,
+                      ),
+                      Image.asset(
+                        "assets/images/hotel2.jpg",
+                        fit: BoxFit.fill,
+                      ),
+                    ],
+                    options: CarouselOptions(
+                      autoPlay: true,
+                      viewportFraction: 1,
+                      enlargeCenterPage: false,
                     ),
-                    Image.asset(
-                      "assets/images/hotel2.jpg",
-                      fit: BoxFit.cover,
+                  )),
+              Container(
+                padding: EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      hotelResult[0]['tourname'],
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                          fontSize: 20),
                     ),
-                    Image.asset(
-                      "assets/images/hotel2.jpg",
-                      fit: BoxFit.fill,
+                    SizedBox(
+                      height: 5,
+                    ),
+                    Text(
+                      hotelResult[0]['destinationname'] +
+                          "," +
+                          hotelResult[0]['countryname'],
+                      style: TextStyle(
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black,
+                          fontSize: 17),
+                    ),
+                    SizedBox(
+                      height: 5,
                     ),
                   ],
-                  options: CarouselOptions(
-                    autoPlay: true,
-                    viewportFraction: 1,
-                    enlargeCenterPage: false,
-                  ),
-                )),
-            Container(
-              padding: EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    hotelResult[0]['tourname'],
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                        fontSize: 20),
-                  ),
-                  SizedBox(
-                    height: 5,
-                  ),
-                  Text(
-                    hotelResult[0]['destinationname'] +
-                        "," +
-                        hotelResult[0]['countryname'],
-                    style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black,
-                        fontSize: 17),
-                  ),
-                  SizedBox(
-                    height: 5,
-                  ),
-                ],
-              ),
-            ),
-            Divider(),
-            Padding(
-              padding: const EdgeInsets.only(right: 15, left: 15),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Valid From',
-                          style: TextStyle(
-                              fontWeight: FontWeight.w500, color: Colors.red)),
-                      Text('Valid To',
-                          style: TextStyle(
-                              fontWeight: FontWeight.w500, color: Colors.red))
-                    ],
-                  ),
-                  SizedBox(
-                    height: 5,
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(widget.Checkindate.toString().substring(0, 10),
-                          style: TextStyle(fontWeight: FontWeight.w500)),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            Divider(),
-            Padding(
-              padding: const EdgeInsets.only(right: 15, left: 15),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Categories',
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.bold,
-                          )),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 5,
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      Text(hotelResult[0]['Categories'].toString(),
-                          style: TextStyle(
-                              fontSize: 15, fontWeight: FontWeight.w500)),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            Divider(),
-            Padding(
-              padding: const EdgeInsets.only(right: 15, left: 15),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Guest',
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.bold,
-                          )),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 5,
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      Text(widget.adultCount.toString() + " " + "Guests",
-                          style: TextStyle(
-                              fontSize: 15, fontWeight: FontWeight.w500)),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            Divider(),
-            Padding(
-              padding: const EdgeInsets.only(
-                right: 15,
-                left: 15,
-              ),
-              child: Text(
-                'Operationdays',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
-              ),
-            ),
-            SizedBox(
-              height: 5,
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(left: 15, right: 15),
-                  child: Text(hotelResult[0]['Operationdays'].toString(),
-                      style:
-                          TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
                 ),
-              ],
-            ),
-            Divider(),
-            Padding(
-              padding: const EdgeInsets.only(
-                right: 15,
-                left: 15,
               ),
-              child: Text(
-                'About Destination',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+              Divider(),
+              Padding(
+                padding: const EdgeInsets.only(right: 15, left: 15),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Valid From',
+                            style: TextStyle(
+                                fontWeight: FontWeight.w500,
+                                color: Colors.red)),
+                        Text('Valid To',
+                            style: TextStyle(
+                                fontWeight: FontWeight.w500, color: Colors.red))
+                      ],
+                    ),
+                    SizedBox(
+                      height: 5,
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(widget.Checkindate.toString().substring(0, 10),
+                            style: TextStyle(fontWeight: FontWeight.w500)),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-            SizedBox(
-              height: 5,
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(left: 15, right: 10),
-                  child: Container(
-                    width: 320,
-                    child: Text(
-                        hotelResult[0]['content_description'].toString(),
+              Divider(),
+              Padding(
+                padding: const EdgeInsets.only(right: 15, left: 15),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Categories',
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                            )),
+                      ],
+                    ),
+                    SizedBox(
+                      height: 5,
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Text(hotelResult[0]['Categories'].toString(),
+                            style: TextStyle(
+                                fontSize: 15, fontWeight: FontWeight.w500)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Divider(),
+              Padding(
+                padding: const EdgeInsets.only(right: 15, left: 15),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Guest',
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                            )),
+                      ],
+                    ),
+                    SizedBox(
+                      height: 5,
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Text(widget.adultCount.toString() + " " + "Guests",
+                            style: TextStyle(
+                                fontSize: 15, fontWeight: FontWeight.w500)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Divider(),
+              Padding(
+                padding: const EdgeInsets.only(
+                  right: 15,
+                  left: 15,
+                ),
+                child: Text(
+                  'Operationdays',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+                ),
+              ),
+              SizedBox(
+                height: 5,
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(left: 15, right: 15),
+                    child: Text(hotelResult[0]['Operationdays'].toString(),
                         style: TextStyle(
                             fontSize: 15, fontWeight: FontWeight.w500)),
                   ),
-                ),
-              ],
-            ),
-            Padding(
-              padding: const EdgeInsets.only(right: 10, left: 15, top: 8),
-              child: Text(
-                'Inclusion& Exclusion',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                ],
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(left: 15, right: 10, top: 6),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Divider(),
+              Padding(
+                padding: const EdgeInsets.only(
+                  right: 15,
+                  left: 15,
+                ),
+                child: Text(
+                  'About Destination',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                ),
+              ),
+              SizedBox(
+                height: 5,
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  Text(
-                    'Inclusions',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
-                  ),
-                  Text(
-                    'Exclusions',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 15, right: 10),
+                    child: Container(
+                      width: 320,
+                      child: Text(
+                          hotelResult[0]['content_description'].toString(),
+                          style: TextStyle(
+                              fontSize: 15, fontWeight: FontWeight.w500)),
+                    ),
                   ),
                 ],
               ),
-            ),
-            Divider(),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(left: 15),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: iconsForFeaturesInclusion,
-                  ),
+              Padding(
+                padding: const EdgeInsets.only(right: 10, left: 15, top: 8),
+                child: Text(
+                  'Inclusion& Exclusion',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
                 ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: iconsForFeaturesExclusion,
-                ),
-              ],
-            ),
-            Column(
-              children: [
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 10),
-                    child: Text(
-                      'Modalities',
+              ),
+              Padding(
+                padding: const EdgeInsets.only(left: 15, right: 10, top: 6),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Inclusions',
                       style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+                    ),
+                    Text(
+                      'Exclusions',
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+                    ),
+                  ],
+                ),
+              ),
+              Divider(),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(left: 15),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: iconsForFeaturesInclusion,
                     ),
                   ),
-                ),
-                ListView.builder(
-                    shrinkWrap: true,
-                    physics: NeverScrollableScrollPhysics(),
-                    itemCount: RoomResult.length,
-                    itemBuilder: (BuildContext context, index) {
-                      return Container(
-                        decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: Colors.grey, width: 1)),
-                        margin:
-                            EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                        padding: EdgeInsets.all(10),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              width: MediaQuery.of(context).size.width - 150,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: iconsForFeaturesExclusion,
+                  ),
+                ],
+              ),
+              Column(
+                children: [
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 10),
+                      child: Text(
+                        'Modalities',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 20),
+                      ),
+                    ),
+                  ),
+                  ListView.builder(
+                      shrinkWrap: true,
+                      physics: NeverScrollableScrollPhysics(),
+                      itemCount: RoomResult.length,
+                      itemBuilder: (BuildContext context, index) {
+                        return Container(
+                          decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: Colors.grey, width: 1)),
+                          margin:
+                              EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          padding: EdgeInsets.all(10),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                width: MediaQuery.of(context).size.width - 150,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      RoomResult[index]['modalities_name'],
+                                      style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.normal),
+                                    ),
+                                    SizedBox(
+                                      height: 10,
+                                    ),
+                                    Text(
+                                      RoomResult[index]['durationvalue'] +
+                                          RoomResult[index]['durationmetric'],
+                                      style: TextStyle(
+                                          color: Colors.green,
+                                          fontWeight: FontWeight.normal),
+                                    ),
+                                    Text(
+                                      "Cancellation Amount From" +
+                                          " " +
+                                          RoomResult[index]
+                                              ['cancelpolicyDate'] +
+                                          " " +
+                                          "is" +
+                                          " " +
+                                          RoomResult[index]
+                                              ['cancelpolicypAmount'],
+                                      style: TextStyle(
+                                          color: Colors.black,
+                                          fontWeight: FontWeight.normal),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Column(
                                 children: [
                                   Text(
-                                    RoomResult[index]['modalities_name'],
+                                    RoomResult[index]['modalities_rate'],
                                     style: TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.normal),
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 20,
+                                        color: Colors.green),
                                   ),
                                   SizedBox(
                                     height: 10,
                                   ),
-                                  Text(
-                                    RoomResult[index]['durationvalue'] +
-                                        RoomResult[index]['durationmetric'],
-                                    style: TextStyle(
-                                        color: Colors.green,
-                                        fontWeight: FontWeight.normal),
-                                  ),
-                                  Text(
-                                    "Cancellation Amount From" +
-                                        " " +
-                                        RoomResult[index]['cancelpolicyDate'] +
-                                        " " +
-                                        "is" +
-                                        " " +
-                                        RoomResult[index]
-                                            ['cancelpolicypAmount'],
-                                    style: TextStyle(
-                                        color: Colors.black,
-                                        fontWeight: FontWeight.normal),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Column(
-                              children: [
-                                Text(
-                                  RoomResult[index]['modalities_rate'],
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 20,
-                                      color: Colors.green),
-                                ),
-                                SizedBox(
-                                  height: 10,
-                                ),
-                                GestureDetector(
-                                  onTap: () {
-                                    /* navigate(HotelReviewBooking(
+                                  GestureDetector(
+                                    onTap: () {
+                                      /* navigate(HotelReviewBooking(
                                   hotelDetail: hotelResult[index],
                                   RoomDetail: RoomResult[index],
                                   Roomtypename: RoomTypeName,
@@ -530,35 +537,79 @@ class _HotelDescriptionState extends State<HolidayDescription> {
                                   Checkindate: widget.Checkindate,
 
                                 ));*/
-                                    print('Container tapped!');
-                                  },
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                        color: Color(0xff3093c7),
-                                        borderRadius:
-                                            BorderRadius.circular(10)),
-                                    padding: EdgeInsets.symmetric(
-                                        vertical: 10, horizontal: 20),
-                                    child: Center(
-                                      child: Text(
-                                        'Book Now',
-                                        style: TextStyle(color: Colors.white),
+                                      print('Container tapped!');
+                                    },
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                          color: Color(0xff3093c7),
+                                          borderRadius:
+                                              BorderRadius.circular(10)),
+                                      padding: EdgeInsets.symmetric(
+                                          vertical: 10, horizontal: 20),
+                                      child: Center(
+                                        child: Text(
+                                          'Book Now',
+                                          style: TextStyle(color: Colors.white),
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                )
-                              ],
-                            )
-                          ],
-                        ),
-                      );
-                    }),
-              ],
-            ),
-          ],
+                                  )
+                                ],
+                              )
+                            ],
+                          ),
+                        );
+                      }),
+                ],
+              ),
+            ],
+          ),
         ),
-      ),
-    );
+      );
+    } else
+      return Scaffold(
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          titleSpacing: 1,
+          title: Row(
+            children: [
+              IconButton(
+                icon: Icon(
+                  Icons.arrow_back,
+                  color: Colors.black,
+                  size: 27,
+                ),
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+              ),
+              SizedBox(width: 1),
+              Text(
+                "Holiday Description",
+                style: TextStyle(
+                    color: Colors.black,
+                    fontFamily: "Montserrat",
+                    fontSize: 17),
+              ),
+            ],
+          ),
+          actions: [
+            Image.asset(
+              'assets/images/logo.png',
+              width: 150,
+              height: 50,
+            ),
+            SizedBox(
+              width: 10,
+            )
+          ],
+          backgroundColor: Colors.white,
+        ),
+        body: Center(
+          child:
+              CircularProgressIndicator(), // Or any other loading indicator or message
+        ),
+      );
   }
 }
 
