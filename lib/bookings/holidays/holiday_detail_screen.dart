@@ -6,6 +6,7 @@ import 'dart:developer' as developer;
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import '../../utils/response_handler.dart';
+import 'HolidayReviewBooking.dart';
 
 class HolidayDescription extends StatefulWidget {
   final dynamic holidayList,
@@ -524,19 +525,26 @@ class _HotelDescriptionState extends State<HolidayDescription> {
                                   ),
                                   GestureDetector(
                                     onTap: () {
-                                      /* navigate(HotelReviewBooking(
-                                  hotelDetail: hotelResult[index],
-                                  RoomDetail: RoomResult[index],
-                                  Roomtypename: RoomTypeName,
-                                  Roomprice: RoomPrice,
-                                  hotelname: HotelName,
-                                  hoteladdress: HotelAddress,
-                                  RoomCount: widget.RoomCount,
-                                  adultCount: widget.adultCount,
-                                  childrenCount: widget.childrenCount,
-                                  Checkindate: widget.Checkindate,
-
-                                ));*/
+                                      navigate(HolidayReviewBooking(
+                                        holidayName: hotelResult[0]['tourname'],
+                                        touraddress: hotelResult[0]
+                                                ['destinationname'] +
+                                            "," +
+                                            hotelResult[0]['countryname'],
+                                        CheckinDate:
+                                            widget.Checkindate.toString()
+                                                .substring(0, 10),
+                                        RoomCount: widget.RoomCount,
+                                        adultCount: widget.adultCount,
+                                        Tourcode: widget.Tourcode,
+                                        featuresInclusion: featuresInclusion,
+                                        featuresExclusion: featuresExclusion,
+                                        price: RoomResult[index]
+                                            ['modalities_rate'],
+                                        modalities_rateKey: RoomResult[index]
+                                            ['modalities_rateKey'],
+                                        childrenCount: 0,
+                                      ));
                                       print('Container tapped!');
                                     },
                                     child: Container(
