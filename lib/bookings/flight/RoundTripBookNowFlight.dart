@@ -2,23 +2,31 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../utils/commonutils.dart';
 import 'package:http/http.dart' as http;
 import 'dart:developer' as developer;
 import 'package:xml/xml.dart' as xml;
 import '../../utils/response_handler.dart';
+import '../../utils/shared_preferences.dart';
+import 'TravellerDetailsModel.dart';
 
 class RoundTripBookNowFlight extends StatefulWidget {
-  final flightDetails, resultFlightData, adultCount, childrenCount, infantCount;
+  final flightDetails,
+      resultFlightData,
+      adultCount,
+      childrenCount,
+      infantCount,
+      departdate;
   const RoundTripBookNowFlight(
       {super.key,
       required this.flightDetails,
       required this.resultFlightData,
       required this.infantCount,
       required this.childrenCount,
-      required this.adultCount});
+      required this.adultCount,
+      required this.departdate});
 
   @override
   State<RoundTripBookNowFlight> createState() => _OneWayBookingState();
@@ -30,9 +38,51 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
   String selectedCountryCode = '+91';
   String selectedTitle = 'Mr';
   String selectedGendar = 'Male';
+  String formattedDate = '';
   final FocusNode _focusNode = FocusNode();
   FocusNode _firstNameFocusNode = FocusNode();
   FocusNode _lastNameFocusNode = FocusNode();
+  int Status = 2;
+  String AdultName1 = '', AdultTravellerId1 = '';
+
+  String selectedTitleAdult1 = 'Mr';
+  String selectedTitleAdult2 = 'Mr';
+  String selectedTitleAdult3 = 'Mr';
+  String selectedTitleAdult4 = 'Mr';
+  String selectedTitleAdult5 = 'Mr';
+
+  String selectedTitleChildren1 = 'Mr';
+  String selectedTitleChildren2 = 'Mr';
+  String selectedTitleChildren3 = 'Mr';
+  String selectedTitleChildren4 = 'Mr';
+  String selectedTitleChildren5 = 'Mr';
+
+  String selectedTitleInfant1 = 'Mr';
+  String selectedTitleInfant2 = 'Mr';
+  String selectedTitleInfant3 = 'Mr';
+  String selectedTitleInfant4 = 'Mr';
+  String selectedTitleInfant5 = 'Mr';
+
+  String selectedGendarAdult1 = 'Male';
+  String selectedGendarAdult2 = 'Male';
+  String selectedGendarAdult3 = 'Male';
+  String selectedGendarAdult4 = 'Male';
+  String selectedGendarAdult5 = 'Male';
+
+  String selectedGendarChildren1 = 'Male';
+  String selectedGendarChildren2 = 'Male';
+  String selectedGendarChildren3 = 'Male';
+  String selectedGendarChildren4 = 'Male';
+  String selectedGendarChildren5 = 'Male';
+
+  String selectedGendarInfant1 = 'Male';
+  String selectedGendarInfant2 = 'Male';
+  String selectedGendarInfant3 = 'Male';
+  String selectedGendarInfant4 = 'Male';
+  String selectedGendarInfant5 = 'Male';
+
+  String selectedGendarContactDetail = 'Male';
+  String Gendar = '';
   TextEditingController adultFname_controller = new TextEditingController();
   TextEditingController adultLname_controller = new TextEditingController();
 
@@ -43,6 +93,10 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
   TextEditingController contactMobileController = new TextEditingController();
   TextEditingController contactAddressController = new TextEditingController();
   TextEditingController contactCityController = new TextEditingController();
+  TextEditingController _CountryController = new TextEditingController();
+  TextEditingController Documentype_controller = new TextEditingController();
+  TextEditingController Documentnumber_controller = new TextEditingController();
+
   @override
   void dispose() {
     _firstNameFocusNode.dispose();
@@ -50,48 +104,408 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
     super.dispose();
   }
 
+  String convertDate(String inputDate) {
+    // Parse the input date string
+    DateTime date = DateFormat('dd MMM yyyy').parse(inputDate);
+
+    // Format the date in the desired format
+    formattedDate = DateFormat('yyyy-MM-dd').format(date);
+
+    return formattedDate;
+  }
+
   var selectedDate = DateTime.now().obs;
-  TextEditingController dateController = TextEditingController();
+  TextEditingController ExpiryDateController = TextEditingController();
+  TextEditingController dateControllerAdult1 = TextEditingController();
+  TextEditingController dateControllerAdult2 = TextEditingController();
+  TextEditingController dateControllerAdult3 = TextEditingController();
+  TextEditingController dateControllerAdult4 = TextEditingController();
+  TextEditingController dateControllerAdult5 = TextEditingController();
   TextEditingController passengerNameController = new TextEditingController();
-  void chooseDate() async {
-    DateTime? pickedDate = await showDatePicker(
+
+  TextEditingController dateControllerChildren1 = TextEditingController();
+  TextEditingController dateControllerChildren2 = TextEditingController();
+  TextEditingController dateControllerChildren3 = TextEditingController();
+  TextEditingController dateControllerChildren4 = TextEditingController();
+  TextEditingController dateControllerChildren5 = TextEditingController();
+
+  TextEditingController dateControllerInfant1 = TextEditingController();
+  TextEditingController dateControllerInfant2 = TextEditingController();
+  TextEditingController dateControllerInfant3 = TextEditingController();
+  TextEditingController dateControllerInfant4 = TextEditingController();
+  TextEditingController dateControllerInfant5 = TextEditingController();
+
+  Future<void> _selectExpiryDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: selectedDate.value,
-      firstDate: DateTime(1800),
-      lastDate: DateTime(2024),
-      helpText: 'Select DOB',
-      cancelText: 'Close',
-      confirmText: 'Confirm',
-      errorFormatText: 'Enter a valid date',
-      errorInvalidText: 'Enter a valid date range',
-      fieldLabelText: 'DOB',
-      fieldHintText: 'Month/Date/Year',
+      initialDate: DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime(2101),
     );
-    if (pickedDate != null && pickedDate != selectedDate.value) {
-      selectedDate.value = pickedDate;
-      dateController.text = DateFormat('dd/MM/yyyy').format(pickedDate);
+    if (picked != null && picked != ExpiryDateController) {
+      setState(() {
+        ExpiryDateController.text = DateFormat('yyyy-MM-dd').format(picked);
+      });
+    }
+  }
+
+  Future<void> _selectDateAdult1(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null && picked != dateControllerAdult1) {
+      setState(() {
+        dateControllerAdult1.text = DateFormat('yyyy-MM-dd').format(picked);
+      });
+    }
+  }
+
+  late String userTypeID = '';
+  late String userID = '';
+  late String Currency = '';
+  String formattedFromDate = '';
+  @override
+  void initState() {
+    super.initState();
+    setState(() {
+      resultFlightData = widget.resultFlightData;
+      _retrieveSavedValues();
+    });
+  }
+
+  Future<void> _retrieveSavedValues() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      userTypeID = prefs.getString(Prefs.PREFS_USER_TYPE_ID) ?? '';
+      userID = prefs.getString(Prefs.PREFS_USER_ID) ?? '';
+      Currency = prefs.getString(Prefs.PREFS_CURRENCY) ?? '';
+      print('Currency: $Currency');
+    });
+  }
+
+  Future<List<TravellerDetailsModel>> fetchAutocompleteData(
+      String empName) async {
+    final url =
+        'https://traveldemo.org/travelapp/b2capi.asmx/BookingSearchTravellers?UserId=$userID&UserTypeId=$userTypeID&SearchFilter=$empName&UID=35510b94-5342-TDemoB2CAPI-a2e3-2e722772';
+    print('userID' + userID);
+    print('userTypeID' + userTypeID);
+    print('empName' + empName);
+
+    final response = await http.get(Uri.parse(url));
+    print('response: ${response.statusCode}');
+    if (response.statusCode == 200) {
+      final xmlDocument = xml.XmlDocument.parse(response.body);
+      final responseData = xmlDocument.findAllElements('string').first.text;
+
+      final decodedData = json.decode(responseData);
+      return decodedData
+          .map<TravellerDetailsModel>(
+              (data) => TravellerDetailsModel.fromJson(data))
+          .toList();
+    } else {
+      print('Failed to load autocomplete data: ${response.statusCode}');
+      throw Exception('Failed to load autocomplete data');
+    }
+  }
+
+  Future<void> callSecondApi(String id) async {
+    final url =
+        'https://traveldemo.org/travelapp/b2capi.asmx/BookingSearchTravellerDetails?TravellerId=$id&UID=35510b94-5342-TDemoB2CAPI-a2e3-2e722772';
+    print('object' + id);
+
+    final response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      final responseData = response.body;
+
+      // Parse XML and extract JSON string
+      final startTag = '<string xmlns="http://tempuri.org/">';
+      final endTag = '</string>';
+      final startIndex = responseData.indexOf(startTag) + startTag.length;
+      final endIndex = responseData.indexOf(endTag);
+      final jsonString = responseData.substring(startIndex, endIndex);
+
+      // Parse JSON string
+      final jsonData = json.decode(jsonString);
+
+      // Extract data from Table
+      final tableData = jsonData['Table'];
+      final table1Data = jsonData['Table1'];
+
+      if (tableData != null &&
+          tableData.isNotEmpty &&
+          table1Data != null &&
+          table1Data.isNotEmpty) {
+        final traveller = tableData[0];
+        final passportInfo =
+            table1Data[0]; // Assuming there's only one entry in Table1
+
+        setState(() {
+          String _firstNameController = traveller['UDFirstName'];
+          adultLname_controller.text = traveller['UDLastName'];
+          dateControllerAdult1.text = traveller['UDDOB'];
+          String inputDate = dateControllerAdult1.text;
+          formattedDate = convertDate(inputDate);
+          print("formattedDate" + formattedDate);
+
+          print('finDate' + dateControllerAdult1.text.toString());
+          if (traveller['GenderId'] == 0) {
+            selectedGendarContactDetail = "Male";
+            Gendar = '0';
+          } else if (traveller['GenderId'] == 1) {
+            selectedGendarContactDetail = "Female";
+            Gendar = "1";
+          }
+          print("Gendar" + Gendar);
+          // Get data from Table1
+          Documentnumber_controller.text = passportInfo['PDPassportNo'];
+
+          String dateOfBirth = passportInfo['PDDateofBirth'];
+          Documentype_controller.text = passportInfo['PDDocument'];
+          String issuingCountry = passportInfo['PDIssuingCountry'];
+          ExpiryDateController.text = passportInfo['PDDateofExpiry'];
+          DateTime checkinDateTime = DateTime.parse(ExpiryDateController.text);
+          String finDate = DateFormat('yyyy/MM/dd').format(checkinDateTime);
+
+          ExpiryDateController.text = finDate;
+          print('finDate' + ExpiryDateController.text.toString());
+          // Update other text controllers with relevant fields
+        });
+      } else {
+        throw Exception('Failed to load traveller details');
+      }
+    }
+  }
+
+  Future<void> _selectDateAdult2(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null && picked != dateControllerAdult2) {
+      setState(() {
+        dateControllerAdult2.text = DateFormat('yyyy-MM-dd').format(picked);
+      });
+    }
+  }
+
+  Future<void> _selectDateAdult3(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null && picked != dateControllerAdult3) {
+      setState(() {
+        dateControllerAdult3.text = DateFormat('yyyy-MM-dd').format(picked);
+      });
+    }
+  }
+
+  Future<void> _selectDateAdult4(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null && picked != dateControllerAdult4) {
+      setState(() {
+        dateControllerAdult4.text = DateFormat('yyyy-MM-dd').format(picked);
+      });
+    }
+  }
+
+  Future<void> _selectDateAdult5(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null && picked != dateControllerAdult5) {
+      setState(() {
+        dateControllerAdult5.text = DateFormat('yyyy-MM-dd').format(picked);
+      });
+    }
+  }
+
+  Future<void> _selectDateChildren1(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null && picked != dateControllerChildren1) {
+      setState(() {
+        dateControllerChildren1.text = DateFormat('yyyy-MM-dd').format(picked);
+      });
+    }
+  }
+
+  Future<void> _selectDateChildren2(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null && picked != dateControllerChildren2) {
+      setState(() {
+        dateControllerChildren2.text = DateFormat('yyyy-MM-dd').format(picked);
+      });
+    }
+  }
+
+  Future<void> _selectDateChildren3(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null && picked != dateControllerChildren3) {
+      setState(() {
+        dateControllerChildren3.text = DateFormat('yyyy-MM-dd').format(picked);
+      });
+    }
+  }
+
+  Future<void> _selectDateChildren4(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null && picked != dateControllerChildren4) {
+      setState(() {
+        dateControllerChildren4.text = DateFormat('yyyy-MM-dd').format(picked);
+      });
+    }
+  }
+
+  Future<void> _selectDateChildren5(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null && picked != dateControllerChildren5) {
+      setState(() {
+        dateControllerChildren5.text = DateFormat('yyyy-MM-dd').format(picked);
+      });
+    }
+  }
+
+  Future<void> _selectDateInfant1(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null && picked != dateControllerInfant1) {
+      setState(() {
+        dateControllerInfant1.text = DateFormat('yyyy-MM-dd').format(picked);
+      });
+    }
+  }
+
+  Future<void> _selectDateInfant2(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null && picked != dateControllerInfant2) {
+      setState(() {
+        dateControllerInfant2.text = DateFormat('yyyy-MM-dd').format(picked);
+      });
+    }
+  }
+
+  Future<void> _selectDateInfant3(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null && picked != dateControllerInfant3) {
+      setState(() {
+        dateControllerInfant3.text = DateFormat('yyyy-MM-dd').format(picked);
+      });
+    }
+  }
+
+  Future<void> _selectDateInfant4(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null && picked != dateControllerInfant4) {
+      setState(() {
+        dateControllerInfant4.text = DateFormat('yyyy-MM-dd').format(picked);
+      });
+    }
+  }
+
+  Future<void> _selectDateInfant5(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null && picked != dateControllerInfant5) {
+      setState(() {
+        dateControllerInfant5.text = DateFormat('yyyy-MM-dd').format(picked);
+      });
     }
   }
 
   var resultFlightData = [];
   Future<void> submitAdivahaFlightBooking() async {
     final url = Uri.parse(
-        'https://traveldemo.org/travelapp/corporateapi.asmx/AdivahaFlightBooking');
+        'https://traveldemo.org/travelapp/b2capi.asmx/AdivahaFlightBooking');
     final headers = {'Content-Type': 'application/x-www-form-urlencoded'};
 
-    String resultIndex = widget.flightDetails['ResultIndexID'];
-    String traceId = widget.flightDetails['ItemId'];
+    String resultIndex = resultFlightData[0]['ResultIndexID'].toString();
+    String traceId = resultFlightData[0]['ItemId'].toString();
+
+    String formattedDateTime = widget.departdate.toString();
+
+    // Extract the date part using substring
+    formattedFromDate = formattedDateTime.substring(0, 10);
+
+    // Print the formatted date
+    print(formattedFromDate); // Output: 2024-04-17
 
     var reqBody = {
-      'ResultIndex': resultIndex,
-      'TraceId': traceId,
+      'ResultIndex': resultFlightData[0]['ResultIndexID'].toString(),
+      'TraceId': resultFlightData[0]['ItemId'].toString(),
       'LCC': resultFlightData[0]['IsLCC'].toString(),
-      'TripType': 'Roundtrip',
-      'UserId': '',
-      'AdultCount': '1',
-      'ChildCount': '0',
-      'InfantCount': '0',
-      'BookingCurrency': resultFlightData[0]['BookingCurrency'].toString(),
+      'TripType': 'OneWay',
+      'UserId': userID.toString(),
+      'UserTypeId': userTypeID.toString(),
+      'DefaultCurrency': resultFlightData[0]['BookingCurrency'].toString(),
+      'FromDate': formattedFromDate.toString(),
+      'AdultCount': widget.adultCount.toString(),
+      'ChildCount': widget.childrenCount.toString(),
+      'InfantCount': widget.infantCount.toString(),
+      'BookingCurrency': Currency.toString(),
       'BookingBaseFare': resultFlightData[0]['BookingBaseFare'].toString(),
       'BookingTax': resultFlightData[0]['BookingTax'].toString(),
       'BookingYQTax': resultFlightData[0]['BookingYQTax'].toString(),
@@ -117,17 +531,13 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
       'GSTCompanyName': '',
       'GSTNumber': '',
       'GSTCompanyEmail': '',
-      'TitleAdult1': 'Mrs',
-      'FNameAdult1': adultFname_controller.text.toString().isEmpty
-          ? 'A'
-          : adultFname_controller.text.toString(),
-      'LNameAdult1': adultLname_controller.text.toString().isEmpty
-          ? 'A'
-          : adultLname_controller.text.toString(),
-      'LDOBAdult1': '1990/01/01',
-      'GenderAdult1': '1',
-      'DocNumAdult1': '65757657655',
-      'ExpDateAdult1': '2025/01/01',
+      'TitleAdult1': selectedTitleAdult1.toString(),
+      'FNameAdult1': AdultName1.toString(),
+      'LNameAdult1': adultLname_controller.text.toString(),
+      'LDOBAdult1': formattedDate.toString(),
+      'GenderAdult1': Gendar.toString(),
+      'DocNumAdult1': Documentnumber_controller.text.toString(),
+      'ExpDateAdult1': ExpiryDateController.text.toString(),
       'TitleAdult2': '',
       'FNameAdult2': '',
       'LNameAdult2': '',
@@ -261,13 +671,14 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
       'GenderInfant5': '',
       'DocNumInfant5': '',
       'ExpDateInfant5': '',
-      'Address': contactAddressController.text,
-      'City': contactCityController.text,
+      'Address': contactAddressController.text.toString(),
+      'City': contactCityController.text.toString(),
       'CountryCode': 'IN',
-      'CountryName': 'India',
-      'MobileNumber': contactMobileController.text,
-      'Email': contactEmailController.text,
-      'AdultTravellerID1': '1002',
+      'CountryName': _CountryController.text.toString(),
+      'MobileNumber': contactMobileController.text.toString(),
+      'Email': contactEmailController.text.toString(),
+      'IsPassportRequired': 'True',
+      'AdultTravellerID1': AdultTravellerId1.toString(),
       'AdultTravellerID2': '',
       'AdultTravellerID3': '',
       'AdultTravellerID4': '',
@@ -276,33 +687,80 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
       'AdultTravellerID7': '',
       'AdultTravellerID8': '',
       'AdultTravellerID9': '',
-      'TravelPolicy': 'InPolicy',
-      'TravelPolicyId': '1008',
       'AdultTravellerID10': ''
     };
+    developer.log('ResultIndex: $resultIndex');
+    print('TraceId: $traceId');
+    print('LCC: True');
+    print('TripType: OneWay');
+    print('UserId: $userID');
+    print('UserTypeId: $userTypeID');
+    print('DefaultCurrency: $Currency');
+    print('FromDate: ${formattedFromDate.toString()}');
+    print('AdultCount: ${widget.adultCount}');
+    print('ChildCount: ${widget.childrenCount}');
+    print('InfantCount: ${widget.infantCount}');
+    print('BookingCurrency: ${resultFlightData[0]['BookingCurrency']}');
+    print('BookingBaseFare: ${resultFlightData[0]['BookingBaseFare']}');
+    print('BookingTax: ${resultFlightData[0]['BookingTax']}');
+    print('BookingYQTax: ${resultFlightData[0]['BookingYQTax']}');
+    print(
+        'BookingAdditionalTxnFeePub: ${resultFlightData[0]['BookingAdditionalTxnFeePub']}');
+    print(
+        'BookingAdditionalTxnFeeOfrd: ${resultFlightData[0]['BookingAdditionalTxnFeeOfrd']}');
+    print('BookingOtherCharges: ${resultFlightData[0]['BookingOtherCharges']}');
+    print('BookingDiscount: ${resultFlightData[0]['BookingDiscount']}');
+    print(
+        'BookingPublishedFare: ${resultFlightData[0]['BookingPublishedFare']}');
+    print('BookingOfferedFare: ${resultFlightData[0]['BookingOfferedFare']}');
+    print(
+        'BookingTdsOnCommission: ${resultFlightData[0]['BookingTdsOnCommission']}');
+    print('BookingTdsOnPLB: ${resultFlightData[0]['BookingTdsOnPLB']}');
+    print(
+        'BookingTdsOnIncentive: ${resultFlightData[0]['BookingTdsOnIncentive']}');
+    print('BookingServiceFee: ${resultFlightData[0]['BookingServiceFee']}');
+    print('GSTCompanyAddress: ');
+    print('GSTCompanyContactNumber: ');
+    print('GSTCompanyName: ');
+    print('GSTNumber: ');
+    print('GSTCompanyEmail: ');
+    print('TitleAdult1: $selectedTitleAdult1');
+    print('FNameAdult1: $AdultName1');
+    print(
+        'LNameAdult1: ${adultLname_controller.text.isEmpty ? 'A' : adultLname_controller.text}');
+    print('LDOBAdult1: ${formattedDate.toString()}');
+    print('GenderAdult1: $Gendar');
+    print('DocNumAdult1: ${Documentnumber_controller.text}');
+    print('ExpDateAdult1: ${ExpiryDateController.text}');
+// Repeat this pattern for all other fields
+
+    print('Address: ${contactAddressController.text}');
+    print('City: ${contactCityController.text}');
+    print('CountryCode: IN');
+    print('CountryName: India');
+    print('MobileNumber: ${contactMobileController.text}');
+    print('Email: ${contactEmailController.text}');
+    print('AdultTravellerID1:${AdultTravellerId1}');
+
     try {
       setState(() {
         isBookingLoading = true;
       });
-      //developer.log(reqBody.toString());
+
       final response = await http.post(
         url,
         headers: headers,
         body: reqBody,
       );
 
-      //developer.log(reqBody.toString());
-
       setState(() {
         isBookingLoading = false;
       });
       if (response.statusCode == 200) {
-        //print('Request successful! Response: ${response.body}');
-        developer.log(response.body);
-        // Handle the response data here
+        print('Response: ${response.body}');
       } else {
-        print(
-            'Request failed with status: ${response.statusCode} : ${response.body}');
+        print('Request failed with status: ${response.statusCode}');
+
         // Handle the failure scenario
       }
     } catch (error) {
@@ -323,6 +781,28 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
         json.decode(jsonString).cast<Map<String, dynamic>>();
 
     return jsonList;
+  }
+
+  TextEditingController dateController = TextEditingController();
+
+  void chooseDate() async {
+    DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: selectedDate.value,
+      firstDate: DateTime(1800),
+      lastDate: DateTime(2024),
+      helpText: 'Select DOB',
+      cancelText: 'Close',
+      confirmText: 'Confirm',
+      errorFormatText: 'Enter a valid date',
+      errorInvalidText: 'Enter a valid date range',
+      fieldLabelText: 'DOB',
+      fieldHintText: 'Month/Date/Year',
+    );
+    if (pickedDate != null && pickedDate != selectedDate.value) {
+      selectedDate.value = pickedDate;
+      dateController.text = DateFormat('dd/MM/yyyy').format(pickedDate);
+    }
   }
 
   Future<void> getAdivahaFlightDetails() async {
@@ -959,23 +1439,27 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                 padding: const EdgeInsets.all(8.0),
                                 child: Align(
                                   alignment: Alignment.topLeft,
-                                  child: Text("Adult 1:",
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 18)),
+                                  child: Text(
+                                    "Adult 1:",
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 18),
+                                  ),
                                 ),
                               ),
                               SizedBox(
-                                height: 15,
+                                height: 0,
                               ),
                               Padding(
                                 padding: const EdgeInsets.all(8.0),
                                 child: Align(
                                   alignment: Alignment.topLeft,
-                                  child: Text("Traveller details",
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 17)),
+                                  child: Text(
+                                    "Traveller details",
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 17),
+                                  ),
                                 ),
                               ),
                               Row(
@@ -983,10 +1467,10 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                 children: [
                                   Radio(
                                     value: 'Mr',
-                                    groupValue: selectedTitle,
+                                    groupValue: selectedTitleAdult1,
                                     onChanged: (value) {
                                       setState(() {
-                                        selectedTitle = value.toString();
+                                        selectedTitleAdult1 = value.toString();
                                       });
                                     },
                                   ),
@@ -995,10 +1479,10 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                           fontWeight: FontWeight.bold)),
                                   Radio(
                                     value: 'Mrs',
-                                    groupValue: selectedTitle,
+                                    groupValue: selectedTitleAdult1,
                                     onChanged: (value) {
                                       setState(() {
-                                        selectedTitle = value.toString();
+                                        selectedTitleAdult1 = value.toString();
                                       });
                                     },
                                   ),
@@ -1007,10 +1491,10 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                           fontWeight: FontWeight.bold)),
                                   Radio(
                                     value: 'Ms',
-                                    groupValue: selectedTitle,
+                                    groupValue: selectedTitleAdult1,
                                     onChanged: (value) {
                                       setState(() {
-                                        selectedTitle = value.toString();
+                                        selectedTitleAdult1 = value.toString();
                                       });
                                     },
                                   ),
@@ -1024,56 +1508,98 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                     MainAxisAlignment.spaceBetween,
                                 children: [
                                   Padding(
-                                    padding: const EdgeInsets.only(
-                                        right: 10, left: 10),
+                                    padding: const EdgeInsets.only(left: 10),
                                     child: Container(
-                                      width: 135,
+                                      width: 150,
                                       height: 50,
-                                      child: TextFormField(
-                                        controller: adultFname_controller,
-                                        decoration: InputDecoration(
-                                          label: const Text('FirstName'),
-                                          hintText: 'First Name',
-                                          enabledBorder: OutlineInputBorder(
-                                            borderSide: const BorderSide(
-                                                color: Colors.grey),
-                                            borderRadius:
-                                                BorderRadius.circular(5),
-                                          ),
-                                          focusedBorder: OutlineInputBorder(
-                                            borderSide: const BorderSide(
-                                              color: Colors.black,
-                                              width: 1.5,
+                                      child:
+                                          Autocomplete<TravellerDetailsModel>(
+                                        optionsBuilder: (TextEditingValue
+                                            textEditingValue) async {
+                                          if (textEditingValue.text.isEmpty) {
+                                            return const Iterable<
+                                                TravellerDetailsModel>.empty();
+                                          }
+                                          return await fetchAutocompleteData(
+                                              textEditingValue.text);
+                                        },
+                                        displayStringForOption:
+                                            (TravellerDetailsModel option) =>
+                                                '${option.name}',
+                                        onSelected: (TravellerDetailsModel?
+                                            selectedOption) {
+                                          if (selectedOption != null) {
+                                            print(
+                                                'Selected: ${selectedOption.name}');
+                                            setState(() async {
+                                              await callSecondApi(
+                                                  selectedOption.id);
+                                              setState(() {
+                                                AdultName1 =
+                                                    selectedOption.name;
+                                                AdultTravellerId1 =
+                                                    selectedOption.id;
+                                              });
+                                            });
+                                          }
+                                        },
+                                        fieldViewBuilder: (BuildContext context,
+                                            TextEditingController
+                                                textEditingController,
+                                            FocusNode focusNode,
+                                            VoidCallback onFieldSubmitted) {
+                                          return TextFormField(
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.w500,
+                                                fontSize: 14),
+                                            controller: textEditingController,
+                                            focusNode: focusNode,
+                                            onFieldSubmitted: (value) {
+                                              onFieldSubmitted();
+                                            },
+                                            decoration: InputDecoration(
+                                              label: const Text('First Name'),
+                                              hintText: 'First Name',
+                                              enabledBorder: OutlineInputBorder(
+                                                borderSide: const BorderSide(
+                                                    color: Colors.grey),
+                                                borderRadius:
+                                                    BorderRadius.circular(5),
+                                              ),
+                                              focusedBorder: OutlineInputBorder(
+                                                borderSide: const BorderSide(
+                                                    color: Colors.black,
+                                                    width: 1.5),
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
+                                              ),
+                                              labelStyle: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                              errorBorder: OutlineInputBorder(
+                                                borderSide: const BorderSide(
+                                                    color: Colors.red,
+                                                    width: 2),
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
+                                              ),
                                             ),
-                                            borderRadius:
-                                                BorderRadius.circular(10),
-                                          ),
-                                          labelStyle: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                          errorBorder: OutlineInputBorder(
-                                            borderSide: const BorderSide(
-                                              color: Colors.red,
-                                              width: 2,
-                                            ),
-                                            borderRadius:
-                                                BorderRadius.circular(10),
-                                          ),
-                                        ),
+                                          );
+                                        },
                                       ),
                                     ),
                                   ),
-
                                   SizedBox(
-                                      width:
-                                          10), // Adjust the space between the text fields
-
+                                    width: 10,
+                                  ),
                                   Padding(
                                     padding: const EdgeInsets.only(right: 10),
                                     child: Container(
                                       width: 150,
                                       height: 50,
                                       child: TextFormField(
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.w500),
                                         controller: adultLname_controller,
                                         decoration: InputDecoration(
                                           label: const Text('SurName'),
@@ -1086,9 +1612,8 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                           ),
                                           focusedBorder: OutlineInputBorder(
                                             borderSide: const BorderSide(
-                                              color: Colors.black,
-                                              width: 1.5,
-                                            ),
+                                                color: Colors.black,
+                                                width: 1.5),
                                             borderRadius:
                                                 BorderRadius.circular(10),
                                           ),
@@ -1097,9 +1622,7 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                           ),
                                           errorBorder: OutlineInputBorder(
                                             borderSide: const BorderSide(
-                                              color: Colors.red,
-                                              width: 2,
-                                            ),
+                                                color: Colors.red, width: 2),
                                             borderRadius:
                                                 BorderRadius.circular(10),
                                           ),
@@ -1119,16 +1642,18 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                   height: 50,
                                   child: TextField(
                                     onTap: () {
-                                      chooseDate();
+                                      _selectDateAdult1(context);
                                     },
-                                    controller: dateController,
+                                    controller: dateControllerAdult1,
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.w500),
                                     readOnly: true,
                                     decoration: InputDecoration(
                                       label: const Text('DOB'),
                                       hintText: 'DOB',
                                       prefixIcon: GestureDetector(
                                         onTap: () {
-                                          chooseDate();
+                                          _selectDateAdult1(context);
                                         },
                                         child: Image.asset(
                                           'assets/images/calendar.png',
@@ -1143,9 +1668,7 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                       ),
                                       focusedBorder: OutlineInputBorder(
                                         borderSide: const BorderSide(
-                                          color: Colors.black,
-                                          width: 1.5,
-                                        ),
+                                            color: Colors.black, width: 1.5),
                                         borderRadius: BorderRadius.circular(10),
                                       ),
                                       labelStyle: TextStyle(
@@ -1153,9 +1676,7 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                       ),
                                       errorBorder: OutlineInputBorder(
                                         borderSide: const BorderSide(
-                                          color: Colors.red,
-                                          width: 2,
-                                        ),
+                                            color: Colors.red, width: 2),
                                         borderRadius: BorderRadius.circular(10),
                                       ),
                                     ),
@@ -1165,53 +1686,147 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                               SizedBox(
                                 height: 20,
                               ),
-                              Padding(
-                                padding:
-                                    const EdgeInsets.only(left: 10, right: 10),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    border: Border.all(
-                                      color: Colors.grey,
-                                      width: 1.0,
+                              Visibility(
+                                visible:
+                                    Status == 2, // Show or hide based on status
+                                child: Column(
+                                  children: [
+                                    // Fields to show when status is 1
+                                    // Modify or add more fields as needed
+                                    Padding(
+                                      padding: const EdgeInsets.only(
+                                          left: 10, right: 10),
+                                      child: Container(
+                                        height: 50,
+                                        child: TextFormField(
+                                          controller: Documentype_controller,
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.w500),
+                                          decoration: InputDecoration(
+                                            label: const Text('Document Type'),
+                                            hintText: 'Document Type',
+                                            enabledBorder: OutlineInputBorder(
+                                              borderSide: const BorderSide(
+                                                  color: Colors.grey),
+                                              borderRadius:
+                                                  BorderRadius.circular(5),
+                                            ),
+                                            focusedBorder: OutlineInputBorder(
+                                              borderSide: const BorderSide(
+                                                  color: Colors.black,
+                                                  width: 1.5),
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                            labelStyle: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                            errorBorder: OutlineInputBorder(
+                                              borderSide: const BorderSide(
+                                                  color: Colors.red, width: 2),
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
                                     ),
-                                    borderRadius: BorderRadius.circular(5.0),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    children: [
-                                      Radio(
-                                        value: 'Male',
-                                        groupValue: selectedGendar,
-                                        onChanged: (value) {
-                                          setState(() {
-                                            selectedGendar = value.toString();
-                                          });
-                                        },
-                                      ),
-                                      Text('Male.',
+                                    SizedBox(
+                                      height: 20,
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.only(
+                                          left: 10, right: 10),
+                                      child: Container(
+                                        height: 50,
+                                        child: TextFormField(
                                           style: TextStyle(
-                                              fontWeight: FontWeight.bold)),
-                                      Radio(
-                                        value: 'Female',
-                                        groupValue: selectedGendar,
-                                        onChanged: (value) {
-                                          setState(() {
-                                            selectedGendar = value.toString();
-                                          });
-                                        },
+                                              fontWeight: FontWeight.w500),
+                                          controller: Documentnumber_controller,
+                                          decoration: InputDecoration(
+                                            label:
+                                                const Text('Document Number'),
+                                            hintText: 'Document Number',
+                                            enabledBorder: OutlineInputBorder(
+                                              borderSide: const BorderSide(
+                                                  color: Colors.grey),
+                                              borderRadius:
+                                                  BorderRadius.circular(5),
+                                            ),
+                                            focusedBorder: OutlineInputBorder(
+                                              borderSide: const BorderSide(
+                                                  color: Colors.black,
+                                                  width: 1.5),
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                            labelStyle: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                            errorBorder: OutlineInputBorder(
+                                              borderSide: const BorderSide(
+                                                  color: Colors.red, width: 2),
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                          ),
+                                        ),
                                       ),
-                                      Text('Female.',
+                                    ),
+                                    SizedBox(
+                                      height: 20,
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.only(
+                                          left: 10, right: 10),
+                                      child: Container(
+                                        height: 50,
+                                        child: TextField(
+                                          onTap: () {
+                                            _selectExpiryDate(context);
+                                          },
                                           style: TextStyle(
-                                              fontWeight: FontWeight.bold)),
-                                    ],
-                                  ),
+                                              fontWeight: FontWeight.w500),
+                                          controller: ExpiryDateController,
+                                          readOnly: true,
+                                          decoration: InputDecoration(
+                                            label: const Text('Expiry Date'),
+                                            hintText: 'Expiry Date',
+                                            enabledBorder: OutlineInputBorder(
+                                              borderSide: const BorderSide(
+                                                  color: Colors.grey),
+                                              borderRadius:
+                                                  BorderRadius.circular(5),
+                                            ),
+                                            focusedBorder: OutlineInputBorder(
+                                              borderSide: const BorderSide(
+                                                  color: Colors.black,
+                                                  width: 1.5),
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                            labelStyle: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                            errorBorder: OutlineInputBorder(
+                                              borderSide: const BorderSide(
+                                                  color: Colors.red, width: 2),
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      height: 20,
+                                    ),
+                                  ],
                                 ),
-                              ),
-                              SizedBox(
-                                height: 20,
                               ),
                             ],
                           ),
+
                           int.parse(widget.adultCount) > 1
                               ? Column(
                                   children: [
@@ -1244,10 +1859,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                       children: [
                                         Radio(
                                           value: 'Mr',
-                                          groupValue: selectedTitle,
+                                          groupValue: selectedTitleAdult2,
                                           onChanged: (value) {
                                             setState(() {
-                                              selectedTitle = value.toString();
+                                              selectedTitleAdult2 =
+                                                  value.toString();
                                             });
                                           },
                                         ),
@@ -1256,10 +1872,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                                 fontWeight: FontWeight.bold)),
                                         Radio(
                                           value: 'Mrs',
-                                          groupValue: selectedTitle,
+                                          groupValue: selectedTitleAdult2,
                                           onChanged: (value) {
                                             setState(() {
-                                              selectedTitle = value.toString();
+                                              selectedTitleAdult2 =
+                                                  value.toString();
                                             });
                                           },
                                         ),
@@ -1268,10 +1885,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                                 fontWeight: FontWeight.bold)),
                                         Radio(
                                           value: 'Ms',
-                                          groupValue: selectedTitle,
+                                          groupValue: selectedTitleAdult2,
                                           onChanged: (value) {
                                             setState(() {
-                                              selectedTitle = value.toString();
+                                              selectedTitleAdult2 =
+                                                  value.toString();
                                             });
                                           },
                                         ),
@@ -1382,16 +2000,16 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                         height: 50,
                                         child: TextField(
                                           onTap: () {
-                                            chooseDate();
+                                            _selectDateAdult2(context);
                                           },
-                                          controller: dateController,
+                                          controller: dateControllerAdult2,
                                           readOnly: true,
                                           decoration: InputDecoration(
                                             label: const Text('DOB'),
                                             hintText: 'DOB',
                                             prefixIcon: GestureDetector(
                                               onTap: () {
-                                                chooseDate();
+                                                _selectDateAdult2(context);
                                               },
                                               child: Image.asset(
                                                 'assets/images/calendar.png',
@@ -1449,10 +2067,10 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                           children: [
                                             Radio(
                                               value: 'Male',
-                                              groupValue: selectedTitle,
+                                              groupValue: selectedGendarAdult2,
                                               onChanged: (value) {
                                                 setState(() {
-                                                  selectedTitle =
+                                                  selectedGendarAdult2 =
                                                       value.toString();
                                                 });
                                               },
@@ -1463,10 +2081,10 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                                         FontWeight.bold)),
                                             Radio(
                                               value: 'Female',
-                                              groupValue: selectedTitle,
+                                              groupValue: selectedGendarAdult2,
                                               onChanged: (value) {
                                                 setState(() {
-                                                  selectedTitle =
+                                                  selectedGendarAdult2 =
                                                       value.toString();
                                                 });
                                               },
@@ -1481,6 +2099,182 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                     ),
                                     SizedBox(
                                       height: 20,
+                                    ),
+                                    Visibility(
+                                      visible: Status ==
+                                          2, // Show or hide based on status
+                                      child: Column(
+                                        children: [
+                                          // Fields to show when status is 1
+                                          // Modify or add more fields as needed
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                                left: 10, right: 10),
+                                            child: Container(
+                                              height: 50,
+                                              child: TextFormField(
+                                                controller:
+                                                    Documentype_controller,
+                                                style: TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.w500),
+                                                decoration: InputDecoration(
+                                                  label: const Text(
+                                                      'Document Type'),
+                                                  hintText: 'Document Type',
+                                                  enabledBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.grey),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            5),
+                                                  ),
+                                                  focusedBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.black,
+                                                            width: 1.5),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                  labelStyle: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                  errorBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.red,
+                                                            width: 2),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(
+                                            height: 20,
+                                          ),
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                                left: 10, right: 10),
+                                            child: Container(
+                                              height: 50,
+                                              child: TextFormField(
+                                                style: TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.w500),
+                                                controller:
+                                                    Documentnumber_controller,
+                                                decoration: InputDecoration(
+                                                  label: const Text(
+                                                      'Document Number'),
+                                                  hintText: 'Document Number',
+                                                  enabledBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.grey),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            5),
+                                                  ),
+                                                  focusedBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.black,
+                                                            width: 1.5),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                  labelStyle: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                  errorBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.red,
+                                                            width: 2),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(
+                                            height: 20,
+                                          ),
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                                left: 10, right: 10),
+                                            child: Container(
+                                              height: 50,
+                                              child: TextField(
+                                                onTap: () {
+                                                  _selectExpiryDate(context);
+                                                },
+                                                style: TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.w500),
+                                                controller:
+                                                    ExpiryDateController,
+                                                readOnly: true,
+                                                decoration: InputDecoration(
+                                                  label:
+                                                      const Text('Expiry Date'),
+                                                  hintText: 'Expiry Date',
+                                                  enabledBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.grey),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            5),
+                                                  ),
+                                                  focusedBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.black,
+                                                            width: 1.5),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                  labelStyle: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                  errorBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.red,
+                                                            width: 2),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(
+                                            height: 20,
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ],
                                 )
@@ -1517,10 +2311,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                       children: [
                                         Radio(
                                           value: 'Mr',
-                                          groupValue: selectedTitle,
+                                          groupValue: selectedTitleAdult3,
                                           onChanged: (value) {
                                             setState(() {
-                                              selectedTitle = value.toString();
+                                              selectedTitleAdult3 =
+                                                  value.toString();
                                             });
                                           },
                                         ),
@@ -1529,10 +2324,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                                 fontWeight: FontWeight.bold)),
                                         Radio(
                                           value: 'Mrs',
-                                          groupValue: selectedTitle,
+                                          groupValue: selectedTitleAdult3,
                                           onChanged: (value) {
                                             setState(() {
-                                              selectedTitle = value.toString();
+                                              selectedTitleAdult3 =
+                                                  value.toString();
                                             });
                                           },
                                         ),
@@ -1541,10 +2337,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                                 fontWeight: FontWeight.bold)),
                                         Radio(
                                           value: 'Ms',
-                                          groupValue: selectedTitle,
+                                          groupValue: selectedTitleAdult3,
                                           onChanged: (value) {
                                             setState(() {
-                                              selectedTitle = value.toString();
+                                              selectedTitleAdult3 =
+                                                  value.toString();
                                             });
                                           },
                                         ),
@@ -1655,16 +2452,16 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                         height: 50,
                                         child: TextField(
                                           onTap: () {
-                                            chooseDate();
+                                            _selectDateAdult3(context);
                                           },
-                                          controller: dateController,
+                                          controller: dateControllerAdult3,
                                           readOnly: true,
                                           decoration: InputDecoration(
                                             label: const Text('DOB'),
                                             hintText: 'DOB',
                                             prefixIcon: GestureDetector(
                                               onTap: () {
-                                                chooseDate();
+                                                _selectDateAdult3(context);
                                               },
                                               child: Image.asset(
                                                 'assets/images/calendar.png',
@@ -1722,10 +2519,10 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                           children: [
                                             Radio(
                                               value: 'Male',
-                                              groupValue: selectedTitle,
+                                              groupValue: selectedGendarAdult3,
                                               onChanged: (value) {
                                                 setState(() {
-                                                  selectedTitle =
+                                                  selectedGendarAdult3 =
                                                       value.toString();
                                                 });
                                               },
@@ -1736,10 +2533,10 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                                         FontWeight.bold)),
                                             Radio(
                                               value: 'Female',
-                                              groupValue: selectedTitle,
+                                              groupValue: selectedGendarAdult3,
                                               onChanged: (value) {
                                                 setState(() {
-                                                  selectedTitle =
+                                                  selectedGendarAdult3 =
                                                       value.toString();
                                                 });
                                               },
@@ -1754,6 +2551,182 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                     ),
                                     SizedBox(
                                       height: 20,
+                                    ),
+                                    Visibility(
+                                      visible: Status ==
+                                          2, // Show or hide based on status
+                                      child: Column(
+                                        children: [
+                                          // Fields to show when status is 1
+                                          // Modify or add more fields as needed
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                                left: 10, right: 10),
+                                            child: Container(
+                                              height: 50,
+                                              child: TextFormField(
+                                                controller:
+                                                    Documentype_controller,
+                                                style: TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.w500),
+                                                decoration: InputDecoration(
+                                                  label: const Text(
+                                                      'Document Type'),
+                                                  hintText: 'Document Type',
+                                                  enabledBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.grey),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            5),
+                                                  ),
+                                                  focusedBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.black,
+                                                            width: 1.5),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                  labelStyle: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                  errorBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.red,
+                                                            width: 2),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(
+                                            height: 20,
+                                          ),
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                                left: 10, right: 10),
+                                            child: Container(
+                                              height: 50,
+                                              child: TextFormField(
+                                                style: TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.w500),
+                                                controller:
+                                                    Documentnumber_controller,
+                                                decoration: InputDecoration(
+                                                  label: const Text(
+                                                      'Document Number'),
+                                                  hintText: 'Document Number',
+                                                  enabledBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.grey),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            5),
+                                                  ),
+                                                  focusedBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.black,
+                                                            width: 1.5),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                  labelStyle: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                  errorBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.red,
+                                                            width: 2),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(
+                                            height: 20,
+                                          ),
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                                left: 10, right: 10),
+                                            child: Container(
+                                              height: 50,
+                                              child: TextField(
+                                                onTap: () {
+                                                  _selectExpiryDate(context);
+                                                },
+                                                style: TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.w500),
+                                                controller:
+                                                    ExpiryDateController,
+                                                readOnly: true,
+                                                decoration: InputDecoration(
+                                                  label:
+                                                      const Text('Expiry Date'),
+                                                  hintText: 'Expiry Date',
+                                                  enabledBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.grey),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            5),
+                                                  ),
+                                                  focusedBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.black,
+                                                            width: 1.5),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                  labelStyle: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                  errorBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.red,
+                                                            width: 2),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(
+                                            height: 20,
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ],
                                 )
@@ -1790,10 +2763,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                       children: [
                                         Radio(
                                           value: 'Mr',
-                                          groupValue: selectedTitle,
+                                          groupValue: selectedTitleAdult4,
                                           onChanged: (value) {
                                             setState(() {
-                                              selectedTitle = value.toString();
+                                              selectedTitleAdult4 =
+                                                  value.toString();
                                             });
                                           },
                                         ),
@@ -1802,10 +2776,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                                 fontWeight: FontWeight.bold)),
                                         Radio(
                                           value: 'Mrs',
-                                          groupValue: selectedTitle,
+                                          groupValue: selectedTitleAdult4,
                                           onChanged: (value) {
                                             setState(() {
-                                              selectedTitle = value.toString();
+                                              selectedTitleAdult4 =
+                                                  value.toString();
                                             });
                                           },
                                         ),
@@ -1814,10 +2789,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                                 fontWeight: FontWeight.bold)),
                                         Radio(
                                           value: 'Ms',
-                                          groupValue: selectedTitle,
+                                          groupValue: selectedTitleAdult4,
                                           onChanged: (value) {
                                             setState(() {
-                                              selectedTitle = value.toString();
+                                              selectedTitleAdult4 =
+                                                  value.toString();
                                             });
                                           },
                                         ),
@@ -1928,16 +2904,16 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                         height: 50,
                                         child: TextField(
                                           onTap: () {
-                                            chooseDate();
+                                            _selectDateAdult4(context);
                                           },
-                                          controller: dateController,
+                                          controller: dateControllerAdult4,
                                           readOnly: true,
                                           decoration: InputDecoration(
                                             label: const Text('DOB'),
                                             hintText: 'DOB',
                                             prefixIcon: GestureDetector(
                                               onTap: () {
-                                                chooseDate();
+                                                _selectDateAdult4(context);
                                               },
                                               child: Image.asset(
                                                 'assets/images/calendar.png',
@@ -1995,10 +2971,10 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                           children: [
                                             Radio(
                                               value: 'Male',
-                                              groupValue: selectedTitle,
+                                              groupValue: selectedGendarAdult4,
                                               onChanged: (value) {
                                                 setState(() {
-                                                  selectedTitle =
+                                                  selectedGendarAdult4 =
                                                       value.toString();
                                                 });
                                               },
@@ -2009,10 +2985,10 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                                         FontWeight.bold)),
                                             Radio(
                                               value: 'Female',
-                                              groupValue: selectedTitle,
+                                              groupValue: selectedGendarAdult4,
                                               onChanged: (value) {
                                                 setState(() {
-                                                  selectedTitle =
+                                                  selectedGendarAdult4 =
                                                       value.toString();
                                                 });
                                               },
@@ -2027,6 +3003,182 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                     ),
                                     SizedBox(
                                       height: 20,
+                                    ),
+                                    Visibility(
+                                      visible: Status ==
+                                          2, // Show or hide based on status
+                                      child: Column(
+                                        children: [
+                                          // Fields to show when status is 1
+                                          // Modify or add more fields as needed
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                                left: 10, right: 10),
+                                            child: Container(
+                                              height: 50,
+                                              child: TextFormField(
+                                                controller:
+                                                    Documentype_controller,
+                                                style: TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.w500),
+                                                decoration: InputDecoration(
+                                                  label: const Text(
+                                                      'Document Type'),
+                                                  hintText: 'Document Type',
+                                                  enabledBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.grey),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            5),
+                                                  ),
+                                                  focusedBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.black,
+                                                            width: 1.5),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                  labelStyle: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                  errorBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.red,
+                                                            width: 2),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(
+                                            height: 20,
+                                          ),
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                                left: 10, right: 10),
+                                            child: Container(
+                                              height: 50,
+                                              child: TextFormField(
+                                                style: TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.w500),
+                                                controller:
+                                                    Documentnumber_controller,
+                                                decoration: InputDecoration(
+                                                  label: const Text(
+                                                      'Document Number'),
+                                                  hintText: 'Document Number',
+                                                  enabledBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.grey),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            5),
+                                                  ),
+                                                  focusedBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.black,
+                                                            width: 1.5),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                  labelStyle: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                  errorBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.red,
+                                                            width: 2),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(
+                                            height: 20,
+                                          ),
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                                left: 10, right: 10),
+                                            child: Container(
+                                              height: 50,
+                                              child: TextField(
+                                                onTap: () {
+                                                  _selectExpiryDate(context);
+                                                },
+                                                style: TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.w500),
+                                                controller:
+                                                    ExpiryDateController,
+                                                readOnly: true,
+                                                decoration: InputDecoration(
+                                                  label:
+                                                      const Text('Expiry Date'),
+                                                  hintText: 'Expiry Date',
+                                                  enabledBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.grey),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            5),
+                                                  ),
+                                                  focusedBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.black,
+                                                            width: 1.5),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                  labelStyle: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                  errorBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.red,
+                                                            width: 2),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(
+                                            height: 20,
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ],
                                 )
@@ -2063,10 +3215,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                       children: [
                                         Radio(
                                           value: 'Mr',
-                                          groupValue: selectedTitle,
+                                          groupValue: selectedTitleAdult5,
                                           onChanged: (value) {
                                             setState(() {
-                                              selectedTitle = value.toString();
+                                              selectedTitleAdult5 =
+                                                  value.toString();
                                             });
                                           },
                                         ),
@@ -2075,10 +3228,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                                 fontWeight: FontWeight.bold)),
                                         Radio(
                                           value: 'Mrs',
-                                          groupValue: selectedTitle,
+                                          groupValue: selectedTitleAdult5,
                                           onChanged: (value) {
                                             setState(() {
-                                              selectedTitle = value.toString();
+                                              selectedTitleAdult5 =
+                                                  value.toString();
                                             });
                                           },
                                         ),
@@ -2087,10 +3241,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                                 fontWeight: FontWeight.bold)),
                                         Radio(
                                           value: 'Ms',
-                                          groupValue: selectedTitle,
+                                          groupValue: selectedTitleAdult5,
                                           onChanged: (value) {
                                             setState(() {
-                                              selectedTitle = value.toString();
+                                              selectedTitleAdult5 =
+                                                  value.toString();
                                             });
                                           },
                                         ),
@@ -2201,16 +3356,16 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                         height: 50,
                                         child: TextField(
                                           onTap: () {
-                                            chooseDate();
+                                            _selectDateAdult5(context);
                                           },
-                                          controller: dateController,
+                                          controller: dateControllerAdult5,
                                           readOnly: true,
                                           decoration: InputDecoration(
                                             label: const Text('DOB'),
                                             hintText: 'DOB',
                                             prefixIcon: GestureDetector(
                                               onTap: () {
-                                                chooseDate();
+                                                _selectDateAdult5(context);
                                               },
                                               child: Image.asset(
                                                 'assets/images/calendar.png',
@@ -2268,10 +3423,10 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                           children: [
                                             Radio(
                                               value: 'Male',
-                                              groupValue: selectedTitle,
+                                              groupValue: selectedGendarAdult5,
                                               onChanged: (value) {
                                                 setState(() {
-                                                  selectedTitle =
+                                                  selectedGendarAdult5 =
                                                       value.toString();
                                                 });
                                               },
@@ -2282,10 +3437,10 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                                         FontWeight.bold)),
                                             Radio(
                                               value: 'Female',
-                                              groupValue: selectedTitle,
+                                              groupValue: selectedGendarAdult5,
                                               onChanged: (value) {
                                                 setState(() {
-                                                  selectedTitle =
+                                                  selectedGendarAdult5 =
                                                       value.toString();
                                                 });
                                               },
@@ -2300,6 +3455,182 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                     ),
                                     SizedBox(
                                       height: 20,
+                                    ),
+                                    Visibility(
+                                      visible: Status ==
+                                          2, // Show or hide based on status
+                                      child: Column(
+                                        children: [
+                                          // Fields to show when status is 1
+                                          // Modify or add more fields as needed
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                                left: 10, right: 10),
+                                            child: Container(
+                                              height: 50,
+                                              child: TextFormField(
+                                                controller:
+                                                    Documentype_controller,
+                                                style: TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.w500),
+                                                decoration: InputDecoration(
+                                                  label: const Text(
+                                                      'Document Type'),
+                                                  hintText: 'Document Type',
+                                                  enabledBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.grey),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            5),
+                                                  ),
+                                                  focusedBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.black,
+                                                            width: 1.5),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                  labelStyle: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                  errorBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.red,
+                                                            width: 2),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(
+                                            height: 20,
+                                          ),
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                                left: 10, right: 10),
+                                            child: Container(
+                                              height: 50,
+                                              child: TextFormField(
+                                                style: TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.w500),
+                                                controller:
+                                                    Documentnumber_controller,
+                                                decoration: InputDecoration(
+                                                  label: const Text(
+                                                      'Document Number'),
+                                                  hintText: 'Document Number',
+                                                  enabledBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.grey),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            5),
+                                                  ),
+                                                  focusedBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.black,
+                                                            width: 1.5),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                  labelStyle: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                  errorBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.red,
+                                                            width: 2),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(
+                                            height: 20,
+                                          ),
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                                left: 10, right: 10),
+                                            child: Container(
+                                              height: 50,
+                                              child: TextField(
+                                                onTap: () {
+                                                  _selectExpiryDate(context);
+                                                },
+                                                style: TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.w500),
+                                                controller:
+                                                    ExpiryDateController,
+                                                readOnly: true,
+                                                decoration: InputDecoration(
+                                                  label:
+                                                      const Text('Expiry Date'),
+                                                  hintText: 'Expiry Date',
+                                                  enabledBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.grey),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            5),
+                                                  ),
+                                                  focusedBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.black,
+                                                            width: 1.5),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                  labelStyle: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                  errorBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.red,
+                                                            width: 2),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(
+                                            height: 20,
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ],
                                 )
@@ -2339,10 +3670,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                       children: [
                                         Radio(
                                           value: 'Mr',
-                                          groupValue: selectedTitle,
+                                          groupValue: selectedTitleChildren1,
                                           onChanged: (value) {
                                             setState(() {
-                                              selectedTitle = value.toString();
+                                              selectedTitleChildren1 =
+                                                  value.toString();
                                             });
                                           },
                                         ),
@@ -2351,10 +3683,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                                 fontWeight: FontWeight.bold)),
                                         Radio(
                                           value: 'Mrs',
-                                          groupValue: selectedTitle,
+                                          groupValue: selectedTitleChildren1,
                                           onChanged: (value) {
                                             setState(() {
-                                              selectedTitle = value.toString();
+                                              selectedTitleChildren1 =
+                                                  value.toString();
                                             });
                                           },
                                         ),
@@ -2363,10 +3696,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                                 fontWeight: FontWeight.bold)),
                                         Radio(
                                           value: 'Ms',
-                                          groupValue: selectedTitle,
+                                          groupValue: selectedTitleChildren1,
                                           onChanged: (value) {
                                             setState(() {
-                                              selectedTitle = value.toString();
+                                              selectedTitleChildren1 =
+                                                  value.toString();
                                             });
                                           },
                                         ),
@@ -2477,16 +3811,16 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                         height: 50,
                                         child: TextField(
                                           onTap: () {
-                                            chooseDate();
+                                            _selectDateChildren1(context);
                                           },
-                                          controller: dateController,
+                                          controller: dateControllerChildren1,
                                           readOnly: true,
                                           decoration: InputDecoration(
                                             label: const Text('DOB'),
                                             hintText: 'DOB',
                                             prefixIcon: GestureDetector(
                                               onTap: () {
-                                                chooseDate();
+                                                _selectDateChildren1(context);
                                               },
                                               child: Image.asset(
                                                 'assets/images/calendar.png',
@@ -2544,10 +3878,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                           children: [
                                             Radio(
                                               value: 'Male',
-                                              groupValue: selectedTitle,
+                                              groupValue:
+                                                  selectedGendarChildren1,
                                               onChanged: (value) {
                                                 setState(() {
-                                                  selectedTitle =
+                                                  selectedGendarChildren1 =
                                                       value.toString();
                                                 });
                                               },
@@ -2558,10 +3893,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                                         FontWeight.bold)),
                                             Radio(
                                               value: 'Female',
-                                              groupValue: selectedTitle,
+                                              groupValue:
+                                                  selectedGendarChildren1,
                                               onChanged: (value) {
                                                 setState(() {
-                                                  selectedTitle =
+                                                  selectedGendarChildren1 =
                                                       value.toString();
                                                 });
                                               },
@@ -2612,10 +3948,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                       children: [
                                         Radio(
                                           value: 'Mr',
-                                          groupValue: selectedTitle,
+                                          groupValue: selectedTitleChildren2,
                                           onChanged: (value) {
                                             setState(() {
-                                              selectedTitle = value.toString();
+                                              selectedTitleChildren2 =
+                                                  value.toString();
                                             });
                                           },
                                         ),
@@ -2624,10 +3961,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                                 fontWeight: FontWeight.bold)),
                                         Radio(
                                           value: 'Mrs',
-                                          groupValue: selectedTitle,
+                                          groupValue: selectedTitleChildren2,
                                           onChanged: (value) {
                                             setState(() {
-                                              selectedTitle = value.toString();
+                                              selectedTitleChildren2 =
+                                                  value.toString();
                                             });
                                           },
                                         ),
@@ -2636,10 +3974,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                                 fontWeight: FontWeight.bold)),
                                         Radio(
                                           value: 'Ms',
-                                          groupValue: selectedTitle,
+                                          groupValue: selectedTitleChildren2,
                                           onChanged: (value) {
                                             setState(() {
-                                              selectedTitle = value.toString();
+                                              selectedTitleChildren2 =
+                                                  value.toString();
                                             });
                                           },
                                         ),
@@ -2750,16 +4089,16 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                         height: 50,
                                         child: TextField(
                                           onTap: () {
-                                            chooseDate();
+                                            _selectDateChildren2(context);
                                           },
-                                          controller: dateController,
+                                          controller: dateControllerChildren2,
                                           readOnly: true,
                                           decoration: InputDecoration(
                                             label: const Text('DOB'),
                                             hintText: 'DOB',
                                             prefixIcon: GestureDetector(
                                               onTap: () {
-                                                chooseDate();
+                                                _selectDateChildren2(context);
                                               },
                                               child: Image.asset(
                                                 'assets/images/calendar.png',
@@ -2817,10 +4156,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                           children: [
                                             Radio(
                                               value: 'Male',
-                                              groupValue: selectedTitle,
+                                              groupValue:
+                                                  selectedGendarChildren2,
                                               onChanged: (value) {
                                                 setState(() {
-                                                  selectedTitle =
+                                                  selectedGendarChildren2 =
                                                       value.toString();
                                                 });
                                               },
@@ -2831,10 +4171,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                                         FontWeight.bold)),
                                             Radio(
                                               value: 'Female',
-                                              groupValue: selectedTitle,
+                                              groupValue:
+                                                  selectedGendarChildren2,
                                               onChanged: (value) {
                                                 setState(() {
-                                                  selectedTitle =
+                                                  selectedGendarChildren2 =
                                                       value.toString();
                                                 });
                                               },
@@ -2885,10 +4226,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                       children: [
                                         Radio(
                                           value: 'Mr',
-                                          groupValue: selectedTitle,
+                                          groupValue: selectedTitleChildren3,
                                           onChanged: (value) {
                                             setState(() {
-                                              selectedTitle = value.toString();
+                                              selectedTitleChildren3 =
+                                                  value.toString();
                                             });
                                           },
                                         ),
@@ -2897,10 +4239,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                                 fontWeight: FontWeight.bold)),
                                         Radio(
                                           value: 'Mrs',
-                                          groupValue: selectedTitle,
+                                          groupValue: selectedTitleChildren3,
                                           onChanged: (value) {
                                             setState(() {
-                                              selectedTitle = value.toString();
+                                              selectedTitleChildren3 =
+                                                  value.toString();
                                             });
                                           },
                                         ),
@@ -2909,10 +4252,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                                 fontWeight: FontWeight.bold)),
                                         Radio(
                                           value: 'Ms',
-                                          groupValue: selectedTitle,
+                                          groupValue: selectedTitleChildren3,
                                           onChanged: (value) {
                                             setState(() {
-                                              selectedTitle = value.toString();
+                                              selectedTitleChildren3 =
+                                                  value.toString();
                                             });
                                           },
                                         ),
@@ -3023,16 +4367,16 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                         height: 50,
                                         child: TextField(
                                           onTap: () {
-                                            chooseDate();
+                                            _selectDateChildren3(context);
                                           },
-                                          controller: dateController,
+                                          controller: dateControllerChildren3,
                                           readOnly: true,
                                           decoration: InputDecoration(
                                             label: const Text('DOB'),
                                             hintText: 'DOB',
                                             prefixIcon: GestureDetector(
                                               onTap: () {
-                                                chooseDate();
+                                                _selectDateChildren3(context);
                                               },
                                               child: Image.asset(
                                                 'assets/images/calendar.png',
@@ -3090,10 +4434,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                           children: [
                                             Radio(
                                               value: 'Male',
-                                              groupValue: selectedTitle,
+                                              groupValue:
+                                                  selectedGendarChildren3,
                                               onChanged: (value) {
                                                 setState(() {
-                                                  selectedTitle =
+                                                  selectedGendarChildren3 =
                                                       value.toString();
                                                 });
                                               },
@@ -3104,10 +4449,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                                         FontWeight.bold)),
                                             Radio(
                                               value: 'Female',
-                                              groupValue: selectedTitle,
+                                              groupValue:
+                                                  selectedGendarChildren3,
                                               onChanged: (value) {
                                                 setState(() {
-                                                  selectedTitle =
+                                                  selectedGendarChildren3 =
                                                       value.toString();
                                                 });
                                               },
@@ -3158,10 +4504,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                       children: [
                                         Radio(
                                           value: 'Mr',
-                                          groupValue: selectedTitle,
+                                          groupValue: selectedTitleChildren4,
                                           onChanged: (value) {
                                             setState(() {
-                                              selectedTitle = value.toString();
+                                              selectedTitleChildren4 =
+                                                  value.toString();
                                             });
                                           },
                                         ),
@@ -3170,10 +4517,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                                 fontWeight: FontWeight.bold)),
                                         Radio(
                                           value: 'Mrs',
-                                          groupValue: selectedTitle,
+                                          groupValue: selectedTitleChildren4,
                                           onChanged: (value) {
                                             setState(() {
-                                              selectedTitle = value.toString();
+                                              selectedTitleChildren4 =
+                                                  value.toString();
                                             });
                                           },
                                         ),
@@ -3182,10 +4530,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                                 fontWeight: FontWeight.bold)),
                                         Radio(
                                           value: 'Ms',
-                                          groupValue: selectedTitle,
+                                          groupValue: selectedTitleChildren4,
                                           onChanged: (value) {
                                             setState(() {
-                                              selectedTitle = value.toString();
+                                              selectedTitleChildren4 =
+                                                  value.toString();
                                             });
                                           },
                                         ),
@@ -3296,16 +4645,16 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                         height: 50,
                                         child: TextField(
                                           onTap: () {
-                                            chooseDate();
+                                            _selectDateChildren4(context);
                                           },
-                                          controller: dateController,
+                                          controller: dateControllerChildren4,
                                           readOnly: true,
                                           decoration: InputDecoration(
                                             label: const Text('DOB'),
                                             hintText: 'DOB',
                                             prefixIcon: GestureDetector(
                                               onTap: () {
-                                                chooseDate();
+                                                _selectDateChildren4(context);
                                               },
                                               child: Image.asset(
                                                 'assets/images/calendar.png',
@@ -3363,10 +4712,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                           children: [
                                             Radio(
                                               value: 'Male',
-                                              groupValue: selectedTitle,
+                                              groupValue:
+                                                  selectedGendarChildren4,
                                               onChanged: (value) {
                                                 setState(() {
-                                                  selectedTitle =
+                                                  selectedGendarChildren4 =
                                                       value.toString();
                                                 });
                                               },
@@ -3377,10 +4727,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                                         FontWeight.bold)),
                                             Radio(
                                               value: 'Female',
-                                              groupValue: selectedTitle,
+                                              groupValue:
+                                                  selectedGendarChildren4,
                                               onChanged: (value) {
                                                 setState(() {
-                                                  selectedTitle =
+                                                  selectedGendarChildren4 =
                                                       value.toString();
                                                 });
                                               },
@@ -3431,10 +4782,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                       children: [
                                         Radio(
                                           value: 'Mr',
-                                          groupValue: selectedTitle,
+                                          groupValue: selectedTitleChildren5,
                                           onChanged: (value) {
                                             setState(() {
-                                              selectedTitle = value.toString();
+                                              selectedTitleChildren5 =
+                                                  value.toString();
                                             });
                                           },
                                         ),
@@ -3443,10 +4795,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                                 fontWeight: FontWeight.bold)),
                                         Radio(
                                           value: 'Mrs',
-                                          groupValue: selectedTitle,
+                                          groupValue: selectedTitleChildren5,
                                           onChanged: (value) {
                                             setState(() {
-                                              selectedTitle = value.toString();
+                                              selectedTitleChildren5 =
+                                                  value.toString();
                                             });
                                           },
                                         ),
@@ -3455,10 +4808,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                                 fontWeight: FontWeight.bold)),
                                         Radio(
                                           value: 'Ms',
-                                          groupValue: selectedTitle,
+                                          groupValue: selectedTitleChildren5,
                                           onChanged: (value) {
                                             setState(() {
-                                              selectedTitle = value.toString();
+                                              selectedTitleChildren5 =
+                                                  value.toString();
                                             });
                                           },
                                         ),
@@ -3569,16 +4923,16 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                         height: 50,
                                         child: TextField(
                                           onTap: () {
-                                            chooseDate();
+                                            _selectDateChildren5(context);
                                           },
-                                          controller: dateController,
+                                          controller: dateControllerChildren5,
                                           readOnly: true,
                                           decoration: InputDecoration(
                                             label: const Text('DOB'),
                                             hintText: 'DOB',
                                             prefixIcon: GestureDetector(
                                               onTap: () {
-                                                chooseDate();
+                                                _selectDateChildren5(context);
                                               },
                                               child: Image.asset(
                                                 'assets/images/calendar.png',
@@ -3636,10 +4990,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                           children: [
                                             Radio(
                                               value: 'Male',
-                                              groupValue: selectedTitle,
+                                              groupValue:
+                                                  selectedGendarChildren5,
                                               onChanged: (value) {
                                                 setState(() {
-                                                  selectedTitle =
+                                                  selectedGendarChildren5 =
                                                       value.toString();
                                                 });
                                               },
@@ -3650,10 +5005,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                                         FontWeight.bold)),
                                             Radio(
                                               value: 'Female',
-                                              groupValue: selectedTitle,
+                                              groupValue:
+                                                  selectedGendarChildren5,
                                               onChanged: (value) {
                                                 setState(() {
-                                                  selectedTitle =
+                                                  selectedGendarChildren5 =
                                                       value.toString();
                                                 });
                                               },
@@ -3705,10 +5061,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                       children: [
                                         Radio(
                                           value: 'Mr',
-                                          groupValue: selectedTitle,
+                                          groupValue: selectedTitleInfant1,
                                           onChanged: (value) {
                                             setState(() {
-                                              selectedTitle = value.toString();
+                                              selectedTitleInfant1 =
+                                                  value.toString();
                                             });
                                           },
                                         ),
@@ -3717,10 +5074,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                                 fontWeight: FontWeight.bold)),
                                         Radio(
                                           value: 'Mrs',
-                                          groupValue: selectedTitle,
+                                          groupValue: selectedTitleInfant1,
                                           onChanged: (value) {
                                             setState(() {
-                                              selectedTitle = value.toString();
+                                              selectedTitleInfant1 =
+                                                  value.toString();
                                             });
                                           },
                                         ),
@@ -3729,10 +5087,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                                 fontWeight: FontWeight.bold)),
                                         Radio(
                                           value: 'Ms',
-                                          groupValue: selectedTitle,
+                                          groupValue: selectedTitleInfant1,
                                           onChanged: (value) {
                                             setState(() {
-                                              selectedTitle = value.toString();
+                                              selectedTitleInfant1 =
+                                                  value.toString();
                                             });
                                           },
                                         ),
@@ -3843,16 +5202,16 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                         height: 50,
                                         child: TextField(
                                           onTap: () {
-                                            chooseDate();
+                                            _selectDateInfant1(context);
                                           },
-                                          controller: dateController,
+                                          controller: dateControllerInfant1,
                                           readOnly: true,
                                           decoration: InputDecoration(
                                             label: const Text('DOB'),
                                             hintText: 'DOB',
                                             prefixIcon: GestureDetector(
                                               onTap: () {
-                                                chooseDate();
+                                                _selectDateInfant1(context);
                                               },
                                               child: Image.asset(
                                                 'assets/images/calendar.png',
@@ -3910,10 +5269,10 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                           children: [
                                             Radio(
                                               value: 'Male',
-                                              groupValue: selectedTitle,
+                                              groupValue: selectedGendarInfant1,
                                               onChanged: (value) {
                                                 setState(() {
-                                                  selectedTitle =
+                                                  selectedGendarInfant1 =
                                                       value.toString();
                                                 });
                                               },
@@ -3924,10 +5283,10 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                                         FontWeight.bold)),
                                             Radio(
                                               value: 'Female',
-                                              groupValue: selectedTitle,
+                                              groupValue: selectedGendarInfant1,
                                               onChanged: (value) {
                                                 setState(() {
-                                                  selectedTitle =
+                                                  selectedGendarInfant1 =
                                                       value.toString();
                                                 });
                                               },
@@ -3978,10 +5337,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                       children: [
                                         Radio(
                                           value: 'Mr',
-                                          groupValue: selectedTitle,
+                                          groupValue: selectedTitleInfant2,
                                           onChanged: (value) {
                                             setState(() {
-                                              selectedTitle = value.toString();
+                                              selectedTitleInfant2 =
+                                                  value.toString();
                                             });
                                           },
                                         ),
@@ -3990,10 +5350,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                                 fontWeight: FontWeight.bold)),
                                         Radio(
                                           value: 'Mrs',
-                                          groupValue: selectedTitle,
+                                          groupValue: selectedTitleInfant2,
                                           onChanged: (value) {
                                             setState(() {
-                                              selectedTitle = value.toString();
+                                              selectedTitleInfant2 =
+                                                  value.toString();
                                             });
                                           },
                                         ),
@@ -4002,10 +5363,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                                 fontWeight: FontWeight.bold)),
                                         Radio(
                                           value: 'Ms',
-                                          groupValue: selectedTitle,
+                                          groupValue: selectedTitleInfant2,
                                           onChanged: (value) {
                                             setState(() {
-                                              selectedTitle = value.toString();
+                                              selectedTitleInfant2 =
+                                                  value.toString();
                                             });
                                           },
                                         ),
@@ -4116,16 +5478,16 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                         height: 50,
                                         child: TextField(
                                           onTap: () {
-                                            chooseDate();
+                                            _selectDateInfant2(context);
                                           },
-                                          controller: dateController,
+                                          controller: dateControllerInfant2,
                                           readOnly: true,
                                           decoration: InputDecoration(
                                             label: const Text('DOB'),
                                             hintText: 'DOB',
                                             prefixIcon: GestureDetector(
                                               onTap: () {
-                                                chooseDate();
+                                                _selectDateInfant2(context);
                                               },
                                               child: Image.asset(
                                                 'assets/images/calendar.png',
@@ -4183,10 +5545,10 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                           children: [
                                             Radio(
                                               value: 'Male',
-                                              groupValue: selectedTitle,
+                                              groupValue: selectedGendarInfant2,
                                               onChanged: (value) {
                                                 setState(() {
-                                                  selectedTitle =
+                                                  selectedGendarInfant2 =
                                                       value.toString();
                                                 });
                                               },
@@ -4197,10 +5559,10 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                                         FontWeight.bold)),
                                             Radio(
                                               value: 'Female',
-                                              groupValue: selectedTitle,
+                                              groupValue: selectedGendarInfant2,
                                               onChanged: (value) {
                                                 setState(() {
-                                                  selectedTitle =
+                                                  selectedGendarInfant2 =
                                                       value.toString();
                                                 });
                                               },
@@ -4251,10 +5613,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                       children: [
                                         Radio(
                                           value: 'Mr',
-                                          groupValue: selectedTitle,
+                                          groupValue: selectedTitleInfant3,
                                           onChanged: (value) {
                                             setState(() {
-                                              selectedTitle = value.toString();
+                                              selectedTitleInfant3 =
+                                                  value.toString();
                                             });
                                           },
                                         ),
@@ -4263,10 +5626,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                                 fontWeight: FontWeight.bold)),
                                         Radio(
                                           value: 'Mrs',
-                                          groupValue: selectedTitle,
+                                          groupValue: selectedTitleInfant3,
                                           onChanged: (value) {
                                             setState(() {
-                                              selectedTitle = value.toString();
+                                              selectedTitleInfant3 =
+                                                  value.toString();
                                             });
                                           },
                                         ),
@@ -4275,10 +5639,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                                 fontWeight: FontWeight.bold)),
                                         Radio(
                                           value: 'Ms',
-                                          groupValue: selectedTitle,
+                                          groupValue: selectedTitleInfant3,
                                           onChanged: (value) {
                                             setState(() {
-                                              selectedTitle = value.toString();
+                                              selectedTitleInfant3 =
+                                                  value.toString();
                                             });
                                           },
                                         ),
@@ -4389,16 +5754,16 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                         height: 50,
                                         child: TextField(
                                           onTap: () {
-                                            chooseDate();
+                                            _selectDateInfant3(context);
                                           },
-                                          controller: dateController,
+                                          controller: dateControllerInfant3,
                                           readOnly: true,
                                           decoration: InputDecoration(
                                             label: const Text('DOB'),
                                             hintText: 'DOB',
                                             prefixIcon: GestureDetector(
                                               onTap: () {
-                                                chooseDate();
+                                                _selectDateInfant3(context);
                                               },
                                               child: Image.asset(
                                                 'assets/images/calendar.png',
@@ -4456,10 +5821,10 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                           children: [
                                             Radio(
                                               value: 'Male',
-                                              groupValue: selectedTitle,
+                                              groupValue: selectedGendarInfant3,
                                               onChanged: (value) {
                                                 setState(() {
-                                                  selectedTitle =
+                                                  selectedGendarInfant3 =
                                                       value.toString();
                                                 });
                                               },
@@ -4470,10 +5835,10 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                                         FontWeight.bold)),
                                             Radio(
                                               value: 'Female',
-                                              groupValue: selectedTitle,
+                                              groupValue: selectedGendarInfant3,
                                               onChanged: (value) {
                                                 setState(() {
-                                                  selectedTitle =
+                                                  selectedGendarInfant3 =
                                                       value.toString();
                                                 });
                                               },
@@ -4524,10 +5889,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                       children: [
                                         Radio(
                                           value: 'Mr',
-                                          groupValue: selectedTitle,
+                                          groupValue: selectedTitleInfant4,
                                           onChanged: (value) {
                                             setState(() {
-                                              selectedTitle = value.toString();
+                                              selectedTitleInfant4 =
+                                                  value.toString();
                                             });
                                           },
                                         ),
@@ -4536,10 +5902,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                                 fontWeight: FontWeight.bold)),
                                         Radio(
                                           value: 'Mrs',
-                                          groupValue: selectedTitle,
+                                          groupValue: selectedTitleInfant4,
                                           onChanged: (value) {
                                             setState(() {
-                                              selectedTitle = value.toString();
+                                              selectedTitleInfant4 =
+                                                  value.toString();
                                             });
                                           },
                                         ),
@@ -4548,10 +5915,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                                 fontWeight: FontWeight.bold)),
                                         Radio(
                                           value: 'Ms',
-                                          groupValue: selectedTitle,
+                                          groupValue: selectedTitleInfant4,
                                           onChanged: (value) {
                                             setState(() {
-                                              selectedTitle = value.toString();
+                                              selectedTitleInfant4 =
+                                                  value.toString();
                                             });
                                           },
                                         ),
@@ -4662,16 +6030,16 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                         height: 50,
                                         child: TextField(
                                           onTap: () {
-                                            chooseDate();
+                                            _selectDateInfant4(context);
                                           },
-                                          controller: dateController,
+                                          controller: dateControllerInfant4,
                                           readOnly: true,
                                           decoration: InputDecoration(
                                             label: const Text('DOB'),
                                             hintText: 'DOB',
                                             prefixIcon: GestureDetector(
                                               onTap: () {
-                                                chooseDate();
+                                                _selectDateInfant4(context);
                                               },
                                               child: Image.asset(
                                                 'assets/images/calendar.png',
@@ -4729,10 +6097,10 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                           children: [
                                             Radio(
                                               value: 'Male',
-                                              groupValue: selectedTitle,
+                                              groupValue: selectedGendarInfant4,
                                               onChanged: (value) {
                                                 setState(() {
-                                                  selectedTitle =
+                                                  selectedGendarInfant4 =
                                                       value.toString();
                                                 });
                                               },
@@ -4743,10 +6111,10 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                                         FontWeight.bold)),
                                             Radio(
                                               value: 'Female',
-                                              groupValue: selectedTitle,
+                                              groupValue: selectedGendarInfant4,
                                               onChanged: (value) {
                                                 setState(() {
-                                                  selectedTitle =
+                                                  selectedGendarInfant4 =
                                                       value.toString();
                                                 });
                                               },
@@ -4797,10 +6165,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                       children: [
                                         Radio(
                                           value: 'Mr',
-                                          groupValue: selectedTitle,
+                                          groupValue: selectedTitleInfant5,
                                           onChanged: (value) {
                                             setState(() {
-                                              selectedTitle = value.toString();
+                                              selectedTitleInfant5 =
+                                                  value.toString();
                                             });
                                           },
                                         ),
@@ -4809,10 +6178,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                                 fontWeight: FontWeight.bold)),
                                         Radio(
                                           value: 'Mrs',
-                                          groupValue: selectedTitle,
+                                          groupValue: selectedTitleInfant5,
                                           onChanged: (value) {
                                             setState(() {
-                                              selectedTitle = value.toString();
+                                              selectedTitleInfant5 =
+                                                  value.toString();
                                             });
                                           },
                                         ),
@@ -4821,10 +6191,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                                 fontWeight: FontWeight.bold)),
                                         Radio(
                                           value: 'Ms',
-                                          groupValue: selectedTitle,
+                                          groupValue: selectedTitleInfant5,
                                           onChanged: (value) {
                                             setState(() {
-                                              selectedTitle = value.toString();
+                                              selectedTitleInfant5 =
+                                                  value.toString();
                                             });
                                           },
                                         ),
@@ -4935,16 +6306,18 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                         height: 50,
                                         child: TextField(
                                           onTap: () {
-                                            chooseDate();
+                                            _selectDateInfant5(
+                                                context); // Call your function to show the date picker
                                           },
-                                          controller: dateController,
+                                          controller: dateControllerInfant5,
                                           readOnly: true,
                                           decoration: InputDecoration(
-                                            label: const Text('DOB'),
+                                            labelText: 'DOB',
                                             hintText: 'DOB',
                                             prefixIcon: GestureDetector(
                                               onTap: () {
-                                                chooseDate();
+                                                _selectDateInfant5(
+                                                    context); // Call your function to show the date picker
                                               },
                                               child: Image.asset(
                                                 'assets/images/calendar.png',
@@ -5002,10 +6375,10 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                           children: [
                                             Radio(
                                               value: 'Male',
-                                              groupValue: selectedTitle,
+                                              groupValue: selectedGendarInfant5,
                                               onChanged: (value) {
                                                 setState(() {
-                                                  selectedTitle =
+                                                  selectedGendarInfant5 =
                                                       value.toString();
                                                 });
                                               },
@@ -5016,10 +6389,10 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                                         FontWeight.bold)),
                                             Radio(
                                               value: 'Female',
-                                              groupValue: selectedTitle,
+                                              groupValue: selectedGendarInfant5,
                                               onChanged: (value) {
                                                 setState(() {
-                                                  selectedTitle =
+                                                  selectedGendarInfant5 =
                                                       value.toString();
                                                 });
                                               },
@@ -5068,6 +6441,9 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                   width: 310,
                                   height: 50,
                                   child: TextFormField(
+                                    textCapitalization:
+                                        TextCapitalization.words,
+                                    controller: contactEmailController,
                                     decoration: InputDecoration(
                                       label: const Text('Email'),
                                       hintText: 'EMail Address',
@@ -5117,10 +6493,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                 children: [
                                   Radio(
                                     value: 'Male',
-                                    groupValue: selectedTitle,
+                                    groupValue: selectedGendarContactDetail,
                                     onChanged: (value) {
                                       setState(() {
-                                        selectedTitle = value.toString();
+                                        selectedGendarContactDetail =
+                                            value.toString();
                                       });
                                     },
                                   ),
@@ -5129,10 +6506,11 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                           fontWeight: FontWeight.bold)),
                                   Radio(
                                     value: 'Female',
-                                    groupValue: selectedTitle,
+                                    groupValue: selectedGendarContactDetail,
                                     onChanged: (value) {
                                       setState(() {
-                                        selectedTitle = value.toString();
+                                        selectedGendarContactDetail =
+                                            value.toString();
                                       });
                                     },
                                   ),
@@ -5190,6 +6568,8 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                                   width: 260,
                                   height: 50,
                                   child: TextFormField(
+                                    keyboardType: TextInputType.number,
+                                    controller: contactMobileController,
                                     decoration: InputDecoration(
                                       label: const Text('Mobile Number'),
                                       hintText: 'Mobile Number',
@@ -5230,6 +6610,8 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                               width: 310,
                               height: 50,
                               child: TextFormField(
+                                textCapitalization: TextCapitalization.words,
+                                controller: contactAddressController,
                                 decoration: InputDecoration(
                                   label: const Text('Address'),
                                   hintText: 'Address',
@@ -5268,6 +6650,8 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                               width: 310,
                               height: 50,
                               child: TextFormField(
+                                textCapitalization: TextCapitalization.words,
+                                controller: contactCityController,
                                 decoration: InputDecoration(
                                   label: const Text('City'),
                                   hintText: 'City',
@@ -5306,6 +6690,8 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
                               width: 310,
                               height: 50,
                               child: TextFormField(
+                                controller: _CountryController,
+                                textCapitalization: TextCapitalization.words,
                                 decoration: InputDecoration(
                                   label: const Text('Country'),
                                   hintText: 'Country',
@@ -5483,16 +6869,5 @@ class _OneWayBookingState extends State<RoundTripBookNowFlight> {
               ),
             ),
     );
-  }
-
-  @override
-  void initState() {
-    // TODO: implement initState
-    //print(widget.flightDetails);
-    setState(() {
-      resultFlightData = widget.resultFlightData;
-    });
-
-    super.initState();
   }
 }

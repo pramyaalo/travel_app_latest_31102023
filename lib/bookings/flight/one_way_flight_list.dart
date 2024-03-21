@@ -2,15 +2,24 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shimmer/shimmer.dart';
 import 'dart:developer' as developer;
 
 import '../../utils/commonutils.dart';
 import '../../utils/response_handler.dart';
+import '../../utils/shared_preferences.dart';
 import 'oneway_booking.dart';
 
 class OnewayFlightsList extends StatefulWidget {
-  final adult, orgin, destination, departDate, children, infants;
+  final adult,
+      orgin,
+      destination,
+      departDate,
+      children,
+      infants,
+      userId,
+      currency;
 
   const OnewayFlightsList({
     super.key,
@@ -20,6 +29,8 @@ class OnewayFlightsList extends StatefulWidget {
     required this.orgin,
     required this.destination,
     required this.departDate,
+    required this.userId,
+    required this.currency,
   });
 
   @override
@@ -29,38 +40,56 @@ class OnewayFlightsList extends StatefulWidget {
 class _OnewayFlightsListState extends State<OnewayFlightsList> {
   bool isLoading = false;
   var resultList = [];
+  late String userTypeID = '';
+  late String userID = '';
+  late String Currency = '';
+  String fin_date = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _retrieveSavedValues();
+  }
+
+  Future<void> _retrieveSavedValues() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      userTypeID = prefs.getString(Prefs.PREFS_USER_TYPE_ID) ?? '';
+      userID = prefs.getString(Prefs.PREFS_USER_ID) ?? '';
+      Currency = prefs.getString(Prefs.PREFS_CURRENCY) ?? '';
+
+      sendFlightSearchRequest();
+    });
+  }
 
   void sendFlightSearchRequest() async {
-    String FisrtDropDownValue = widget.adult;
-
-    String fin_date =
-        widget.departDate.toString().split(' ')[0].replaceAll('-', '/');
+    fin_date = widget.departDate.toString().split(' ')[0].replaceAll('-', '/');
     String origin = widget.orgin;
     String destination = widget.destination;
 
-    print('widget.departDate ${fin_date}');
-    print('widget.origin ${widget.adult}');
-    print('widget.destination ${widget.adult}');
-
     var requestBody = {
-      'AdultCount': widget.adult,
-      'ChildrenCount': widget.children,
-      'InfantCount': widget.infants,
+      'AdultCount': widget.adult.toString(),
+      'ChildrenCount': widget.children.toString(),
+      'InfantCount': widget.infants.toString(),
       'DepartDate': fin_date,
-      'Class': '1',
+      'Class': '3',
       'Origin': widget.orgin,
       'Destination': widget.destination,
-      'TripType': 'OneWay'
+      'TripType': 'OneWay',
+      'DefaultCurrency': 'KES',
+      'UserID': widget.userId,
     };
+    print('widget.departDate ${fin_date}');
+    print('widget.origin ${widget.orgin}');
+    print('widget.destination ${widget.destination}');
     print('AdultCount: ${widget.adult}');
     print('ChildrenCount: ${widget.children}');
     print('InfantCount: ${widget.infants}');
     print('DepartDate: $fin_date');
     print('Class: 1');
     print('Origin: ${widget.orgin}');
-    print('Destination: ${widget.destination}');
-    print('TripType: OneWay');
-
+    print('UserID: ${widget.userId}');
+    print('DefaultCurrency: KES');
     var url = Uri.parse(
         'https://traveldemo.org/travelapp/b2capi.asmx/AdivahaSearchFlightOneWay');
 
@@ -81,10 +110,10 @@ class _OnewayFlightsListState extends State<OnewayFlightsList> {
       });
 
       if (response.statusCode == 200) {
-        print('Request failed with status: ${response.statusCode}');
+        print('Request successful: ${response.statusCode}');
         var responseData =
             json.decode(ResponseHandler.parseData(response.body));
-        print('Request failed with status: ${responseData}');
+        print('Response data: $responseData');
         developer.log(ResponseHandler.parseData(response.body));
 
         setState(() {
@@ -138,9 +167,47 @@ class _OnewayFlightsListState extends State<OnewayFlightsList> {
         backgroundColor: Colors.white,
       ),
       body: isLoading
-          ? Center(
-              child: CircularProgressIndicator(),
-            )
+          ? ListView.builder(
+              itemCount: 10, // Number of skeleton items
+              itemBuilder: (context, index) {
+                return Shimmer.fromColors(
+                  baseColor: Colors.grey[300]!,
+                  highlightColor: Colors.grey[100]!,
+                  child: ListTile(
+                    leading: Container(
+                      width: 64.0,
+                      height: 64.0,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white,
+                      ),
+                    ),
+                    title: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: double.infinity,
+                          height: 16.0,
+                          margin: EdgeInsets.symmetric(vertical: 4.0),
+                          color: Colors.white,
+                        ),
+                        Container(
+                          width: double.infinity,
+                          height: 12.0,
+                          margin: EdgeInsets.symmetric(vertical: 4.0),
+                          color: Colors.white,
+                        ),
+                        Container(
+                          width: double.infinity,
+                          height: 12.0,
+                          margin: EdgeInsets.symmetric(vertical: 4.0),
+                          color: Colors.white,
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              })
           : Column(
               children: [
                 Expanded(
@@ -173,7 +240,7 @@ class _OnewayFlightsListState extends State<OnewayFlightsList> {
                                               ),
                                             ),
                                             Container(
-                                              width: 65,
+                                              width: 69,
                                               padding:
                                                   EdgeInsets.only(right: 10),
                                               child: Text(
@@ -187,15 +254,6 @@ class _OnewayFlightsListState extends State<OnewayFlightsList> {
                                               ),
                                             ),
                                             SizedBox(height: 10),
-                                            SizedBox(
-                                              width: 65,
-                                              height: 1,
-                                              child: DecoratedBox(
-                                                decoration: const BoxDecoration(
-                                                    color: Color(0xffededed)),
-                                              ),
-                                            ),
-                                            SizedBox(height: 10),
                                             Text(
                                               resultList[index]['Baggage'],
                                               style: TextStyle(
@@ -206,8 +264,8 @@ class _OnewayFlightsListState extends State<OnewayFlightsList> {
                                         ),
                                       ),
                                       Padding(
-                                        padding:
-                                            const EdgeInsets.only(right: 0),
+                                        padding: const EdgeInsets.only(
+                                            right: 0, top: 10),
                                         child: Column(
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
@@ -401,32 +459,28 @@ class _OnewayFlightsListState extends State<OnewayFlightsList> {
                                                   ),
                                                   GestureDetector(
                                                     onTap: () {
-                                                      //no
-                                                      /* developer.log(
-                                                          resultList[index]);*/
-                                                      //agala
-                                                      //panite Oru list ah click pannunga
-                                                      // log varala thrla?
-
                                                       Navigator.push(
                                                           context,
                                                           MaterialPageRoute(
-                                                              builder: (BuildContext
-                                                                      context) =>
-                                                                  OneWayBooking(
-                                                                    flightDetails:
-                                                                        resultList[
-                                                                            index],
-                                                                    adultCount:
-                                                                        widget
-                                                                            .adult,
-                                                                    childrenCount:
-                                                                        widget
-                                                                            .children,
-                                                                    infantCount:
-                                                                        widget
-                                                                            .infants,
-                                                                  )));
+                                                              builder: (BuildContext context) => OneWayBooking(
+                                                                  flightDetails:
+                                                                      resultList[
+                                                                          index],
+                                                                  adultCount:
+                                                                      widget
+                                                                          .adult,
+                                                                  childrenCount:
+                                                                      widget
+                                                                          .children,
+                                                                  infantCount: widget
+                                                                      .infants,
+                                                                  userid: widget
+                                                                      .userId,
+                                                                  currency: widget
+                                                                      .currency,
+                                                                  departDate:
+                                                                      fin_date
+                                                                          .toString())));
                                                     },
                                                     child: Padding(
                                                       padding:
@@ -459,12 +513,5 @@ class _OnewayFlightsListState extends State<OnewayFlightsList> {
               ],
             ),
     );
-  }
-
-  @override
-  void initState() {
-    // TODO: implement initState
-    sendFlightSearchRequest();
-    super.initState();
   }
 }

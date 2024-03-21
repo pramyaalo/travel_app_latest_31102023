@@ -7,6 +7,8 @@ import 'ContactDetaails.dart';
 import 'PaymentTransactions.dart';
 
 class ViewBookingDetails extends StatefulWidget {
+  final id;
+  const ViewBookingDetails({super.key, required this.id});
   @override
   State<ViewBookingDetails> createState() =>
       _BookingCardsDetailsContainerState();
@@ -16,6 +18,7 @@ class _BookingCardsDetailsContainerState extends State<ViewBookingDetails>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController =
       TabController(length: 2, vsync: this);
+
   @override
   void initState() {
     //_tabController = TabController(length: 2, vsync: this);
@@ -24,37 +27,54 @@ class _BookingCardsDetailsContainerState extends State<ViewBookingDetails>
 
   int index = 0;
 
-  var tabs = [
+  late List<Widget> tabs = [
     BookedItemDetail(
-      id: '',
+      id: widget.id,
     ),
-    ContactDetaails(),
-    PaymentTransactions(),
-    ChangingDetails(),
-    CancellationRequestDetails()
+    ContactDetaails( id: widget.id,),
+    PaymentTransactions( id: widget.id,),
+    ChangingDetails( id: widget.id,),
+    CancellationRequestDetails( id: widget.id,)
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-       backgroundColor: Colors.white,
-        title: const Text(
-          "Booking Details",
-          style: TextStyle(
-            fontFamily: "Montserrat",
-          ),
+        automaticallyImplyLeading: false,
+        titleSpacing: 1,
+        title: Row(
+          children: [
+            IconButton(
+              icon: Icon(
+                Icons.arrow_back,
+                color: Colors.black,
+                size: 27,
+              ),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            ),
+
+            SizedBox(width: 1), // Set the desired width
+            Text(
+              "Booking Details",
+              style: TextStyle(
+                  color: Colors.black, fontFamily: "Montserrat", fontSize: 17),
+            ),
+          ],
         ),
         actions: [
           Image.asset(
             'assets/images/logo.png',
-             width: 120,
+            width: 120,
             height: 50,
           ),
-          const SizedBox(
+          SizedBox(
             width: 10,
-          ),
+          )
         ],
+        backgroundColor: Colors.white,
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -77,10 +97,10 @@ class _BookingCardsDetailsContainerState extends State<ViewBookingDetails>
                         margin: EdgeInsets.symmetric(horizontal: 10),
                         decoration: BoxDecoration(
                             border:
-                                Border.all(width: 1, color:  Color(0xff74206b)),
+                                Border.all(width: 1, color: Color(0xff74206b)),
                             borderRadius: BorderRadius.circular(10),
                             color:
-                                index == 0 ?  Color(0xff74206b) : Colors.white),
+                                index == 0 ? Color(0xff74206b) : Colors.white),
                         height: 40,
                         padding: EdgeInsets.all(5),
                         child: Center(
@@ -102,10 +122,10 @@ class _BookingCardsDetailsContainerState extends State<ViewBookingDetails>
                         margin: EdgeInsets.symmetric(horizontal: 10),
                         decoration: BoxDecoration(
                             border:
-                                Border.all(width: 1, color:  Color(0xff74206b)),
+                                Border.all(width: 1, color: Color(0xff74206b)),
                             borderRadius: BorderRadius.circular(10),
                             color:
-                                index == 1 ?  Color(0xff74206b) : Colors.white),
+                                index == 1 ? Color(0xff74206b) : Colors.white),
                         height: 40,
                         padding: EdgeInsets.all(5),
                         child: Center(
@@ -127,10 +147,10 @@ class _BookingCardsDetailsContainerState extends State<ViewBookingDetails>
                         margin: EdgeInsets.symmetric(horizontal: 10),
                         decoration: BoxDecoration(
                             border:
-                                Border.all(width: 1, color:  Color(0xff74206b)),
+                                Border.all(width: 1, color: Color(0xff74206b)),
                             borderRadius: BorderRadius.circular(10),
                             color:
-                                index == 2 ?  Color(0xff74206b) : Colors.white),
+                                index == 2 ? Color(0xff74206b) : Colors.white),
                         height: 40,
                         padding: EdgeInsets.all(5),
                         child: Center(
@@ -152,10 +172,10 @@ class _BookingCardsDetailsContainerState extends State<ViewBookingDetails>
                         margin: EdgeInsets.symmetric(horizontal: 10),
                         decoration: BoxDecoration(
                             border:
-                                Border.all(width: 1, color:  Color(0xff74206b)),
+                                Border.all(width: 1, color: Color(0xff74206b)),
                             borderRadius: BorderRadius.circular(10),
                             color:
-                                index == 3 ?  Color(0xff74206b) : Colors.white),
+                                index == 3 ? Color(0xff74206b) : Colors.white),
                         height: 40,
                         padding: EdgeInsets.all(5),
                         child: Center(
@@ -177,10 +197,10 @@ class _BookingCardsDetailsContainerState extends State<ViewBookingDetails>
                         margin: EdgeInsets.symmetric(horizontal: 10),
                         decoration: BoxDecoration(
                             border:
-                                Border.all(width: 1, color:  Color(0xff74206b)),
+                                Border.all(width: 1, color: Color(0xff74206b)),
                             borderRadius: BorderRadius.circular(10),
                             color:
-                                index == 4 ?  Color(0xff74206b) : Colors.white),
+                                index == 4 ? Color(0xff74206b) : Colors.white),
                         height: 40,
                         padding: EdgeInsets.all(5),
                         child: Center(

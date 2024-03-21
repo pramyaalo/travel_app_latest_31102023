@@ -8,9 +8,9 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.INTERNET" />
     <application
-        android:label="ravel_app_latest_31102023"
+        android:label="B2cApp"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/mobilelogo">
         <activity
             android:name=".MainActivity"
             android:exported="true"

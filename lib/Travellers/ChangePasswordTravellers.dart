@@ -264,12 +264,12 @@ class _MyRechargePageState extends State<ChangePasswordTravellers> {
                               // Add your recharge logic here
                             },
                             style: ElevatedButton.styleFrom(
-                              primary: Colors.yellow, // Set button color
+                              backgroundColor: Color(0xff74206b), // Set button color
                             ),
                             child: Text(
                               'Confirm',
                               style:
-                                  TextStyle(fontSize: 18, color: Colors.black),
+                                  TextStyle(fontSize: 18, color: Colors.white),
                             ),
                           ),
                         ),

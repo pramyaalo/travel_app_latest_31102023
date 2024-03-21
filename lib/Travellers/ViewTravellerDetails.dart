@@ -63,7 +63,7 @@ class _MyRechargePageState extends State<ViewTravellerDetails> {
             IconButton(
               icon: Icon(
                 Icons.arrow_back,
-                color: Colors.white,
+                color: Colors.black,
                 size: 27,
               ),
               onPressed: () {
@@ -73,8 +73,9 @@ class _MyRechargePageState extends State<ViewTravellerDetails> {
 
             SizedBox(width: 1), // Set the desired width
             Text(
-              "View Traveller Details",
-              style: TextStyle( color: Colors.black,fontFamily: "Montserrat", fontSize: 19),
+              "View Details",
+              style: TextStyle(
+                  color: Colors.black, fontFamily: "Montserrat", fontSize: 19),
             ),
           ],
         ),
@@ -88,7 +89,7 @@ class _MyRechargePageState extends State<ViewTravellerDetails> {
             width: 10,
           )
         ],
-       backgroundColor: Colors.white,
+        backgroundColor: Colors.white,
       ),
       body: Center(
           child: FutureBuilder<String?>(

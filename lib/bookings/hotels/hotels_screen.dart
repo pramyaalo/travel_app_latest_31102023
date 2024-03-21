@@ -1,9 +1,15 @@
+import 'dart:convert';
+import 'dart:developer';
+import 'package:xml/xml.dart' as xml;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
+import 'package:http/http.dart' as http;
 import '../../models/hotel_destination_models.dart';
+import '../../utils/response_handler.dart';
+import '../AutofilHotelModel.dart';
 import '../flight/AddGuestes_Hotel.dart';
 import '../flight/AddTravellers_Flight.dart';
 import 'hotel_detail_screen.dart';
@@ -15,7 +21,10 @@ class HotelsScreen extends StatefulWidget {
 
 class _HotelsScreenState extends State<HotelsScreen> {
   DateTime? checkInDate;
+
+  Future<http.Response>? __futureAirlinesDDL;
   DateTime? checkOutDate;
+  String Cityid = '', countrycode = '';
   int AdultCount = 1, childrenCount = 0;
   int AdultCount1 = 1, childrenCount1 = 0;
   int AdultCount2 = 1, childrenCount2 = 0;
@@ -23,7 +32,13 @@ class _HotelsScreenState extends State<HotelsScreen> {
   String selecteddate = '', selecteddate1 = '';
   String RoomType = '1';
   int TotAdultCount = 1;
+  String fromTextHolder = "";
+  List<AutofilHotelModel> AutofilHotelModelList = [];
+  static String _displayOptionForAirportDDL(
+          AutofilHotelModel AutofilHotelModel) =>
+      AutofilHotelModel.className;
   int TotChildrenCount = 0;
+  late AutofilHotelModel selectedPassenger;
   TextEditingController orginController = new TextEditingController();
   List hotelDestination = [
     HotelDestination(
@@ -43,9 +58,8 @@ class _HotelsScreenState extends State<HotelsScreen> {
   ];
   @override
   void initState() {
-    // TODO: implement initState
-    orginController.text = 'CHENNAI';
-    setState(() {});
+    orginController.text = 'DUBAI';
+    //searchBookingTravellers(orginController.text.toString());
 
     super.initState();
   }
@@ -55,6 +69,10 @@ class _HotelsScreenState extends State<HotelsScreen> {
         context, MaterialPageRoute(builder: (BuildContext context) => screen));
   }
 
+  static String _displayOptionForPassengerDDl(AutofilHotelModel passengerDDL) =>
+      passengerDDL.latinFullName;
+  List<AutofilHotelModel> passengers = [];
+  bool _isPassengersLoading = true;
   DateTime selectedDate = DateTime.now();
   DateTime selectedReturnDate = DateTime.now();
   Future<void> _selectDate(BuildContext context, int type) async {
@@ -73,6 +91,24 @@ class _HotelsScreenState extends State<HotelsScreen> {
           print(selectedReturnDate);
         }
       });
+    }
+  }
+
+  Future<List<AutofilHotelModel>> fetchAutocompleteData(String cityName) async {
+    final url =
+        'https://traveldemo.org/travelapp/b2capi.asmx/HotelGetCitiesAutocomplete?cityName=$cityName';
+
+    final response = await http.get(Uri.parse(url));
+    if (response.statusCode == 200) {
+      final xmlDocument = xml.XmlDocument.parse(response.body);
+      final responseData = xmlDocument.findAllElements('string').first.text;
+
+      final decodedData = json.decode(responseData);
+      return decodedData
+          .map<AutofilHotelModel>((data) => AutofilHotelModel.fromJson(data))
+          .toList();
+    } else {
+      throw Exception('Failed to load autocomplete data');
     }
   }
 
@@ -165,21 +201,47 @@ class _HotelsScreenState extends State<HotelsScreen> {
                                             mainAxisAlignment:
                                                 MainAxisAlignment.spaceBetween,
                                             children: [
-                                              Expanded(
-                                                child: TextField(
-                                                  controller: orginController,
-                                                  style: TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                  decoration: InputDecoration(
-                                                    border: InputBorder.none,
-                                                  ),
+                                              SizedBox(
+                                                width: 250,
+                                                child: Autocomplete<
+                                                    AutofilHotelModel>(
+                                                  optionsBuilder: (TextEditingValue
+                                                      textEditingValue) async {
+                                                    if (textEditingValue
+                                                        .text.isEmpty) {
+                                                      return const Iterable<
+                                                          AutofilHotelModel>.empty();
+                                                    }
+                                                    return await fetchAutocompleteData(
+                                                        textEditingValue.text);
+                                                  },
+                                                  displayStringForOption:
+                                                      (AutofilHotelModel
+                                                              option) =>
+                                                          '${option.latinFullName}, ${option.countryCode}, ${option.regionId}',
+                                                  onSelected:
+                                                      (AutofilHotelModel?
+                                                          selectedOption) {
+                                                    if (selectedOption !=
+                                                        null) {
+                                                      print(
+                                                          'Selected: ${selectedOption.latinFullName} (${selectedOption.regionId})');
+                                                      setState(() {
+                                                        Cityid = selectedOption
+                                                            .regionId;
+                                                        countrycode =
+                                                            selectedOption
+                                                                .countryCode;
+                                                      });
+                                                      // Do something with the selected option
+                                                    }
+                                                  },
                                                 ),
                                               ),
                                               Image.asset(
                                                 'assets/images/currentlocation.jpg',
                                                 alignment: Alignment.center,
-                                                width: 35,
+                                                width: 30,
                                                 height: 25,
                                               ),
                                             ],
@@ -413,7 +475,7 @@ class _HotelsScreenState extends State<HotelsScreen> {
                                                       RoomType!.toString());
                                                   if (RoomType == '1') {
                                                     AdultCount = selectedDates[
-                                                        'adultCount'];
+                                                        'adultsCount'];
                                                     childrenCount =
                                                         selectedDates[
                                                             'childrenCount'];
@@ -609,10 +671,12 @@ class _HotelsScreenState extends State<HotelsScreen> {
                                                   AdultCountRoom4: AdultCount3,
                                                   ChildrenCountRoom4:
                                                       childrenCount3,
+                                                  cityid: Cityid,
+                                                  countrycode: countrycode,
                                                 ));
                                               },
                                               style: ElevatedButton.styleFrom(
-                                                primary: Color(0xff74206b),
+                                                backgroundColor: Color(0xff74206b),
 
                                                 // Background color of the button
                                                 shape: RoundedRectangleBorder(

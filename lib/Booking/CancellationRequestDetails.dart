@@ -16,8 +16,8 @@ import 'PassengerModel.dart';
 import 'PaymentModel.dart';
 
 class CancellationRequestDetails extends StatefulWidget {
-  const CancellationRequestDetails({super.key});
-
+  final id;
+  CancellationRequestDetails({super.key, required this.id});
   @override
   State<CancellationRequestDetails> createState() =>
       _CancellationRequestDetailsState();
@@ -27,102 +27,6 @@ class _CancellationRequestDetailsState
     extends State<CancellationRequestDetails> {
   String _userImage = '';
   String selectedAccountType = 'Select Payment Mode';
-  Future _showSelectionDialog(BuildContext context) {
-    return showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            titlePadding: EdgeInsets.all(0),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            title: Container(
-              height: 50,
-              decoration: BoxDecoration(
-                color: Color(0xFF007E01),
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
-                ),
-              ),
-              child: Center(
-                child: Text(
-                  "Add Photo",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 17,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-            contentPadding: EdgeInsets.only(top: 10.0),
-            content: Container(
-              width: 100.0,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Padding(
-                    padding: const EdgeInsets.only(top: 10),
-                    child: GestureDetector(
-                      child: Center(
-                          child: Text("Gallery",
-                              style: TextStyle(
-                                  fontWeight: FontWeight.w500, fontSize: 17))),
-                      onTap: () {
-                        _openGallery();
-                        Navigator.of(context).pop(); // Close the dialog
-                      },
-                    ),
-                  ),
-                  SizedBox(
-                    height: 8,
-                  ),
-                  Divider(color: Colors.grey, thickness: 1),
-                  SizedBox(
-                    height: 8,
-                  ),
-                  GestureDetector(
-                    child: Center(
-                        child: Text("Take Photo",
-                            style: TextStyle(
-                                fontWeight: FontWeight.w500, fontSize: 17))),
-                    onTap: () {
-                      _openCamera();
-                      Navigator.of(context).pop(); // Close the dialog
-                    },
-                  ),
-                  SizedBox(
-                    height: 16,
-                  ),
-                  InkWell(
-                    child: Container(
-                      padding: EdgeInsets.only(top: 15.0, bottom: 10.0),
-                      decoration: BoxDecoration(
-                        color: Color(0xFF007E01),
-                        borderRadius: BorderRadius.only(
-                            bottomLeft: Radius.circular(20),
-                            bottomRight: Radius.circular(20)),
-                      ),
-                      child: Text(
-                        "Cancel",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        });
-  }
 
   var accountTypes = [
     'Select Payment Mode',
@@ -133,35 +37,6 @@ class _CancellationRequestDetailsState
     'Electronic Bank Transfers',
     'Mobile Payments'
   ];
-  Future<void> _openCamera() async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.getImage(source: ImageSource.camera);
-
-    if (pickedFile != null) {
-      final imageBytes = await pickedFile.readAsBytes();
-      final encodedImage = base64Encode(imageBytes);
-
-      setState(() {
-        _userImage = encodedImage;
-        print('baseeeeeeb4:$_userImage');
-      });
-    }
-  }
-
-  Future<void> _openGallery() async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.getImage(source: ImageSource.gallery);
-
-    if (pickedFile != null) {
-      final imageBytes = await pickedFile.readAsBytes();
-      final encodedImage = base64Encode(imageBytes);
-
-      setState(() {
-        _userImage = encodedImage;
-        print('baseeeeeeb4:$_userImage');
-      });
-    }
-  }
 
   static String savedId = '';
 
@@ -230,10 +105,10 @@ class _CancellationRequestDetailsState
     });
   }
 
-  static Future<List<CancelBookingListModel>?> getLabels() async {
+  Future<List<CancelBookingListModel>?> getLabels() async {
     List<CancelBookingListModel> labelData = [];
     Future<http.Response>? __futureLabels = ResponseHandler.performPost(
-        "BookingCardViewGet", 'BookFlightId=${savedId}&StaffId=0');
+        "BookingCardViewGet", "BookFlightId=${widget.id}&StaffId=0");
     print('jfghhjgh' + savedId);
     return await __futureLabels?.then((value) {
       String jsonResponse = ResponseHandler.parseData(value.body);
@@ -286,18 +161,17 @@ class _CancellationRequestDetailsState
                                                     MaterialPageRoute(
                                                         builder: (BuildContext
                                                                 context) =>
-                                                            BookingCancelScreen()));
+                                                            BookingCancelScreen(
+                                                                id: widget
+                                                                    .id)));
                                               },
                                               style: ElevatedButton.styleFrom(
-                                                shape: RoundedRectangleBorder(
+                                                foregroundColor: Colors.black, backgroundColor: Colors
+                                                    .yellow, shape: RoundedRectangleBorder(
                                                   borderRadius:
                                                       BorderRadius.circular(
                                                           5), // Adjust the radius as needed
-                                                ),
-                                                primary: Colors
-                                                    .yellow, // Button color
-                                                onPrimary:
-                                                    Colors.black, // Text color
+                                                ), // Text color
                                               ),
                                               child: SizedBox(
                                                   width: 190,

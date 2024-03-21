@@ -1,24 +1,37 @@
 import 'dart:convert';
+import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../utils/commonutils.dart';
 import 'package:http/http.dart' as http;
 import 'dart:developer' as developer;
 import 'package:xml/xml.dart' as xml;
 import '../../utils/response_handler.dart';
+import '../../utils/shared_preferences.dart';
+import 'PassportDetailModel.dart';
+import 'TravellerDetailModel.dart';
+import 'TravellerDetailsModel.dart';
+import 'package:get/get.dart';
 
 class FlightBookNow extends StatefulWidget {
-  final flightDetails, resultFlightData, adultCount, childrenCount, infantCount;
+  final flightDetails,
+      resultFlightData,
+      adultCount,
+      childrenCount,
+      infantCount,
+      departdate;
   const FlightBookNow(
       {super.key,
       required this.flightDetails,
       required this.resultFlightData,
       required this.infantCount,
       required this.childrenCount,
-      required this.adultCount});
+      required this.adultCount,
+      required this.departdate});
 
   @override
   State<FlightBookNow> createState() => _OneWayBookingState();
@@ -26,6 +39,9 @@ class FlightBookNow extends StatefulWidget {
 
 class _OneWayBookingState extends State<FlightBookNow> {
   bool isLoading = false;
+  int Status = 2;
+  String formattedDate = '';
+  String AdultName1 = '', AdultTravellerId1 = '';
   bool isBookingLoading = false;
   String selectedCountryCode = '+91';
   String selectedTitleAdult1 = 'Mr';
@@ -65,7 +81,7 @@ class _OneWayBookingState extends State<FlightBookNow> {
   String selectedGendarInfant5 = 'Male';
 
   String selectedGendarContactDetail = 'Male';
-
+  String Gendar = '';
   final FocusNode _focusNode = FocusNode();
   FocusNode _firstNameFocusNode = FocusNode();
   FocusNode _lastNameFocusNode = FocusNode();
@@ -80,6 +96,9 @@ class _OneWayBookingState extends State<FlightBookNow> {
   TextEditingController contactMobileController = new TextEditingController();
   TextEditingController contactAddressController = new TextEditingController();
   TextEditingController contactCityController = new TextEditingController();
+  TextEditingController _CountryController = new TextEditingController();
+  TextEditingController Documentype_controller = new TextEditingController();
+  TextEditingController Documentnumber_controller = new TextEditingController();
 
   @override
   void dispose() {
@@ -89,6 +108,7 @@ class _OneWayBookingState extends State<FlightBookNow> {
   }
 
   var selectedDate = DateTime.now().obs;
+  TextEditingController ExpiryDateController = TextEditingController();
   TextEditingController dateControllerAdult1 = TextEditingController();
   TextEditingController dateControllerAdult2 = TextEditingController();
   TextEditingController dateControllerAdult3 = TextEditingController();
@@ -108,6 +128,20 @@ class _OneWayBookingState extends State<FlightBookNow> {
   TextEditingController dateControllerInfant4 = TextEditingController();
   TextEditingController dateControllerInfant5 = TextEditingController();
 
+  Future<void> _selectExpiryDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null && picked != ExpiryDateController) {
+      setState(() {
+        ExpiryDateController.text = DateFormat('yyyy-MM-dd').format(picked);
+      });
+    }
+  }
+
   Future<void> _selectDateAdult1(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -119,6 +153,136 @@ class _OneWayBookingState extends State<FlightBookNow> {
       setState(() {
         dateControllerAdult1.text = DateFormat('yyyy-MM-dd').format(picked);
       });
+    }
+  }
+
+  late String userTypeID = '';
+  late String userID = '';
+  late String Currency = '';
+  String formattedFromDate = '';
+  @override
+  void initState() {
+    super.initState();
+
+    setState(() {
+      resultFlightData = widget.resultFlightData;
+      print("lkjewkhfriu" + widget.departdate);
+      _retrieveSavedValues();
+    });
+  }
+
+  Future<void> _retrieveSavedValues() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      userTypeID = prefs.getString(Prefs.PREFS_USER_TYPE_ID) ?? '';
+      userID = prefs.getString(Prefs.PREFS_USER_ID) ?? '';
+      Currency = prefs.getString(Prefs.PREFS_CURRENCY) ?? '';
+      print('Currency: $Currency');
+    });
+  }
+
+  Future<List<TravellerDetailsModel>> fetchAutocompleteData(
+      String empName) async {
+    final url =
+        'https://traveldemo.org/travelapp/b2capi.asmx/BookingSearchTravellers?UserId=$userID&UserTypeId=$userTypeID&SearchFilter=$empName&UID=35510b94-5342-TDemoB2CAPI-a2e3-2e722772';
+    print('userID' + userID);
+    print('userTypeID' + userTypeID);
+    print('empName' + empName);
+    print(widget.departdate);
+
+    final response = await http.get(Uri.parse(url));
+    print('response: ${response.statusCode}');
+    if (response.statusCode == 200) {
+      final xmlDocument = xml.XmlDocument.parse(response.body);
+      final responseData = xmlDocument.findAllElements('string').first.text;
+
+      final decodedData = json.decode(responseData);
+      return decodedData
+          .map<TravellerDetailsModel>(
+              (data) => TravellerDetailsModel.fromJson(data))
+          .toList();
+    } else {
+      print('Failed to load autocomplete data: ${response.statusCode}');
+      throw Exception('Failed to load autocomplete data');
+    }
+  }
+
+  String convertDate(String inputDate) {
+    // Parse the input date string
+    DateTime date = DateFormat('dd MMM yyyy').parse(inputDate);
+
+    // Format the date in the desired format
+    formattedDate = DateFormat('yyyy-MM-dd').format(date);
+
+    return formattedDate;
+  }
+
+  Future<void> callSecondApi(String id) async {
+    final url =
+        'https://traveldemo.org/travelapp/b2capi.asmx/BookingSearchTravellerDetails?TravellerId=$id&UID=35510b94-5342-TDemoB2CAPI-a2e3-2e722772';
+    print('object' + id);
+
+    final response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      final responseData = response.body;
+
+      // Parse XML and extract JSON string
+      final startTag = '<string xmlns="http://tempuri.org/">';
+      final endTag = '</string>';
+      final startIndex = responseData.indexOf(startTag) + startTag.length;
+      final endIndex = responseData.indexOf(endTag);
+      final jsonString = responseData.substring(startIndex, endIndex);
+
+      // Parse JSON string
+      final jsonData = json.decode(jsonString);
+
+      // Extract data from Table
+      final tableData = jsonData['Table'];
+      final table1Data = jsonData['Table1'];
+
+      if (tableData != null &&
+          tableData.isNotEmpty &&
+          table1Data != null &&
+          table1Data.isNotEmpty) {
+        final traveller = tableData[0];
+        final passportInfo =
+            table1Data[0]; // Assuming there's only one entry in Table1
+
+        setState(() {
+          String _firstNameController = traveller['UDFirstName'];
+          adultLname_controller.text = traveller['UDLastName'];
+          dateControllerAdult1.text = traveller['UDDOB'];
+          String inputDate = dateControllerAdult1.text;
+          formattedDate = convertDate(inputDate);
+          print("formattedDate" + formattedDate);
+
+          print('finDate' + dateControllerAdult1.text.toString());
+          if (traveller['GenderId'] == 0) {
+            selectedGendarContactDetail = "Male";
+            Gendar = '0';
+          } else if (traveller['GenderId'] == 1) {
+            selectedGendarContactDetail = "Female";
+            Gendar = "1";
+          }
+          print("Gendar" + Gendar);
+          // Get data from Table1
+          Documentnumber_controller.text = passportInfo['PDPassportNo'];
+
+          String dateOfBirth = passportInfo['PDDateofBirth'];
+          Documentype_controller.text = passportInfo['PDDocument'];
+          String issuingCountry = passportInfo['PDIssuingCountry'];
+          ExpiryDateController.text = passportInfo['PDDateofExpiry'];
+          DateTime checkinDateTime = DateTime.parse(ExpiryDateController.text);
+          String finDate = DateFormat('yyyy/MM/dd').format(checkinDateTime);
+
+          ExpiryDateController.text = finDate;
+          print('finDate' + ExpiryDateController.text.toString());
+          // Update other text controllers with relevant fields
+        });
+      } else {
+        throw Exception('Failed to load traveller details');
+      }
     }
   }
 
@@ -321,22 +485,31 @@ class _OneWayBookingState extends State<FlightBookNow> {
   var resultFlightData = [];
   Future<void> submitAdivahaFlightBooking() async {
     final url = Uri.parse(
-        'https://traveldemo.org/travelapp/corporateapi.asmx/AdivahaFlightBooking');
+        'https://traveldemo.org/travelapp/b2capi.asmx/AdivahaFlightBooking');
     final headers = {'Content-Type': 'application/x-www-form-urlencoded'};
 
     String resultIndex = widget.flightDetails['ResultIndexID'];
     String traceId = widget.flightDetails['ItemId'];
 
+    DateTime date = DateFormat('yyyy/MM/dd').parse(widget.departdate);
+
+    // Format the date string with dashes
+    formattedFromDate = DateFormat('yyyy-MM-dd').format(date);
+
+    print(formattedFromDate);
     var reqBody = {
-      'ResultIndex': resultIndex,
-      'TraceId': traceId,
+      'ResultIndex': resultFlightData[0]['ResultIndexID'].toString(),
+      'TraceId': resultFlightData[0]['ItemId'].toString(),
       'LCC': resultFlightData[0]['IsLCC'].toString(),
-      'TripType': 'Oneway',
-      'UserId': '',
-      'AdultCount': '1',
-      'ChildCount': '0',
-      'InfantCount': '0',
-      'BookingCurrency': resultFlightData[0]['BookingCurrency'].toString(),
+      'TripType': 'OneWay',
+      'UserId': userID.toString(),
+      'UserTypeId': userTypeID.toString(),
+      'DefaultCurrency': resultFlightData[0]['BookingCurrency'].toString(),
+      'FromDate': formattedFromDate.toString(),
+      'AdultCount': widget.adultCount.toString(),
+      'ChildCount': widget.childrenCount.toString(),
+      'InfantCount': widget.infantCount.toString(),
+      'BookingCurrency': Currency.toString(),
       'BookingBaseFare': resultFlightData[0]['BookingBaseFare'].toString(),
       'BookingTax': resultFlightData[0]['BookingTax'].toString(),
       'BookingYQTax': resultFlightData[0]['BookingYQTax'].toString(),
@@ -362,17 +535,13 @@ class _OneWayBookingState extends State<FlightBookNow> {
       'GSTCompanyName': '',
       'GSTNumber': '',
       'GSTCompanyEmail': '',
-      'TitleAdult1': 'Mrs',
-      'FNameAdult1': adultFname_controller.text.toString().isEmpty
-          ? 'A'
-          : adultFname_controller.text.toString(),
-      'LNameAdult1': adultLname_controller.text.toString().isEmpty
-          ? 'A'
-          : adultLname_controller.text.toString(),
-      'LDOBAdult1': '1990/01/01',
-      'GenderAdult1': '1',
-      'DocNumAdult1': '65757657655',
-      'ExpDateAdult1': '2025/01/01',
+      'TitleAdult1': selectedTitleAdult1.toString(),
+      'FNameAdult1': AdultName1.toString(),
+      'LNameAdult1': adultLname_controller.text.toString(),
+      'LDOBAdult1': formattedDate.toString(),
+      'GenderAdult1': Gendar.toString(),
+      'DocNumAdult1': Documentnumber_controller.text.toString(),
+      'ExpDateAdult1': ExpiryDateController.text.toString(),
       'TitleAdult2': '',
       'FNameAdult2': '',
       'LNameAdult2': '',
@@ -506,13 +675,14 @@ class _OneWayBookingState extends State<FlightBookNow> {
       'GenderInfant5': '',
       'DocNumInfant5': '',
       'ExpDateInfant5': '',
-      'Address': contactAddressController.text,
-      'City': contactCityController.text,
+      'Address': contactAddressController.text.toString(),
+      'City': contactCityController.text.toString(),
       'CountryCode': 'IN',
-      'CountryName': 'India',
-      'MobileNumber': contactMobileController.text,
-      'Email': contactEmailController.text,
-      'AdultTravellerID1': '1002',
+      'CountryName': _CountryController.text.toString(),
+      'MobileNumber': contactMobileController.text.toString(),
+      'Email': contactEmailController.text.toString(),
+      'IsPassportRequired': 'True',
+      'AdultTravellerID1': AdultTravellerId1.toString(),
       'AdultTravellerID2': '',
       'AdultTravellerID3': '',
       'AdultTravellerID4': '',
@@ -521,49 +691,92 @@ class _OneWayBookingState extends State<FlightBookNow> {
       'AdultTravellerID7': '',
       'AdultTravellerID8': '',
       'AdultTravellerID9': '',
-      'TravelPolicy': 'InPolicy',
-      'TravelPolicyId': '1008',
       'AdultTravellerID10': ''
     };
+    developer.log('ResultIndex: $resultIndex');
+    print('TraceId: $traceId');
+    print('LCC: True');
+    print('TripType: OneWay');
+    print('UserId: $userID');
+    print('UserTypeId: $userTypeID');
+    print('DefaultCurrency: $Currency');
+    print('FromDate: ${formattedFromDate.toString()}');
+    print('AdultCount: ${widget.adultCount}');
+    print('ChildCount: ${widget.childrenCount}');
+    print('InfantCount: ${widget.infantCount}');
+    print('BookingCurrency: ${resultFlightData[0]['BookingCurrency']}');
+    print('BookingBaseFare: ${resultFlightData[0]['BookingBaseFare']}');
+    print('BookingTax: ${resultFlightData[0]['BookingTax']}');
+    print('BookingYQTax: ${resultFlightData[0]['BookingYQTax']}');
+    print(
+        'BookingAdditionalTxnFeePub: ${resultFlightData[0]['BookingAdditionalTxnFeePub']}');
+    print(
+        'BookingAdditionalTxnFeeOfrd: ${resultFlightData[0]['BookingAdditionalTxnFeeOfrd']}');
+    print('BookingOtherCharges: ${resultFlightData[0]['BookingOtherCharges']}');
+    print('BookingDiscount: ${resultFlightData[0]['BookingDiscount']}');
+    print(
+        'BookingPublishedFare: ${resultFlightData[0]['BookingPublishedFare']}');
+    print('BookingOfferedFare: ${resultFlightData[0]['BookingOfferedFare']}');
+    print(
+        'BookingTdsOnCommission: ${resultFlightData[0]['BookingTdsOnCommission']}');
+    print('BookingTdsOnPLB: ${resultFlightData[0]['BookingTdsOnPLB']}');
+    print(
+        'BookingTdsOnIncentive: ${resultFlightData[0]['BookingTdsOnIncentive']}');
+    print('BookingServiceFee: ${resultFlightData[0]['BookingServiceFee']}');
+    print('GSTCompanyAddress: ');
+    print('GSTCompanyContactNumber: ');
+    print('GSTCompanyName: ');
+    print('GSTNumber: ');
+    print('GSTCompanyEmail: ');
+    print('TitleAdult1: $selectedTitleAdult1');
+    print('FNameAdult1: $AdultName1');
+    print(
+        'LNameAdult1: ${adultLname_controller.text.isEmpty ? 'A' : adultLname_controller.text}');
+    print('LDOBAdult1: ${formattedDate.toString()}');
+    print('GenderAdult1: $Gendar');
+    print('DocNumAdult1: ${Documentnumber_controller.text}');
+    print('ExpDateAdult1: ${ExpiryDateController.text}');
+// Repeat this pattern for all other fields
+
+    print('Address: ${contactAddressController.text}');
+    print('City: ${contactCityController.text}');
+    print('CountryCode: IN');
+    print('CountryName: India');
+    print('MobileNumber: ${contactMobileController.text}');
+    print('Email: ${contactEmailController.text}');
+    print('AdultTravellerID1:${AdultTravellerId1}');
+
     try {
       setState(() {
         isBookingLoading = true;
       });
-      //developer.log(reqBody.toString());
+
       final response = await http.post(
         url,
         headers: headers,
         body: reqBody,
       );
 
-      //developer.log(reqBody.toString());
-
       setState(() {
         isBookingLoading = false;
       });
       if (response.statusCode == 200) {
-        //print('Request successful! Response: ${response.body}');
-        developer.log(response.body);
-        // Handle the response data here
+        print('Response: ${response.body}');
       } else {
-        print(
-            'Request failed with status: ${response.statusCode} : ${response.body}');
+        print('Request failed with status: ${response.statusCode}');
+
         // Handle the failure scenario
       }
     } catch (error) {
       print('Error sending request: $error');
-      // Handle any exceptions or errors that occurred during the request
     }
   }
 
   List<Map<String, dynamic>> extractJsonFromXml(String xmlString) {
-    // Parse the XML string
     var document = xml.XmlDocument.parse(xmlString);
 
-    // Extract the JSON string from the XML string
     String jsonString = document.findAllElements('string').first.text;
 
-    // Decode the JSON string into a list of maps
     List<Map<String, dynamic>> jsonList =
         json.decode(jsonString).cast<Map<String, dynamic>>();
 
@@ -574,9 +787,6 @@ class _OneWayBookingState extends State<FlightBookNow> {
     final url = Uri.parse(
         'https://traveldemo.org/travelapp/b2capi.asmx/AdivahaFlightDetailsGet');
     final headers = {'Content-Type': 'application/x-www-form-urlencoded'};
-
-    //print(widget.flightDetails['ResultIndexID']);
-    //print(widget.flightDetails['ItemId']);
 
     String resultIndex = widget.flightDetails['ResultIndexID'].toString();
     String traceId = widget.flightDetails['ItemId'].toString();
@@ -697,8 +907,21 @@ class _OneWayBookingState extends State<FlightBookNow> {
                               return Column(
                                 children: [
                                   Container(
-                                    color: Colors.white,
-                                    padding: EdgeInsets.all(20),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(
+                                          10), // Adjust the value as needed
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.grey.withOpacity(0.5),
+                                          spreadRadius: 2,
+                                          blurRadius: 5,
+                                          offset: Offset(0,
+                                              3), // changes the position of the shadow
+                                        ),
+                                      ],
+                                    ),
+                                    padding: EdgeInsets.all(10),
                                     width: double.infinity,
                                     child: Column(
                                       children: [
@@ -717,7 +940,7 @@ class _OneWayBookingState extends State<FlightBookNow> {
                                                   fontSize: 18),
                                             ),
                                             SizedBox(
-                                              width: 10,
+                                              width: 5,
                                             ),
                                             /* Text(
                                               'Air Asia',
@@ -729,7 +952,7 @@ class _OneWayBookingState extends State<FlightBookNow> {
                                           ],
                                         ),
                                         SizedBox(
-                                          height: 20,
+                                          height: 7,
                                         ),
                                         Row(
                                           crossAxisAlignment:
@@ -847,7 +1070,7 @@ class _OneWayBookingState extends State<FlightBookNow> {
                                           ],
                                         ),
                                         SizedBox(
-                                          height: 20,
+                                          height: 7,
                                         ),
                                         Row(
                                           mainAxisAlignment:
@@ -941,28 +1164,31 @@ class _OneWayBookingState extends State<FlightBookNow> {
                                           width: double.infinity,
                                           color: Color(0xfff7f7f7),
                                           margin: EdgeInsets.symmetric(
-                                              horizontal: 10),
-                                          padding: EdgeInsets.all(10),
+                                              horizontal: 9),
+                                          padding: EdgeInsets.all(4),
                                           child: Column(
                                             children: [
-                                              SizedBox(
-                                                height: 20,
+                                              Padding(
+                                                padding: const EdgeInsets.only(
+                                                    top: 5),
+                                                child: Text(
+                                                  CommonUtils
+                                                          .convertMinutesToHoursMinutes(
+                                                              resultFlightData[
+                                                                      index + 1]
+                                                                  [
+                                                                  'TravelTime']) +
+                                                      " " +
+                                                      "Layover",
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color: Colors.black,
+                                                      fontSize: 18),
+                                                ),
                                               ),
-                                              Text(
-                                                CommonUtils
-                                                        .convertMinutesToHoursMinutes(
-                                                            resultFlightData[
-                                                                    index + 1][
-                                                                'TravelTime']) +
-                                                    " " +
-                                                    "Layover",
-                                                style: TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    color: Colors.black,
-                                                    fontSize: 18),
-                                              ),
                                               SizedBox(
-                                                height: 20,
+                                                height: 7,
                                               ),
                                             ],
                                           ),
@@ -1215,23 +1441,27 @@ class _OneWayBookingState extends State<FlightBookNow> {
                                 padding: const EdgeInsets.all(8.0),
                                 child: Align(
                                   alignment: Alignment.topLeft,
-                                  child: Text("Adult 1:",
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 18)),
+                                  child: Text(
+                                    "Adult 1:",
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 18),
+                                  ),
                                 ),
                               ),
                               SizedBox(
-                                height: 15,
+                                height: 0,
                               ),
                               Padding(
                                 padding: const EdgeInsets.all(8.0),
                                 child: Align(
                                   alignment: Alignment.topLeft,
-                                  child: Text("Traveller details",
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 17)),
+                                  child: Text(
+                                    "Traveller details",
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 17),
+                                  ),
                                 ),
                               ),
                               Row(
@@ -1280,56 +1510,98 @@ class _OneWayBookingState extends State<FlightBookNow> {
                                     MainAxisAlignment.spaceBetween,
                                 children: [
                                   Padding(
-                                    padding: const EdgeInsets.only(
-                                        right: 10, left: 10),
+                                    padding: const EdgeInsets.only(left: 10),
                                     child: Container(
-                                      width: 135,
+                                      width: 150,
                                       height: 50,
-                                      child: TextFormField(
-                                        controller: adultFname_controller,
-                                        decoration: InputDecoration(
-                                          label: const Text('FirstName'),
-                                          hintText: 'First Name',
-                                          enabledBorder: OutlineInputBorder(
-                                            borderSide: const BorderSide(
-                                                color: Colors.grey),
-                                            borderRadius:
-                                                BorderRadius.circular(5),
-                                          ),
-                                          focusedBorder: OutlineInputBorder(
-                                            borderSide: const BorderSide(
-                                              color: Colors.black,
-                                              width: 1.5,
+                                      child:
+                                          Autocomplete<TravellerDetailsModel>(
+                                        optionsBuilder: (TextEditingValue
+                                            textEditingValue) async {
+                                          if (textEditingValue.text.isEmpty) {
+                                            return const Iterable<
+                                                TravellerDetailsModel>.empty();
+                                          }
+                                          return await fetchAutocompleteData(
+                                              textEditingValue.text);
+                                        },
+                                        displayStringForOption:
+                                            (TravellerDetailsModel option) =>
+                                                '${option.name}',
+                                        onSelected: (TravellerDetailsModel?
+                                            selectedOption) {
+                                          if (selectedOption != null) {
+                                            print(
+                                                'Selected: ${selectedOption.name}');
+                                            setState(() async {
+                                              await callSecondApi(
+                                                  selectedOption.id);
+                                              setState(() {
+                                                AdultName1 =
+                                                    selectedOption.name;
+                                                AdultTravellerId1 =
+                                                    selectedOption.id;
+                                              });
+                                            });
+                                          }
+                                        },
+                                        fieldViewBuilder: (BuildContext context,
+                                            TextEditingController
+                                                textEditingController,
+                                            FocusNode focusNode,
+                                            VoidCallback onFieldSubmitted) {
+                                          return TextFormField(
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.w500,
+                                                fontSize: 14),
+                                            controller: textEditingController,
+                                            focusNode: focusNode,
+                                            onFieldSubmitted: (value) {
+                                              onFieldSubmitted();
+                                            },
+                                            decoration: InputDecoration(
+                                              label: const Text('First Name'),
+                                              hintText: 'First Name',
+                                              enabledBorder: OutlineInputBorder(
+                                                borderSide: const BorderSide(
+                                                    color: Colors.grey),
+                                                borderRadius:
+                                                    BorderRadius.circular(5),
+                                              ),
+                                              focusedBorder: OutlineInputBorder(
+                                                borderSide: const BorderSide(
+                                                    color: Colors.black,
+                                                    width: 1.5),
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
+                                              ),
+                                              labelStyle: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                              errorBorder: OutlineInputBorder(
+                                                borderSide: const BorderSide(
+                                                    color: Colors.red,
+                                                    width: 2),
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
+                                              ),
                                             ),
-                                            borderRadius:
-                                                BorderRadius.circular(10),
-                                          ),
-                                          labelStyle: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                          errorBorder: OutlineInputBorder(
-                                            borderSide: const BorderSide(
-                                              color: Colors.red,
-                                              width: 2,
-                                            ),
-                                            borderRadius:
-                                                BorderRadius.circular(10),
-                                          ),
-                                        ),
+                                          );
+                                        },
                                       ),
                                     ),
                                   ),
-
                                   SizedBox(
-                                      width:
-                                          10), // Adjust the space between the text fields
-
+                                    width: 10,
+                                  ),
                                   Padding(
                                     padding: const EdgeInsets.only(right: 10),
                                     child: Container(
                                       width: 150,
                                       height: 50,
                                       child: TextFormField(
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.w500),
                                         controller: adultLname_controller,
                                         decoration: InputDecoration(
                                           label: const Text('SurName'),
@@ -1342,9 +1614,8 @@ class _OneWayBookingState extends State<FlightBookNow> {
                                           ),
                                           focusedBorder: OutlineInputBorder(
                                             borderSide: const BorderSide(
-                                              color: Colors.black,
-                                              width: 1.5,
-                                            ),
+                                                color: Colors.black,
+                                                width: 1.5),
                                             borderRadius:
                                                 BorderRadius.circular(10),
                                           ),
@@ -1353,9 +1624,7 @@ class _OneWayBookingState extends State<FlightBookNow> {
                                           ),
                                           errorBorder: OutlineInputBorder(
                                             borderSide: const BorderSide(
-                                              color: Colors.red,
-                                              width: 2,
-                                            ),
+                                                color: Colors.red, width: 2),
                                             borderRadius:
                                                 BorderRadius.circular(10),
                                           ),
@@ -1378,6 +1647,8 @@ class _OneWayBookingState extends State<FlightBookNow> {
                                       _selectDateAdult1(context);
                                     },
                                     controller: dateControllerAdult1,
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.w500),
                                     readOnly: true,
                                     decoration: InputDecoration(
                                       label: const Text('DOB'),
@@ -1399,9 +1670,7 @@ class _OneWayBookingState extends State<FlightBookNow> {
                                       ),
                                       focusedBorder: OutlineInputBorder(
                                         borderSide: const BorderSide(
-                                          color: Colors.black,
-                                          width: 1.5,
-                                        ),
+                                            color: Colors.black, width: 1.5),
                                         borderRadius: BorderRadius.circular(10),
                                       ),
                                       labelStyle: TextStyle(
@@ -1409,9 +1678,7 @@ class _OneWayBookingState extends State<FlightBookNow> {
                                       ),
                                       errorBorder: OutlineInputBorder(
                                         borderSide: const BorderSide(
-                                          color: Colors.red,
-                                          width: 2,
-                                        ),
+                                            color: Colors.red, width: 2),
                                         borderRadius: BorderRadius.circular(10),
                                       ),
                                     ),
@@ -1421,52 +1688,143 @@ class _OneWayBookingState extends State<FlightBookNow> {
                               SizedBox(
                                 height: 20,
                               ),
-                              Padding(
-                                padding:
-                                    const EdgeInsets.only(left: 10, right: 10),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    border: Border.all(
-                                      color: Colors.grey,
-                                      width: 1.0,
+                              Visibility(
+                                visible:
+                                    Status == 2, // Show or hide based on status
+                                child: Column(
+                                  children: [
+                                    // Fields to show when status is 1
+                                    // Modify or add more fields as needed
+                                    Padding(
+                                      padding: const EdgeInsets.only(
+                                          left: 10, right: 10),
+                                      child: Container(
+                                        height: 50,
+                                        child: TextFormField(
+                                          controller: Documentype_controller,
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.w500),
+                                          decoration: InputDecoration(
+                                            label: const Text('Document Type'),
+                                            hintText: 'Document Type',
+                                            enabledBorder: OutlineInputBorder(
+                                              borderSide: const BorderSide(
+                                                  color: Colors.grey),
+                                              borderRadius:
+                                                  BorderRadius.circular(5),
+                                            ),
+                                            focusedBorder: OutlineInputBorder(
+                                              borderSide: const BorderSide(
+                                                  color: Colors.black,
+                                                  width: 1.5),
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                            labelStyle: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                            errorBorder: OutlineInputBorder(
+                                              borderSide: const BorderSide(
+                                                  color: Colors.red, width: 2),
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
                                     ),
-                                    borderRadius: BorderRadius.circular(5.0),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    children: [
-                                      Radio(
-                                        value: 'Male',
-                                        groupValue: selectedGendarAdult1,
-                                        onChanged: (value) {
-                                          setState(() {
-                                            selectedGendarAdult1 =
-                                                value.toString();
-                                          });
-                                        },
-                                      ),
-                                      Text('Male.',
+                                    SizedBox(
+                                      height: 20,
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.only(
+                                          left: 10, right: 10),
+                                      child: Container(
+                                        height: 50,
+                                        child: TextFormField(
                                           style: TextStyle(
-                                              fontWeight: FontWeight.bold)),
-                                      Radio(
-                                        value: 'Female',
-                                        groupValue: selectedGendarAdult1,
-                                        onChanged: (value) {
-                                          setState(() {
-                                            selectedGendarAdult1 =
-                                                value.toString();
-                                          });
-                                        },
+                                              fontWeight: FontWeight.w500),
+                                          controller: Documentnumber_controller,
+                                          decoration: InputDecoration(
+                                            label:
+                                                const Text('Document Number'),
+                                            hintText: 'Document Number',
+                                            enabledBorder: OutlineInputBorder(
+                                              borderSide: const BorderSide(
+                                                  color: Colors.grey),
+                                              borderRadius:
+                                                  BorderRadius.circular(5),
+                                            ),
+                                            focusedBorder: OutlineInputBorder(
+                                              borderSide: const BorderSide(
+                                                  color: Colors.black,
+                                                  width: 1.5),
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                            labelStyle: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                            errorBorder: OutlineInputBorder(
+                                              borderSide: const BorderSide(
+                                                  color: Colors.red, width: 2),
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                          ),
+                                        ),
                                       ),
-                                      Text('Female.',
+                                    ),
+                                    SizedBox(
+                                      height: 20,
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.only(
+                                          left: 10, right: 10),
+                                      child: Container(
+                                        height: 50,
+                                        child: TextField(
+                                          onTap: () {
+                                            _selectExpiryDate(context);
+                                          },
                                           style: TextStyle(
-                                              fontWeight: FontWeight.bold)),
-                                    ],
-                                  ),
+                                              fontWeight: FontWeight.w500),
+                                          controller: ExpiryDateController,
+                                          readOnly: true,
+                                          decoration: InputDecoration(
+                                            label: const Text('Expiry Date'),
+                                            hintText: 'Expiry Date',
+                                            enabledBorder: OutlineInputBorder(
+                                              borderSide: const BorderSide(
+                                                  color: Colors.grey),
+                                              borderRadius:
+                                                  BorderRadius.circular(5),
+                                            ),
+                                            focusedBorder: OutlineInputBorder(
+                                              borderSide: const BorderSide(
+                                                  color: Colors.black,
+                                                  width: 1.5),
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                            labelStyle: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                            errorBorder: OutlineInputBorder(
+                                              borderSide: const BorderSide(
+                                                  color: Colors.red, width: 2),
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      height: 20,
+                                    ),
+                                  ],
                                 ),
-                              ),
-                              SizedBox(
-                                height: 20,
                               ),
                             ],
                           ),
@@ -1744,6 +2102,182 @@ class _OneWayBookingState extends State<FlightBookNow> {
                                     SizedBox(
                                       height: 20,
                                     ),
+                                    Visibility(
+                                      visible: Status ==
+                                          2, // Show or hide based on status
+                                      child: Column(
+                                        children: [
+                                          // Fields to show when status is 1
+                                          // Modify or add more fields as needed
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                                left: 10, right: 10),
+                                            child: Container(
+                                              height: 50,
+                                              child: TextFormField(
+                                                controller:
+                                                    Documentype_controller,
+                                                style: TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.w500),
+                                                decoration: InputDecoration(
+                                                  label: const Text(
+                                                      'Document Type'),
+                                                  hintText: 'Document Type',
+                                                  enabledBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.grey),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            5),
+                                                  ),
+                                                  focusedBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.black,
+                                                            width: 1.5),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                  labelStyle: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                  errorBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.red,
+                                                            width: 2),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(
+                                            height: 20,
+                                          ),
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                                left: 10, right: 10),
+                                            child: Container(
+                                              height: 50,
+                                              child: TextFormField(
+                                                style: TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.w500),
+                                                controller:
+                                                    Documentnumber_controller,
+                                                decoration: InputDecoration(
+                                                  label: const Text(
+                                                      'Document Number'),
+                                                  hintText: 'Document Number',
+                                                  enabledBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.grey),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            5),
+                                                  ),
+                                                  focusedBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.black,
+                                                            width: 1.5),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                  labelStyle: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                  errorBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.red,
+                                                            width: 2),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(
+                                            height: 20,
+                                          ),
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                                left: 10, right: 10),
+                                            child: Container(
+                                              height: 50,
+                                              child: TextField(
+                                                onTap: () {
+                                                  _selectExpiryDate(context);
+                                                },
+                                                style: TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.w500),
+                                                controller:
+                                                    ExpiryDateController,
+                                                readOnly: true,
+                                                decoration: InputDecoration(
+                                                  label:
+                                                      const Text('Expiry Date'),
+                                                  hintText: 'Expiry Date',
+                                                  enabledBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.grey),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            5),
+                                                  ),
+                                                  focusedBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.black,
+                                                            width: 1.5),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                  labelStyle: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                  errorBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.red,
+                                                            width: 2),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(
+                                            height: 20,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                   ],
                                 )
                               : Container(),
@@ -2019,6 +2553,182 @@ class _OneWayBookingState extends State<FlightBookNow> {
                                     ),
                                     SizedBox(
                                       height: 20,
+                                    ),
+                                    Visibility(
+                                      visible: Status ==
+                                          2, // Show or hide based on status
+                                      child: Column(
+                                        children: [
+                                          // Fields to show when status is 1
+                                          // Modify or add more fields as needed
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                                left: 10, right: 10),
+                                            child: Container(
+                                              height: 50,
+                                              child: TextFormField(
+                                                controller:
+                                                    Documentype_controller,
+                                                style: TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.w500),
+                                                decoration: InputDecoration(
+                                                  label: const Text(
+                                                      'Document Type'),
+                                                  hintText: 'Document Type',
+                                                  enabledBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.grey),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            5),
+                                                  ),
+                                                  focusedBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.black,
+                                                            width: 1.5),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                  labelStyle: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                  errorBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.red,
+                                                            width: 2),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(
+                                            height: 20,
+                                          ),
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                                left: 10, right: 10),
+                                            child: Container(
+                                              height: 50,
+                                              child: TextFormField(
+                                                style: TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.w500),
+                                                controller:
+                                                    Documentnumber_controller,
+                                                decoration: InputDecoration(
+                                                  label: const Text(
+                                                      'Document Number'),
+                                                  hintText: 'Document Number',
+                                                  enabledBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.grey),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            5),
+                                                  ),
+                                                  focusedBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.black,
+                                                            width: 1.5),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                  labelStyle: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                  errorBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.red,
+                                                            width: 2),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(
+                                            height: 20,
+                                          ),
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                                left: 10, right: 10),
+                                            child: Container(
+                                              height: 50,
+                                              child: TextField(
+                                                onTap: () {
+                                                  _selectExpiryDate(context);
+                                                },
+                                                style: TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.w500),
+                                                controller:
+                                                    ExpiryDateController,
+                                                readOnly: true,
+                                                decoration: InputDecoration(
+                                                  label:
+                                                      const Text('Expiry Date'),
+                                                  hintText: 'Expiry Date',
+                                                  enabledBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.grey),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            5),
+                                                  ),
+                                                  focusedBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.black,
+                                                            width: 1.5),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                  labelStyle: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                  errorBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.red,
+                                                            width: 2),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(
+                                            height: 20,
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ],
                                 )
@@ -2296,6 +3006,182 @@ class _OneWayBookingState extends State<FlightBookNow> {
                                     SizedBox(
                                       height: 20,
                                     ),
+                                    Visibility(
+                                      visible: Status ==
+                                          2, // Show or hide based on status
+                                      child: Column(
+                                        children: [
+                                          // Fields to show when status is 1
+                                          // Modify or add more fields as needed
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                                left: 10, right: 10),
+                                            child: Container(
+                                              height: 50,
+                                              child: TextFormField(
+                                                controller:
+                                                    Documentype_controller,
+                                                style: TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.w500),
+                                                decoration: InputDecoration(
+                                                  label: const Text(
+                                                      'Document Type'),
+                                                  hintText: 'Document Type',
+                                                  enabledBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.grey),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            5),
+                                                  ),
+                                                  focusedBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.black,
+                                                            width: 1.5),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                  labelStyle: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                  errorBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.red,
+                                                            width: 2),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(
+                                            height: 20,
+                                          ),
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                                left: 10, right: 10),
+                                            child: Container(
+                                              height: 50,
+                                              child: TextFormField(
+                                                style: TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.w500),
+                                                controller:
+                                                    Documentnumber_controller,
+                                                decoration: InputDecoration(
+                                                  label: const Text(
+                                                      'Document Number'),
+                                                  hintText: 'Document Number',
+                                                  enabledBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.grey),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            5),
+                                                  ),
+                                                  focusedBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.black,
+                                                            width: 1.5),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                  labelStyle: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                  errorBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.red,
+                                                            width: 2),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(
+                                            height: 20,
+                                          ),
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                                left: 10, right: 10),
+                                            child: Container(
+                                              height: 50,
+                                              child: TextField(
+                                                onTap: () {
+                                                  _selectExpiryDate(context);
+                                                },
+                                                style: TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.w500),
+                                                controller:
+                                                    ExpiryDateController,
+                                                readOnly: true,
+                                                decoration: InputDecoration(
+                                                  label:
+                                                      const Text('Expiry Date'),
+                                                  hintText: 'Expiry Date',
+                                                  enabledBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.grey),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            5),
+                                                  ),
+                                                  focusedBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.black,
+                                                            width: 1.5),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                  labelStyle: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                  errorBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.red,
+                                                            width: 2),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(
+                                            height: 20,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                   ],
                                 )
                               : Container(),
@@ -2571,6 +3457,182 @@ class _OneWayBookingState extends State<FlightBookNow> {
                                     ),
                                     SizedBox(
                                       height: 20,
+                                    ),
+                                    Visibility(
+                                      visible: Status ==
+                                          2, // Show or hide based on status
+                                      child: Column(
+                                        children: [
+                                          // Fields to show when status is 1
+                                          // Modify or add more fields as needed
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                                left: 10, right: 10),
+                                            child: Container(
+                                              height: 50,
+                                              child: TextFormField(
+                                                controller:
+                                                    Documentype_controller,
+                                                style: TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.w500),
+                                                decoration: InputDecoration(
+                                                  label: const Text(
+                                                      'Document Type'),
+                                                  hintText: 'Document Type',
+                                                  enabledBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.grey),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            5),
+                                                  ),
+                                                  focusedBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.black,
+                                                            width: 1.5),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                  labelStyle: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                  errorBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.red,
+                                                            width: 2),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(
+                                            height: 20,
+                                          ),
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                                left: 10, right: 10),
+                                            child: Container(
+                                              height: 50,
+                                              child: TextFormField(
+                                                style: TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.w500),
+                                                controller:
+                                                    Documentnumber_controller,
+                                                decoration: InputDecoration(
+                                                  label: const Text(
+                                                      'Document Number'),
+                                                  hintText: 'Document Number',
+                                                  enabledBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.grey),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            5),
+                                                  ),
+                                                  focusedBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.black,
+                                                            width: 1.5),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                  labelStyle: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                  errorBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.red,
+                                                            width: 2),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(
+                                            height: 20,
+                                          ),
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                                left: 10, right: 10),
+                                            child: Container(
+                                              height: 50,
+                                              child: TextField(
+                                                onTap: () {
+                                                  _selectExpiryDate(context);
+                                                },
+                                                style: TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.w500),
+                                                controller:
+                                                    ExpiryDateController,
+                                                readOnly: true,
+                                                decoration: InputDecoration(
+                                                  label:
+                                                      const Text('Expiry Date'),
+                                                  hintText: 'Expiry Date',
+                                                  enabledBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.grey),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            5),
+                                                  ),
+                                                  focusedBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.black,
+                                                            width: 1.5),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                  labelStyle: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                  errorBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.red,
+                                                            width: 2),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(
+                                            height: 20,
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ],
                                 )
@@ -5630,6 +6692,7 @@ class _OneWayBookingState extends State<FlightBookNow> {
                               width: 310,
                               height: 50,
                               child: TextFormField(
+                                controller: _CountryController,
                                 textCapitalization: TextCapitalization.words,
                                 decoration: InputDecoration(
                                   label: const Text('Country'),
@@ -5777,49 +6840,66 @@ class _OneWayBookingState extends State<FlightBookNow> {
                           SizedBox(
                             height: 10,
                           ),
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  resultFlightData[0]["Currency"] +
-                                      " " +
-                                      resultFlightData[0]["TotalPrice"],
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 18,
-                                  ),
-                                ),
-                                ElevatedButton(
-                                  onPressed: () {
-                                    submitAdivahaFlightBooking();
-                                    // Add your continue button functionality here
-                                  },
-                                  child: Text('Continue'),
-                                ),
-                              ],
-                            ),
-                          ),
                         ],
                       ),
-                    )
+                    ),
+                    Material(
+                      elevation: 10,
+                      child: Container(
+                        padding: EdgeInsets.fromLTRB(10, 10, 20, 10),
+                        color: Colors.white,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    resultFlightData[0]["Currency"] +
+                                        " " +
+                                        resultFlightData[0]["TotalPrice"],
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 18,
+                                    ),
+                                  ),
+                                  Text('Inclusive of all taxes')
+                                ],
+                              ),
+                              Material(
+                                elevation: 10,
+                                borderRadius: BorderRadius.circular(10),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                      color: Colors.orange,
+                                      borderRadius: BorderRadius.circular(10)),
+                                  padding: EdgeInsets.fromLTRB(20, 10, 20, 10),
+                                  child: Center(
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        submitAdivahaFlightBooking();
+                                      },
+                                      child: Text(
+                                        'Continue',
+                                        style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              )
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
             ),
     );
-  }
-
-  @override
-  void initState() {
-    // TODO: implement initState
-    //developer.log(widget.flightDetails.toString());
-    setState(() {
-      //getAdivahaFlightDetails();
-      resultFlightData = widget.resultFlightData;
-    });
-
-    super.initState();
   }
 }

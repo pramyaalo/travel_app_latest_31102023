@@ -4,9 +4,9 @@ import 'dart:developer';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-
+import 'package:get/get.dart';
+import 'package:xml/xml.dart' as xml;
 import 'package:http/http.dart' as http;
-import 'package:rounded_loading_button/rounded_loading_button.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../Booking/FamilyMembersModel.dart';
@@ -15,7 +15,9 @@ import '../../Models/passenger_ddl_model.dart';
 import '../../models/hotel_destination_models.dart';
 
 import '../../utils/response_handler.dart';
+import '../../utils/shared_preferences.dart';
 import 'AddTravellers_Flight.dart';
+import 'FlightScreenModel.dart';
 import 'multicity_flight_list.dart';
 import 'one_way_flight_list.dart';
 
@@ -27,7 +29,20 @@ class FlightScreen extends StatefulWidget {
 }
 
 class _FlightsScreenState extends State<FlightScreen> {
+  bool isSwapped = false;
   bool __shouldShowReturn = true;
+  String FinalOutput = '',
+      FinalOutPut1 = '',
+      SelectionValue = '',
+      SelectionValue1 = '',
+      FinalOutputMulti = '',
+      FinalOutput1Multi = '',
+      FinalOutputMultiSecond = '',
+      FinalOutput1MultiSecond = '',
+      FinalOutputMultiThird = '',
+      FinalOutput1MultiThird = '',
+      OriginPlace = '',
+      DestinationPlace = '';
   bool isMulti = false;
   bool _isPassengersLoading = true;
   String Economy = '',
@@ -46,15 +61,29 @@ class _FlightsScreenState extends State<FlightScreen> {
   TextEditingController destinationController = new TextEditingController();
   TextEditingController destinationController1 = new TextEditingController();
 
-  final RoundedLoadingButtonController _btnAddController =
-      RoundedLoadingButtonController();
-
   //String tripValue = 'Round trip';
   List tripOptions = [
     {"Id": 0, "Name": "Round trip"},
     {"Id": 1, "Name": "One Way"},
     {"Id": 2, "Name": "Multi-City"},
   ];
+  Future<List<FlightScreenModel>> fetchAutocompleteData(String empName) async {
+    final url =
+        'https://traveldemo.org/travelapp/b2capi.asmx/FlightAirportAutocomplete?empName=$empName';
+
+    final response = await http.get(Uri.parse(url));
+    if (response.statusCode == 200) {
+      final xmlDocument = xml.XmlDocument.parse(response.body);
+      final responseData = xmlDocument.findAllElements('string').first.text;
+
+      final decodedData = json.decode(responseData);
+      return decodedData
+          .map<FlightScreenModel>((data) => FlightScreenModel.fromJson(data))
+          .toList();
+    } else {
+      throw Exception('Failed to load autocomplete data');
+    }
+  }
 
   @override
   void initState() {
@@ -71,7 +100,7 @@ class _FlightsScreenState extends State<FlightScreen> {
     if (selectedClass == '') {
       selectedClass = 'Economy';
     }
-
+    _retrieveSavedValues();
     super.initState();
   }
 
@@ -163,6 +192,21 @@ class _FlightsScreenState extends State<FlightScreen> {
         }
       });
     }
+  }
+
+  late String userTypeID = '';
+  late String userID = '';
+  late String Currency = '';
+
+  Future<void> _retrieveSavedValues() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      userTypeID = prefs.getString(Prefs.PREFS_USER_TYPE_ID) ?? '';
+      userID = prefs.getString(Prefs.PREFS_USER_ID) ?? '';
+      Currency = prefs.getString(Prefs.PREFS_CURRENCY) ?? '';
+      print('Currsdency: $Currency');
+      // Call sendFlightSearchRequest() here after SharedPreferences values are retrieved
+    });
   }
 
   bool isSelected = false;
@@ -429,250 +473,195 @@ class _FlightsScreenState extends State<FlightScreen> {
                                   ),
                                   Spacer(), // Add some space between "From" and "To"
                                   Text(
-                                    'Destination',
+                                    'To',
                                     style: TextStyle(
                                       fontSize: 14,
                                       color: Colors.black54,
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
-                                ],
-                              ),
-                            ),
-                            Container(
-                              height: 40,
-                              margin: EdgeInsets.only(right: 0, left: 10),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Expanded(
-                                    child: TextField(
-                                      controller: orginController,
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                      decoration: InputDecoration(
-                                        border: InputBorder.none,
-                                      ),
-                                    ),
-                                  ),
-                                  Spacer(), // Add some space between the text field and the image
-                                  Container(
-                                    width: 25,
-                                    height: 25,
-                                    child:
-                                        Image.asset("assets/images/swap2.png"),
-                                  ),
-                                  Spacer(), // Add some space between the image and the text field
-                                  Expanded(
-                                    child: TextField(
-                                      controller: destinationController,
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                      decoration: InputDecoration(
-                                        border: InputBorder.none,
-                                      ),
-                                    ),
-                                  ),
-                                  /* Column(
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        "From",
-                                        style: TextStyle(
-                                            fontFamily: "Montserrat",
-                                            fontSize: 13,
-                                            color: Colors.grey),
-                                      ),
-                                      SizedBox(
-                                        height: 5,
-                                      ),
-                                      //Text("DEL", style: TextStyle(fontFamily: "Montserrat", fontSize: 14, fontWeight: FontWeight.bold),),
-                                      SizedBox(
-                                        width: 80,
-                                        child: TextField(
-                                          controller: orginController,
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.bold),
-                                          decoration: InputDecoration(
-                                              border: InputBorder.none),
-                                        ),
-                                      ),
-
-                                      SizedBox(
-                                        height: 8,
-                                      ),
-                                      Text(
-                                        'ABC',
-                                        style: TextStyle(
-                                            fontFamily: "Montserrat",
-                                            fontSize: 12,
-                                            color: Colors.grey),
-                                      ),
-                                    ],
-                                  ),*/
-                                  /* Image(
-                                      width: 40,
-                                      height: 40,
-                                      image: AssetImage(
-                                          "assets/images/swap2.png")),
-                                  Column(
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        "To",
-                                        style: TextStyle(
-                                            fontFamily: "Montserrat",
-                                            fontSize: 13,
-                                            color: Colors.grey),
-                                      ),
-                                      SizedBox(
-                                        height: 5,
-                                      ),
-                                      //Text("BOM", style: TextStyle(fontFamily: "Montserrat", fontSize: 14, fontWeight: FontWeight.bold),),
-                                      SizedBox(
-                                        width: 120,
-                                        child: TextField(
-                                          controller: destinationController,
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.bold),
-                                          decoration: InputDecoration(
-                                              border: InputBorder.none),
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        height: 8,
-                                      ),
-                                      Text(
-                                        'DEF',
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontFamily: "Montserrat",
-                                            fontSize: 13,
-                                            color: Colors.grey),
-                                      ),
-                                    ],
-                                  )*/
-                                ],
-                              ),
-                            ),
-                            Container(
-                              margin: EdgeInsets.only(left: 10, right: 15),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    'Delhi',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.black54,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  Spacer(), // Add some space between "From" and "To"
-                                  Text(
-                                    'Chennai',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.black54,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  /* Column(
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        "From",
-                                        style: TextStyle(
-                                            fontFamily: "Montserrat",
-                                            fontSize: 13,
-                                            color: Colors.grey),
-                                      ),
-                                      SizedBox(
-                                        height: 5,
-                                      ),
-                                      //Text("DEL", style: TextStyle(fontFamily: "Montserrat", fontSize: 14, fontWeight: FontWeight.bold),),
-                                      SizedBox(
-                                        width: 80,
-                                        child: TextField(
-                                          controller: orginController,
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.bold),
-                                          decoration: InputDecoration(
-                                              border: InputBorder.none),
-                                        ),
-                                      ),
-
-                                      SizedBox(
-                                        height: 8,
-                                      ),
-                                      Text(
-                                        'ABC',
-                                        style: TextStyle(
-                                            fontFamily: "Montserrat",
-                                            fontSize: 12,
-                                            color: Colors.grey),
-                                      ),
-                                    ],
-                                  ),*/
-                                  /* Image(
-                                      width: 40,
-                                      height: 40,
-                                      image: AssetImage(
-                                          "assets/images/swap2.png")),
-                                  Column(
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        "To",
-                                        style: TextStyle(
-                                            fontFamily: "Montserrat",
-                                            fontSize: 13,
-                                            color: Colors.grey),
-                                      ),
-                                      SizedBox(
-                                        height: 5,
-                                      ),
-                                      //Text("BOM", style: TextStyle(fontFamily: "Montserrat", fontSize: 14, fontWeight: FontWeight.bold),),
-                                      SizedBox(
-                                        width: 120,
-                                        child: TextField(
-                                          controller: destinationController,
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.bold),
-                                          decoration: InputDecoration(
-                                              border: InputBorder.none),
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        height: 8,
-                                      ),
-                                      Text(
-                                        'DEF',
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontFamily: "Montserrat",
-                                            fontSize: 13,
-                                            color: Colors.grey),
-                                      ),
-                                    ],
-                                  )*/
                                 ],
                               ),
                             ),
                             SizedBox(
-                              height: 4,
+                              height: 5,
+                            ),
+                            Container(
+                              margin: EdgeInsets.only(left: 10, right: 10),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  // Display FinalOutput or FinalOutPut1 based on isSwapped
+                                  Text(
+                                    isSwapped ? FinalOutPut1 : FinalOutput,
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.black,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  // GestureDetector to handle tap on the swap icon
+                                  GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        isSwapped =
+                                            !isSwapped; // Toggle the swap state
+                                      });
+                                    },
+                                    child: Container(
+                                      height: 25,
+                                      child: Image.asset(
+                                        "assets/images/swap2.png",
+                                        width: 15,
+                                        height: 15,
+                                      ),
+                                    ),
+                                  ),
+                                  // Display FinalOutput or FinalOutPut1 based on isSwapped
+                                  Text(
+                                    isSwapped ? FinalOutput : FinalOutPut1,
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.black,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            SizedBox(
+                              height: 3,
+                            ),
+                            // Inside the build method or wherever appropriate
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 10),
+                                  child: Container(
+                                      height: 33,
+                                      width: 140,
+                                      child: Autocomplete<FlightScreenModel>(
+                                        optionsBuilder: (TextEditingValue
+                                            textEditingValue) async {
+                                          if (textEditingValue.text.isEmpty) {
+                                            return const Iterable<
+                                                FlightScreenModel>.empty();
+                                          }
+                                          return await fetchAutocompleteData(
+                                              textEditingValue.text);
+                                        },
+                                        displayStringForOption: (FlightScreenModel
+                                                option) =>
+                                            '${option.name}, ${option.id}, ${option.municipality}',
+                                        onSelected: (FlightScreenModel?
+                                            selectedOption) {
+                                          if (selectedOption != null) {
+                                            print(
+                                                'Selected: ${selectedOption.name} (${selectedOption.id})');
+                                            setState(() {
+                                              FinalOutput = selectedOption.id;
+                                              OriginPlace =
+                                                  selectedOption.municipality;
+                                              SelectionValue =
+                                                  selectedOption.name;
+                                            });
+                                            // Do something with the selected option
+                                          }
+                                        },
+                                        fieldViewBuilder: (context, controller,
+                                            focusNode, onFieldSubmitted) {
+                                          return Container(
+                                            height: 38,
+                                            width: 120,
+                                            child: TextFormField(
+                                              controller: controller,
+                                              focusNode: focusNode,
+                                              // Adjust the signature of onFieldSubmitted to accept a String parameter
+                                              onFieldSubmitted: (String value) {
+                                                // Your logic here
+                                              },
+                                              maxLines: 2,
+                                              style: TextStyle(
+                                                color: Colors.black54,
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                              decoration: InputDecoration(
+                                                isDense: true,
+                                                contentPadding:
+                                                    EdgeInsets.only(top: 0),
+                                                border: InputBorder.none,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      )),
+                                ),
+                                SizedBox(width: 5),
+                                Padding(
+                                  padding: const EdgeInsets.only(right: 5),
+                                  child: Container(
+                                      height: 33,
+                                      width: 140,
+                                      child: Autocomplete<FlightScreenModel>(
+                                        optionsBuilder: (TextEditingValue
+                                            textEditingValue) async {
+                                          if (textEditingValue.text.isEmpty) {
+                                            return const Iterable<
+                                                FlightScreenModel>.empty();
+                                          }
+                                          return await fetchAutocompleteData(
+                                              textEditingValue.text);
+                                        },
+                                        displayStringForOption: (FlightScreenModel
+                                                option) =>
+                                            '${option.name}, ${option.id}, ${option.municipality}',
+                                        onSelected: (FlightScreenModel?
+                                            selectedOption) {
+                                          if (selectedOption != null) {
+                                            print(
+                                                'Selected: ${selectedOption.name} (${selectedOption.id})');
+                                            setState(() {
+                                              FinalOutPut1 = selectedOption.id;
+                                              DestinationPlace =
+                                                  selectedOption.municipality;
+                                            });
+                                            // Do something with the selected option
+                                          }
+                                        },
+                                        fieldViewBuilder: (context, controller,
+                                            focusNode, onFieldSubmitted) {
+                                          return TextFormField(
+                                            controller: controller,
+                                            focusNode: focusNode,
+                                            // Adjust the signature of onFieldSubmitted to accept a String parameter
+                                            onFieldSubmitted: (String value) {
+                                              // Your logic here
+                                            },
+                                            maxLines:
+                                                2, // Specify maximum lines
+                                            style: TextStyle(
+                                              color: Colors.black54,
+                                              overflow: TextOverflow.ellipsis,
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                            decoration: InputDecoration(
+                                              isDense: true,
+                                              contentPadding:
+                                                  EdgeInsets.only(top: 0),
+                                              border: InputBorder.none,
+                                            ),
+                                          );
+                                        },
+                                      )),
+                                ),
+                              ],
+                            ),
+                            SizedBox(
+                              height: 10,
                             ),
                             Visibility(
                               visible: tTripType == '2',
@@ -706,138 +695,220 @@ class _FlightsScreenState extends State<FlightScreen> {
                                       ],
                                     ),
                                   ),
+                                  SizedBox(
+                                    height: 7,
+                                  ),
                                   Container(
-                                    height: 40,
-                                    margin: EdgeInsets.only(right: 0, left: 10),
+                                    margin:
+                                        EdgeInsets.only(left: 10, right: 10),
                                     child: Row(
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceBetween,
                                       children: [
-                                        Expanded(
-                                          child: TextField(
-                                            controller: orginController1,
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                            decoration: InputDecoration(
-                                              border: InputBorder.none,
-                                            ),
-                                          ),
-                                        ),
-                                        Spacer(), // Add some space between the text field and the image
-                                        Container(
-                                          width: 25,
-                                          height: 25,
-                                          child: Image.asset(
-                                              "assets/images/swap2.png"),
-                                        ),
-                                        Spacer(), // Add some space between the image and the text field
-                                        Expanded(
-                                          child: TextField(
-                                            controller: destinationController1,
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                            decoration: InputDecoration(
-                                              border: InputBorder.none,
-                                            ),
-                                          ),
-                                        ),
-                                        /* Column(
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        "From",
-                                        style: TextStyle(
-                                            fontFamily: "Montserrat",
-                                            fontSize: 13,
-                                            color: Colors.grey),
-                                      ),
-                                      SizedBox(
-                                        height: 5,
-                                      ),
-                                      //Text("DEL", style: TextStyle(fontFamily: "Montserrat", fontSize: 14, fontWeight: FontWeight.bold),),
-                                      SizedBox(
-                                        width: 80,
-                                        child: TextField(
-                                          controller: orginController,
+                                        // Display FinalOutput or FinalOutPut1 based on isSwapped
+                                        Text(
+                                          isSwapped
+                                              ? FinalOutputMultiSecond
+                                              : FinalOutputMultiSecond,
                                           style: TextStyle(
-                                              fontWeight: FontWeight.bold),
-                                          decoration: InputDecoration(
-                                              border: InputBorder.none),
-                                        ),
-                                      ),
-
-                                      SizedBox(
-                                        height: 8,
-                                      ),
-                                      Text(
-                                        'ABC',
-                                        style: TextStyle(
-                                            fontFamily: "Montserrat",
-                                            fontSize: 12,
-                                            color: Colors.grey),
-                                      ),
-                                    ],
-                                  ),*/
-                                        /* Image(
-                                      width: 40,
-                                      height: 40,
-                                      image: AssetImage(
-                                          "assets/images/swap2.png")),
-                                  Column(
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        "To",
-                                        style: TextStyle(
-                                            fontFamily: "Montserrat",
-                                            fontSize: 13,
-                                            color: Colors.grey),
-                                      ),
-                                      SizedBox(
-                                        height: 5,
-                                      ),
-                                      //Text("BOM", style: TextStyle(fontFamily: "Montserrat", fontSize: 14, fontWeight: FontWeight.bold),),
-                                      SizedBox(
-                                        width: 120,
-                                        child: TextField(
-                                          controller: destinationController,
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.bold),
-                                          decoration: InputDecoration(
-                                              border: InputBorder.none),
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        height: 8,
-                                      ),
-                                      Text(
-                                        'DEF',
-                                        style: TextStyle(
+                                            fontSize: 16,
+                                            color: Colors.black,
                                             fontWeight: FontWeight.bold,
-                                            fontFamily: "Montserrat",
-                                            fontSize: 13,
-                                            color: Colors.grey),
-                                      ),
-                                    ],
-                                  )*/
+                                          ),
+                                        ),
+                                        // GestureDetector to handle tap on the swap icon
+                                        GestureDetector(
+                                          onTap: () {
+                                            setState(() {
+                                              isSwapped =
+                                                  !isSwapped; // Toggle the swap state
+                                            });
+                                          },
+                                          child: Container(
+                                            height: 25,
+                                            child: Image.asset(
+                                              "assets/images/swap2.png",
+                                              width: 15,
+                                              height: 15,
+                                            ),
+                                          ),
+                                        ),
+                                        // Display FinalOutput or FinalOutPut1 based on isSwapped
+                                        Text(
+                                          isSwapped
+                                              ? FinalOutputMultiSecond
+                                              : FinalOutput1MultiSecond,
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            color: Colors.black,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
                                       ],
                                     ),
                                   ),
+                                  SizedBox(
+                                    height: 3,
+                                  ),
+                                  // Inside the build method or wherever appropriate
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Padding(
+                                        padding:
+                                            const EdgeInsets.only(left: 10),
+                                        child: Container(
+                                            height: 33,
+                                            width: 140,
+                                            child:
+                                                Autocomplete<FlightScreenModel>(
+                                              optionsBuilder: (TextEditingValue
+                                                  textEditingValue) async {
+                                                if (textEditingValue
+                                                    .text.isEmpty) {
+                                                  return const Iterable<
+                                                      FlightScreenModel>.empty();
+                                                }
+                                                return await fetchAutocompleteData(
+                                                    textEditingValue.text);
+                                              },
+                                              displayStringForOption:
+                                                  (FlightScreenModel option) =>
+                                                      '${option.name}, ${option.id}, ${option.municipality}',
+                                              onSelected: (FlightScreenModel?
+                                                  selectedOption) {
+                                                if (selectedOption != null) {
+                                                  print(
+                                                      'Selected: ${selectedOption.name} (${selectedOption.id})');
+                                                  setState(() {
+                                                    FinalOutputMultiSecond =
+                                                        selectedOption.id;
+                                                    OriginPlace = selectedOption
+                                                        .municipality;
+                                                    SelectionValue =
+                                                        selectedOption.name;
+                                                  });
+                                                  // Do something with the selected option
+                                                }
+                                              },
+                                              fieldViewBuilder: (context,
+                                                  controller,
+                                                  focusNode,
+                                                  onFieldSubmitted) {
+                                                return Container(
+                                                  height: 38,
+                                                  width: 120,
+                                                  child: TextFormField(
+                                                    controller: controller,
+                                                    focusNode: focusNode,
+                                                    // Adjust the signature of onFieldSubmitted to accept a String parameter
+                                                    onFieldSubmitted:
+                                                        (String value) {
+                                                      // Your logic here
+                                                    },
+                                                    maxLines: 2,
+                                                    style: TextStyle(
+                                                      color: Colors.black54,
+                                                      fontSize: 14,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                    ),
+                                                    decoration: InputDecoration(
+                                                      isDense: true,
+                                                      contentPadding:
+                                                          EdgeInsets.only(
+                                                              top: 0),
+                                                      border: InputBorder.none,
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                            )),
+                                      ),
+                                      SizedBox(width: 5),
+                                      Padding(
+                                        padding:
+                                            const EdgeInsets.only(right: 5),
+                                        child: Container(
+                                            height: 33,
+                                            width: 140,
+                                            child:
+                                                Autocomplete<FlightScreenModel>(
+                                              optionsBuilder: (TextEditingValue
+                                                  textEditingValue) async {
+                                                if (textEditingValue
+                                                    .text.isEmpty) {
+                                                  return const Iterable<
+                                                      FlightScreenModel>.empty();
+                                                }
+                                                return await fetchAutocompleteData(
+                                                    textEditingValue.text);
+                                              },
+                                              displayStringForOption:
+                                                  (FlightScreenModel option) =>
+                                                      '${option.name}, ${option.id}, ${option.municipality}',
+                                              onSelected: (FlightScreenModel?
+                                                  selectedOption) {
+                                                if (selectedOption != null) {
+                                                  print(
+                                                      'Selected: ${selectedOption.name} (${selectedOption.id})');
+                                                  setState(() {
+                                                    FinalOutput1MultiSecond =
+                                                        selectedOption.id;
+                                                    DestinationPlace =
+                                                        selectedOption
+                                                            .municipality;
+                                                  });
+                                                  // Do something with the selected option
+                                                }
+                                              },
+                                              fieldViewBuilder: (context,
+                                                  controller,
+                                                  focusNode,
+                                                  onFieldSubmitted) {
+                                                return TextFormField(
+                                                  controller: controller,
+                                                  focusNode: focusNode,
+                                                  // Adjust the signature of onFieldSubmitted to accept a String parameter
+                                                  onFieldSubmitted:
+                                                      (String value) {
+                                                    // Your logic here
+                                                  },
+                                                  maxLines:
+                                                      2, // Specify maximum lines
+                                                  style: TextStyle(
+                                                    color: Colors.black54,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                  decoration: InputDecoration(
+                                                    isDense: true,
+                                                    contentPadding:
+                                                        EdgeInsets.only(top: 0),
+                                                    border: InputBorder.none,
+                                                  ),
+                                                );
+                                              },
+                                            )),
+                                      ),
+                                    ],
+                                  ),
+                                  SizedBox(
+                                    height: 10,
+                                  ),
                                   Container(
-                                    margin:
-                                        EdgeInsets.only(left: 10, right: 15),
+                                    padding: EdgeInsets.only(bottom: 0),
+                                    margin: EdgeInsets.only(
+                                        left: 10, right: 10, top: 10),
                                     child: Row(
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceBetween,
                                       children: [
                                         Text(
-                                          'Delhi',
+                                          'From',
                                           style: TextStyle(
                                             fontSize: 14,
                                             color: Colors.black54,
@@ -846,101 +917,448 @@ class _FlightsScreenState extends State<FlightScreen> {
                                         ),
                                         Spacer(), // Add some space between "From" and "To"
                                         Text(
-                                          'Chennai',
+                                          'Destination',
                                           style: TextStyle(
                                             fontSize: 14,
                                             color: Colors.black54,
                                             fontWeight: FontWeight.w500,
                                           ),
                                         ),
-                                        /* Column(
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        "From",
-                                        style: TextStyle(
-                                            fontFamily: "Montserrat",
-                                            fontSize: 13,
-                                            color: Colors.grey),
-                                      ),
-                                      SizedBox(
-                                        height: 5,
-                                      ),
-                                      //Text("DEL", style: TextStyle(fontFamily: "Montserrat", fontSize: 14, fontWeight: FontWeight.bold),),
-                                      SizedBox(
-                                        width: 80,
-                                        child: TextField(
-                                          controller: orginController,
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.bold),
-                                          decoration: InputDecoration(
-                                              border: InputBorder.none),
-                                        ),
-                                      ),
-
-                                      SizedBox(
-                                        height: 8,
-                                      ),
-                                      Text(
-                                        'ABC',
-                                        style: TextStyle(
-                                            fontFamily: "Montserrat",
-                                            fontSize: 12,
-                                            color: Colors.grey),
-                                      ),
-                                    ],
-                                  ),*/
-                                        /* Image(
-                                      width: 40,
-                                      height: 40,
-                                      image: AssetImage(
-                                          "assets/images/swap2.png")),
-                                  Column(
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        "To",
-                                        style: TextStyle(
-                                            fontFamily: "Montserrat",
-                                            fontSize: 13,
-                                            color: Colors.grey),
-                                      ),
-                                      SizedBox(
-                                        height: 5,
-                                      ),
-                                      //Text("BOM", style: TextStyle(fontFamily: "Montserrat", fontSize: 14, fontWeight: FontWeight.bold),),
-                                      SizedBox(
-                                        width: 120,
-                                        child: TextField(
-                                          controller: destinationController,
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.bold),
-                                          decoration: InputDecoration(
-                                              border: InputBorder.none),
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        height: 8,
-                                      ),
-                                      Text(
-                                        'DEF',
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontFamily: "Montserrat",
-                                            fontSize: 13,
-                                            color: Colors.grey),
-                                      ),
-                                    ],
-                                  )*/
                                       ],
                                     ),
                                   ),
                                   SizedBox(
-                                    height: 5,
+                                    height: 7,
+                                  ),
+                                  Container(
+                                    margin:
+                                        EdgeInsets.only(left: 10, right: 10),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        // Display FinalOutput or FinalOutPut1 based on isSwapped
+                                        Text(
+                                          isSwapped
+                                              ? FinalOutputMulti
+                                              : FinalOutputMulti,
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            color: Colors.black,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        // GestureDetector to handle tap on the swap icon
+                                        GestureDetector(
+                                          onTap: () {
+                                            setState(() {
+                                              isSwapped =
+                                                  !isSwapped; // Toggle the swap state
+                                            });
+                                          },
+                                          child: Container(
+                                            height: 25,
+                                            child: Image.asset(
+                                              "assets/images/swap2.png",
+                                              width: 15,
+                                              height: 15,
+                                            ),
+                                          ),
+                                        ),
+                                        // Display FinalOutput or FinalOutPut1 based on isSwapped
+                                        Text(
+                                          isSwapped
+                                              ? FinalOutputMulti
+                                              : FinalOutput1Multi,
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            color: Colors.black,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    height: 3,
+                                  ),
+                                  // Inside the build method or wherever appropriate
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Padding(
+                                        padding:
+                                            const EdgeInsets.only(left: 10),
+                                        child: Container(
+                                            height: 33,
+                                            width: 140,
+                                            child:
+                                                Autocomplete<FlightScreenModel>(
+                                              optionsBuilder: (TextEditingValue
+                                                  textEditingValue) async {
+                                                if (textEditingValue
+                                                    .text.isEmpty) {
+                                                  return const Iterable<
+                                                      FlightScreenModel>.empty();
+                                                }
+                                                return await fetchAutocompleteData(
+                                                    textEditingValue.text);
+                                              },
+                                              displayStringForOption:
+                                                  (FlightScreenModel option) =>
+                                                      '${option.name}, ${option.id}, ${option.municipality}',
+                                              onSelected: (FlightScreenModel?
+                                                  selectedOption) {
+                                                if (selectedOption != null) {
+                                                  print(
+                                                      'Selected: ${selectedOption.name} (${selectedOption.id})');
+                                                  setState(() {
+                                                    FinalOutputMulti =
+                                                        selectedOption.id;
+                                                    OriginPlace = selectedOption
+                                                        .municipality;
+                                                    SelectionValue =
+                                                        selectedOption.name;
+                                                  });
+                                                  // Do something with the selected option
+                                                }
+                                              },
+                                              fieldViewBuilder: (context,
+                                                  controller,
+                                                  focusNode,
+                                                  onFieldSubmitted) {
+                                                return Container(
+                                                  height: 38,
+                                                  width: 120,
+                                                  child: TextFormField(
+                                                    controller: controller,
+                                                    focusNode: focusNode,
+                                                    // Adjust the signature of onFieldSubmitted to accept a String parameter
+                                                    onFieldSubmitted:
+                                                        (String value) {
+                                                      // Your logic here
+                                                    },
+                                                    maxLines: 2,
+                                                    style: TextStyle(
+                                                      color: Colors.black54,
+                                                      fontSize: 14,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                    ),
+                                                    decoration: InputDecoration(
+                                                      isDense: true,
+                                                      contentPadding:
+                                                          EdgeInsets.only(
+                                                              top: 0),
+                                                      border: InputBorder.none,
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                            )),
+                                      ),
+                                      SizedBox(width: 5),
+                                      Padding(
+                                        padding:
+                                            const EdgeInsets.only(right: 5),
+                                        child: Container(
+                                            height: 33,
+                                            width: 140,
+                                            child:
+                                                Autocomplete<FlightScreenModel>(
+                                              optionsBuilder: (TextEditingValue
+                                                  textEditingValue) async {
+                                                if (textEditingValue
+                                                    .text.isEmpty) {
+                                                  return const Iterable<
+                                                      FlightScreenModel>.empty();
+                                                }
+                                                return await fetchAutocompleteData(
+                                                    textEditingValue.text);
+                                              },
+                                              displayStringForOption:
+                                                  (FlightScreenModel option) =>
+                                                      '${option.name}, ${option.id}, ${option.municipality}',
+                                              onSelected: (FlightScreenModel?
+                                                  selectedOption) {
+                                                if (selectedOption != null) {
+                                                  print(
+                                                      'Selected: ${selectedOption.name} (${selectedOption.id})');
+                                                  setState(() {
+                                                    FinalOutput1Multi =
+                                                        selectedOption.id;
+                                                    DestinationPlace =
+                                                        selectedOption
+                                                            .municipality;
+                                                  });
+                                                  // Do something with the selected option
+                                                }
+                                              },
+                                              fieldViewBuilder: (context,
+                                                  controller,
+                                                  focusNode,
+                                                  onFieldSubmitted) {
+                                                return TextFormField(
+                                                  controller: controller,
+                                                  focusNode: focusNode,
+                                                  // Adjust the signature of onFieldSubmitted to accept a String parameter
+                                                  onFieldSubmitted:
+                                                      (String value) {
+                                                    // Your logic here
+                                                  },
+                                                  maxLines:
+                                                      2, // Specify maximum lines
+                                                  style: TextStyle(
+                                                    color: Colors.black54,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                  decoration: InputDecoration(
+                                                    isDense: true,
+                                                    contentPadding:
+                                                        EdgeInsets.only(top: 0),
+                                                    border: InputBorder.none,
+                                                  ),
+                                                );
+                                              },
+                                            )),
+                                      ),
+                                    ],
+                                  ),
+                                  SizedBox(
+                                    height: 10,
+                                  ),
+                                  Container(
+                                    padding: EdgeInsets.only(bottom: 0),
+                                    margin: EdgeInsets.only(
+                                        left: 10, right: 10, top: 10),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          'From',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.black54,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                        Spacer(), // Add some space between "From" and "To"
+                                        Text(
+                                          'Destination',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.black54,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    height: 7,
+                                  ),
+                                  Container(
+                                    margin:
+                                        EdgeInsets.only(left: 10, right: 10),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        // Display FinalOutput or FinalOutPut1 based on isSwapped
+                                        Text(
+                                          isSwapped
+                                              ? FinalOutputMultiThird
+                                              : FinalOutputMultiThird,
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            color: Colors.black,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        // GestureDetector to handle tap on the swap icon
+                                        GestureDetector(
+                                          onTap: () {
+                                            setState(() {
+                                              isSwapped =
+                                                  !isSwapped; // Toggle the swap state
+                                            });
+                                          },
+                                          child: Container(
+                                            height: 25,
+                                            child: Image.asset(
+                                              "assets/images/swap2.png",
+                                              width: 15,
+                                              height: 15,
+                                            ),
+                                          ),
+                                        ),
+                                        // Display FinalOutput or FinalOutPut1 based on isSwapped
+                                        Text(
+                                          isSwapped
+                                              ? FinalOutputMultiThird
+                                              : FinalOutput1MultiThird,
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            color: Colors.black,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    height: 3,
+                                  ),
+                                  // Inside the build method or wherever appropriate
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Padding(
+                                        padding:
+                                            const EdgeInsets.only(left: 10),
+                                        child: Container(
+                                            height: 33,
+                                            width: 140,
+                                            child:
+                                                Autocomplete<FlightScreenModel>(
+                                              optionsBuilder: (TextEditingValue
+                                                  textEditingValue) async {
+                                                if (textEditingValue
+                                                    .text.isEmpty) {
+                                                  return const Iterable<
+                                                      FlightScreenModel>.empty();
+                                                }
+                                                return await fetchAutocompleteData(
+                                                    textEditingValue.text);
+                                              },
+                                              displayStringForOption:
+                                                  (FlightScreenModel option) =>
+                                                      '${option.name}, ${option.id}, ${option.municipality}',
+                                              onSelected: (FlightScreenModel?
+                                                  selectedOption) {
+                                                if (selectedOption != null) {
+                                                  print(
+                                                      'Selected: ${selectedOption.name} (${selectedOption.id})');
+                                                  setState(() {
+                                                    FinalOutputMultiThird =
+                                                        selectedOption.id;
+                                                    OriginPlace = selectedOption
+                                                        .municipality;
+                                                    SelectionValue =
+                                                        selectedOption.name;
+                                                  });
+                                                  // Do something with the selected option
+                                                }
+                                              },
+                                              fieldViewBuilder: (context,
+                                                  controller,
+                                                  focusNode,
+                                                  onFieldSubmitted) {
+                                                return Container(
+                                                  height: 38,
+                                                  width: 120,
+                                                  child: TextFormField(
+                                                    controller: controller,
+                                                    focusNode: focusNode,
+                                                    // Adjust the signature of onFieldSubmitted to accept a String parameter
+                                                    onFieldSubmitted:
+                                                        (String value) {
+                                                      // Your logic here
+                                                    },
+                                                    maxLines: 2,
+                                                    style: TextStyle(
+                                                      color: Colors.black54,
+                                                      fontSize: 14,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                    ),
+                                                    decoration: InputDecoration(
+                                                      isDense: true,
+                                                      contentPadding:
+                                                          EdgeInsets.only(
+                                                              top: 0),
+                                                      border: InputBorder.none,
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                            )),
+                                      ),
+                                      SizedBox(width: 5),
+                                      Padding(
+                                        padding:
+                                            const EdgeInsets.only(right: 5),
+                                        child: Container(
+                                            height: 33,
+                                            width: 140,
+                                            child:
+                                                Autocomplete<FlightScreenModel>(
+                                              optionsBuilder: (TextEditingValue
+                                                  textEditingValue) async {
+                                                if (textEditingValue
+                                                    .text.isEmpty) {
+                                                  return const Iterable<
+                                                      FlightScreenModel>.empty();
+                                                }
+                                                return await fetchAutocompleteData(
+                                                    textEditingValue.text);
+                                              },
+                                              displayStringForOption:
+                                                  (FlightScreenModel option) =>
+                                                      '${option.name}, ${option.id}, ${option.municipality}',
+                                              onSelected: (FlightScreenModel?
+                                                  selectedOption) {
+                                                if (selectedOption != null) {
+                                                  print(
+                                                      'Selected: ${selectedOption.name} (${selectedOption.id})');
+                                                  setState(() {
+                                                    FinalOutput1MultiThird =
+                                                        selectedOption.id;
+                                                    DestinationPlace =
+                                                        selectedOption
+                                                            .municipality;
+                                                  });
+                                                  // Do something with the selected option
+                                                }
+                                              },
+                                              fieldViewBuilder: (context,
+                                                  controller,
+                                                  focusNode,
+                                                  onFieldSubmitted) {
+                                                return TextFormField(
+                                                  controller: controller,
+                                                  focusNode: focusNode,
+                                                  // Adjust the signature of onFieldSubmitted to accept a String parameter
+                                                  onFieldSubmitted:
+                                                      (String value) {
+                                                    // Your logic here
+                                                  },
+                                                  maxLines:
+                                                      2, // Specify maximum lines
+                                                  style: TextStyle(
+                                                    color: Colors.black54,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                  decoration: InputDecoration(
+                                                    isDense: true,
+                                                    contentPadding:
+                                                        EdgeInsets.only(top: 0),
+                                                    border: InputBorder.none,
+                                                  ),
+                                                );
+                                              },
+                                            )),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
@@ -1287,15 +1705,16 @@ class _FlightsScreenState extends State<FlightScreen> {
                                               children:
                                                   childrenCount.toString(),
                                               infants: infantsCount.toString(),
-                                              orgin: orginController.text,
-                                              destination:
-                                                  destinationController.text,
+                                              orgin: FinalOutput,
+                                              originCountry: OriginPlace,
+                                              destinationCourntry:
+                                                  DestinationPlace,
+                                              destination: FinalOutPut1,
                                               departDate: selectedDate,
                                               returnDate: selectedReturnDate,
                                             ));
                                           } else if (tTripType == "1") {
-                                            print(
-                                                'sfdf' + orginController.text);
+                                            print('sfdf' + FinalOutput);
                                             Navigator.push(
                                                 context,
                                                 MaterialPageRoute(
@@ -1308,13 +1727,16 @@ class _FlightsScreenState extends State<FlightScreen> {
                                                                   .toString(),
                                                           infants: infantsCount
                                                               .toString(),
-                                                          orgin: orginController
-                                                              .text,
+                                                          orgin: FinalOutput
+                                                              .toString(),
                                                           destination:
-                                                              destinationController
-                                                                  .text,
+                                                              FinalOutPut1
+                                                                  .toString(),
                                                           departDate:
-                                                              selectedDate),
+                                                              selectedDate
+                                                                  .toString(),
+                                                          userId: userID,
+                                                          currency: Currency),
                                                 ));
                                           } else if (tTripType == "2") {
                                             print("destinationController1:" +
@@ -1325,12 +1747,16 @@ class _FlightsScreenState extends State<FlightScreen> {
                                                     childrenCount.toString(),
                                                 infants:
                                                     infantsCount.toString(),
-                                                orgin: orginController.text,
-                                                destination:
-                                                    destinationController.text,
-                                                orgin1: orginController1.text,
-                                                destination1:
-                                                    destinationController1.text,
+                                                orgin: FinalOutput,
+                                                destination: FinalOutPut1,
+                                                orgin1: FinalOutputMulti,
+                                                destination1: FinalOutput1Multi,
+                                                orgin2: FinalOutputMultiSecond,
+                                                destination2:
+                                                    FinalOutput1MultiSecond,
+                                                orgin3: FinalOutputMultiThird,
+                                                destination3:
+                                                    FinalOutput1MultiThird,
                                                 returnDate: selectedReturnDate,
                                                 departDate: selectedDate));
                                           }
@@ -1342,7 +1768,7 @@ class _FlightsScreenState extends State<FlightScreen> {
                                               fontWeight: FontWeight.bold),
                                         ),
                                         style: ElevatedButton.styleFrom(
-                                          primary: Color(0xff74206b),
+                                          backgroundColor: Color(0xff74206b),
 
                                           // Background color of the button
                                           shape: RoundedRectangleBorder(
@@ -1450,7 +1876,7 @@ class _FlightsScreenState extends State<FlightScreen> {
                                           style: TextStyle(color: Colors.white),
                                         ),
                                         style: ElevatedButton.styleFrom(
-                                            primary: Colors.red,
+                                            backgroundColor: Colors.red,
                                             elevation: 16.0),
                                       )
                                     ],

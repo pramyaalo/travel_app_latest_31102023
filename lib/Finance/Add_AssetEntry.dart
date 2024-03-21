@@ -56,7 +56,7 @@ class _BookingCardGeneralDetailsState extends State<Add_AssetEntry> {
             children: [
               IconButton(
                 icon: Icon(
-                 Icons.arrow_back,
+                  Icons.arrow_back,
                   color: Colors.black,
                   size: 27,
                 ),
@@ -68,7 +68,10 @@ class _BookingCardGeneralDetailsState extends State<Add_AssetEntry> {
               SizedBox(width: 1), // Set the desired width
               Text(
                 "Add Asset Entry",
-                style: TextStyle( color: Colors.black,fontFamily: "Montserrat", fontSize: 19),
+                style: TextStyle(
+                    color: Colors.black,
+                    fontFamily: "Montserrat",
+                    fontSize: 19),
               ),
             ],
           ),
@@ -82,7 +85,7 @@ class _BookingCardGeneralDetailsState extends State<Add_AssetEntry> {
               width: 10,
             )
           ],
-         backgroundColor: Colors.white,
+          backgroundColor: Colors.white,
         ),
         body: SingleChildScrollView(
           padding: EdgeInsets.all(10),
@@ -638,12 +641,12 @@ class _BookingCardGeneralDetailsState extends State<Add_AssetEntry> {
                                           KYCApplication()));*/
                           },
                           style: ElevatedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            backgroundColor: Colors.blue,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(
                                   5), // Adjust the radius as needed
-                            ),
-                            primary: Colors.blue, // Button color
-                            onPrimary: Colors.white, // Text color
+                            ), // Text color
                           ),
                           child: SizedBox(
                               width: 115,
@@ -669,12 +672,12 @@ class _BookingCardGeneralDetailsState extends State<Add_AssetEntry> {
                                               AddReview()));*/
                           },
                           style: ElevatedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            backgroundColor: Colors.red,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(
                                   5), // Adjust the radius as needed
-                            ),
-                            primary: Colors.red, // Button color
-                            onPrimary: Colors.white, // Text color
+                            ), // Text color
                           ),
                           child: SizedBox(
                               width: 115,

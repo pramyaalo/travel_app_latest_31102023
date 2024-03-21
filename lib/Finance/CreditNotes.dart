@@ -3,7 +3,9 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/response_handler.dart';
+import '../utils/shared_preferences.dart';
 import 'CreditNoteHolidayReceipt.dart';
 import 'CreditNoteHotelReceipt.dart';
 import 'CreditNoteListModel.dart';
@@ -18,11 +20,29 @@ class CreditNoteInvoiceList extends StatefulWidget {
 }
 
 class _BookingCardGeneralDetailsState extends State<CreditNoteInvoiceList> {
+  static late String userTypeID;
+  static late String userID;
+  @override
+  void initState() {
+    super.initState();
+    _retrieveSavedValues();
+  }
+
+  Future<void> _retrieveSavedValues() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      userTypeID = prefs.getString(Prefs.PREFS_USER_TYPE_ID) ?? '';
+      userID = prefs.getString(Prefs.PREFS_USER_ID) ?? '';
+      print("userTypeID" + userTypeID);
+      print("userID" + userID);
+    });
+  }
+
   static Future<List<CreditNoteListModel>?> getLabels() async {
     List<CreditNoteListModel> labelData = [];
     Future<http.Response>? __futureLabels = ResponseHandler.performPost(
         "CreditNoteGet",
-        "UserTypeId=2&UserId=1035&Status=&BookingNo=&RefferNo=&Bookingdt=&StaffId=0");
+        "UserTypeId=$userTypeID&UserId=$userID&Status=&BookingNo=&RefferNo=&Bookingdt=&StaffId=0");
     print('jfghhjgh');
     return await __futureLabels?.then((value) {
       String jsonResponse = ResponseHandler.parseData(value.body);
@@ -45,391 +65,381 @@ class _BookingCardGeneralDetailsState extends State<CreditNoteInvoiceList> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-        child: Scaffold(
-            appBar: AppBar(
-              automaticallyImplyLeading: false,
-              titleSpacing: 1,
-              title: Row(
-                children: [
-                  IconButton(
-                    icon: Icon(
-                      Icons.arrow_back,
-                      color: Colors.black,
-                      size: 27,
-                    ),
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                  ),
-
-                  SizedBox(width: 1), // Set the desired width
-                  Text(
-                    "Credit Note",
-                    style: TextStyle(
-                        color: Colors.black,
-                        fontFamily: "Montserrat",
-                        fontSize: 18),
-                  ),
-                ],
-              ),
-              actions: [
-                Image.asset(
-                  'assets/images/logo.png',
-                  width: 120,
-                  height: 50,
+    return Scaffold(
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          titleSpacing: 1,
+          title: Row(
+            children: [
+              IconButton(
+                icon: Icon(
+                  Icons.arrow_back,
+                  color: Colors.black,
+                  size: 27,
                 ),
-                SizedBox(
-                  width: 10,
-                )
-              ],
-              backgroundColor: Colors.white,
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+              ),
+
+              SizedBox(width: 1), // Set the desired width
+              Text(
+                "Credit Note",
+                style: TextStyle(
+                    color: Colors.black,
+                    fontFamily: "Montserrat",
+                    fontSize: 18),
+              ),
+            ],
+          ),
+          actions: [
+            Image.asset(
+              'assets/images/logo.png',
+              width: 120,
+              height: 50,
             ),
-            body: Center(
-              child: FutureBuilder<List<CreditNoteListModel>?>(
-                  future: getLabels(),
-                  builder: (context, snapshot) {
-                    if (snapshot.hasData &&
-                        snapshot.connectionState == ConnectionState.done) {
-                      return ListView.builder(
-                          itemCount: snapshot.data!.length,
-                          itemBuilder: (context, index) {
-                            return Card(
-                              color: Colors.white,
-                              margin: const EdgeInsets.only(
-                                  right: 10, left: 10, top: 7),
-                              elevation: 5,
-                              shadowColor: Color(0xff9a9ce3),
-                              child: Container(
-                                padding: EdgeInsets.all(10.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+            SizedBox(
+              width: 10,
+            )
+          ],
+          backgroundColor: Colors.white,
+        ),
+        body: Center(
+          child: FutureBuilder<List<CreditNoteListModel>?>(
+              future: getLabels(),
+              builder: (context, snapshot) {
+                if (snapshot.hasData &&
+                    snapshot.connectionState == ConnectionState.done) {
+                  return ListView.builder(
+                      itemCount: snapshot.data!.length,
+                      itemBuilder: (context, index) {
+                        return Card(
+                          color: Colors.white,
+                          margin: const EdgeInsets.only(
+                              right: 10, left: 10, top: 7),
+                          elevation: 5,
+                          shadowColor: Color(0xff9a9ce3),
+                          child: Container(
+                            padding: EdgeInsets.all(10.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Container(
-                                          width: 290,
-                                          child: Text(
-                                            snapshot.data![index].paxName1,
-                                            style: TextStyle(
-                                              fontFamily: "Montserrat",
-                                              fontSize: 17,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    SizedBox(
-                                      height: 5,
-                                    ),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Container(
-                                          width: 290,
-                                          child: Text(
-                                            snapshot.data![index].bookingType +
-                                                " " +
-                                                "Details: " +
-                                                snapshot
-                                                    .data![index].flightDetails,
-                                            style: TextStyle(
-                                              fontFamily: "Montserrat",
-                                              fontSize: 15,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    SizedBox(
-                                      height: 5,
-                                    ),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          "PNR No: " +
-                                              snapshot.data![index].ticketNo,
-                                          style: TextStyle(
-                                            fontFamily: "Montserrat",
-                                            fontWeight: FontWeight.w500,
-                                            fontSize: 15,
-                                          ),
-                                        ),
-                                        SizedBox(
-                                            width:
-                                                10), // Adjust spacing as needed
-                                        Text(
-                                          'Fare: ' +
-                                              snapshot.data![index].totalSales,
-                                          style: TextStyle(
-                                            fontFamily: "Montserrat",
-                                            fontWeight: FontWeight.w500,
-                                            fontSize: 15,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    SizedBox(
-                                      height: 4,
-                                    ),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Flexible(
-                                          child: Text(
-                                            "Baggage: " +
-                                                snapshot.data![index].baggage,
-                                            style: TextStyle(
-                                              fontFamily: "Montserrat",
-                                              fontWeight: FontWeight.w500,
-                                              fontSize: 15,
-                                            ),
-                                          ),
-                                          flex: 5,
-                                        ),
-                                        SizedBox(
-                                            width:
-                                                10), // Adjust spacing as needed
-                                        Text(
-                                          'TicketNo: ' +
-                                              snapshot.data![index].ticketNo,
-                                          style: TextStyle(
-                                            fontFamily: "Montserrat",
-                                            fontWeight: FontWeight.w500,
-                                            fontSize: 15,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    SizedBox(
-                                      height: 4,
-                                    ),
-                                    SizedBox(
-                                      height: 0,
-                                    ),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Container(
-                                              padding: EdgeInsets.fromLTRB(
-                                                  10.0, 5, 10, 5),
-                                              decoration: new BoxDecoration(
-                                                color: Colors.orange,
-                                                border: Border.all(
-                                                  width: 0.1,
-                                                  color: Colors.blue,
-                                                ),
-                                                borderRadius:
-                                                    new BorderRadius.circular(
-                                                        5.0),
-                                              ),
-                                              child: GestureDetector(
-                                                onTap: () {
-                                                  if (snapshot.data![index]
-                                                          .bookingType ==
-                                                      "flight") {
-                                                    Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                        builder: (context) =>
-                                                            CreditNoteFlightReceipt(
-                                                                Id: snapshot
-                                                                    .data![
-                                                                        index]
-                                                                    .bookFlightId),
-                                                      ),
-                                                    );
-                                                  }
-
-                                                  if (snapshot.data![index]
-                                                          .bookingType ==
-                                                      "Holiday") {
-                                                    Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                        builder: (context) =>
-                                                            CreditNoteHolidayReceipt(
-                                                                Id: snapshot
-                                                                    .data![
-                                                                        index]
-                                                                    .bookFlightId),
-                                                      ),
-                                                    );
-                                                  }
-
-                                                  if (snapshot.data![index]
-                                                          .bookingType ==
-                                                      "hotel") {
-                                                    Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                        builder: (context) =>
-                                                            CreditNoteHotelReceipt(
-                                                                Id: snapshot
-                                                                    .data![
-                                                                        index]
-                                                                    .bookFlightId),
-                                                      ),
-                                                    );
-                                                  }
-                                                },
-                                                child: Row(
-                                                  children: [
-                                                    Icon(
-                                                      Icons
-                                                          .flight, // You can choose an appropriate icon
-                                                      color: Colors.white,
-                                                    ),
-                                                    Text(
-                                                      "View",
-                                                      style: TextStyle(
-                                                        fontFamily:
-                                                            "Montserrat",
-                                                        fontSize: 15,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                        color: Colors.white,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ),
-                                            SizedBox(
-                                              height: 5,
-                                            ),
-                                          ],
-                                        ),
-                                        Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.end,
-                                          children: [
-                                            Row(
-                                              children: [
-                                                Image(
-                                                  image: AssetImage(
-                                                      'assets/images/tickiconpng.png'),
-                                                  width: 16,
-                                                  height: 16,
-                                                  color: Colors.blue,
-                                                ),
-                                                Text(
-                                                  "Tax:" +
-                                                      snapshot.data![index]
-                                                          .totalTax,
-                                                  style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                      fontFamily: "Montserrat",
-                                                      fontSize: 15,
-                                                      color: Colors.blue),
-                                                ),
-                                              ],
-                                            ),
-                                            SizedBox(
-                                              height: 5,
-                                            ),
-                                            Row(
-                                              children: [
-                                                Image(
-                                                  image: AssetImage(
-                                                      'assets/images/tickiconpng.png'),
-                                                  width: 16,
-                                                  height: 16,
-                                                  color: Colors.blue,
-                                                ),
-                                                Text(
-                                                  "Booking Date: " +
-                                                      snapshot.data![index]
-                                                          .bookedOnDt,
-                                                  style: TextStyle(
-                                                      fontFamily: "Montserrat",
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                      fontSize: 15,
-                                                      color: Colors.blue),
-                                                ),
-                                              ],
-                                            ),
-                                            SizedBox(
-                                              height: 7,
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        SizedBox(
-                                          width: 246,
-                                          height: 1,
-                                          child: DecoratedBox(
-                                            decoration: const BoxDecoration(
-                                                color: Color(0xffededed)),
-                                          ),
-                                        ),
-                                        Text(
-                                          "Total Amount",
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.w500,
-                                              fontFamily: "Montserrat",
-                                              fontSize: 12),
-                                        )
-                                      ],
-                                    ),
                                     Container(
-                                      height: 35,
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              Text(
-                                                "Booking ID: " +
-                                                    snapshot
-                                                        .data![index].bookingId,
-                                                style: TextStyle(
-                                                    fontWeight: FontWeight.w500,
-                                                    fontFamily: "Montserrat",
-                                                    fontSize: 15),
-                                              ),
-                                            ],
-                                          ),
-                                          Text(
-                                            snapshot.data![index].totalAmt,
-                                            style: TextStyle(
-                                                fontFamily: "Montserrat",
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.bold),
-                                          )
-                                        ],
+                                      width: 290,
+                                      child: Text(
+                                        snapshot.data![index].paxName1,
+                                        style: TextStyle(
+                                          fontFamily: "Montserrat",
+                                          fontSize: 17,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(
+                                  height: 5,
+                                ),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Container(
+                                      width: 290,
+                                      child: Text(
+                                        snapshot.data![index].bookingType +
+                                            " " +
+                                            "Details: " +
+                                            snapshot.data![index].flightDetails,
+                                        style: TextStyle(
+                                          fontFamily: "Montserrat",
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(
+                                  height: 5,
+                                ),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Container(
+                                      width: 160,
+                                      child: Text(
+                                        "PNR: " +
+                                            snapshot.data![index].ticketNo,
+                                        style: TextStyle(
+                                          fontFamily: "Montserrat",
+                                          fontWeight: FontWeight.w500,
+                                          fontSize: 15,
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(
+                                        width: 10), // Adjust spacing as needed
+                                    Text(
+                                      'Fare: ' +
+                                          snapshot.data![index].totalSales,
+                                      style: TextStyle(
+                                        fontFamily: "Montserrat",
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 15,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(
+                                  height: 4,
+                                ),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        "Baggage: " +
+                                            snapshot.data![index].baggage,
+                                        style: TextStyle(
+                                          fontFamily: "Montserrat",
+                                          fontWeight: FontWeight.w500,
+                                          fontSize: 15,
+                                        ),
+                                      ),
+                                      flex: 5,
+                                    ),
+                                    SizedBox(
+                                        width: 10), // Adjust spacing as needed
+                                    Text(
+                                      'TicketNo: ' +
+                                          snapshot.data![index].ticketNo,
+                                      style: TextStyle(
+                                        fontFamily: "Montserrat",
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 15,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(
+                                  height: 4,
+                                ),
+                                SizedBox(
+                                  height: 0,
+                                ),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Container(
+                                          padding: EdgeInsets.fromLTRB(
+                                              10.0, 5, 10, 5),
+                                          decoration: new BoxDecoration(
+                                            color: Colors.orange,
+                                            border: Border.all(
+                                              width: 0.1,
+                                              color: Colors.blue,
+                                            ),
+                                            borderRadius:
+                                                new BorderRadius.circular(5.0),
+                                          ),
+                                          child: GestureDetector(
+                                            onTap: () {
+                                              if (snapshot.data![index]
+                                                      .bookingType ==
+                                                  "Flight") {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        CreditNoteFlightReceipt(
+                                                            Id: snapshot
+                                                                .data![index]
+                                                                .bookFlightId),
+                                                  ),
+                                                );
+                                              }
+
+                                              if (snapshot.data![index]
+                                                      .bookingType ==
+                                                  "Holiday") {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        CreditNoteHolidayReceipt(
+                                                            Id: snapshot
+                                                                .data![index]
+                                                                .bookFlightId),
+                                                  ),
+                                                );
+                                              }
+
+                                              if (snapshot.data![index]
+                                                      .bookingType ==
+                                                  "Hotel") {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        CreditNoteHotelReceipt(
+                                                            Id: snapshot
+                                                                .data![index]
+                                                                .bookFlightId),
+                                                  ),
+                                                );
+                                              }
+                                            },
+                                            child: Row(
+                                              children: [
+                                                Icon(
+                                                  Icons
+                                                      .flight, // You can choose an appropriate icon
+                                                  color: Colors.white,
+                                                ),
+                                                Text(
+                                                  "View",
+                                                  style: TextStyle(
+                                                    fontFamily: "Montserrat",
+                                                    fontSize: 15,
+                                                    fontWeight: FontWeight.w500,
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                        SizedBox(
+                                          height: 5,
+                                        ),
+                                      ],
+                                    ),
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.end,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Image(
+                                              image: AssetImage(
+                                                  'assets/images/tickiconpng.png'),
+                                              width: 16,
+                                              height: 16,
+                                              color: Colors.blue,
+                                            ),
+                                            Text(
+                                              "Tax:" +
+                                                  snapshot
+                                                      .data![index].totalTax,
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.w500,
+                                                  fontFamily: "Montserrat",
+                                                  fontSize: 15,
+                                                  color: Colors.blue),
+                                            ),
+                                          ],
+                                        ),
+                                        SizedBox(
+                                          height: 5,
+                                        ),
+                                        Row(
+                                          children: [
+                                            Image(
+                                              image: AssetImage(
+                                                  'assets/images/tickiconpng.png'),
+                                              width: 16,
+                                              height: 16,
+                                              color: Colors.blue,
+                                            ),
+                                            Text(
+                                              "Booking Date: " +
+                                                  snapshot
+                                                      .data![index].bookedOnDt,
+                                              style: TextStyle(
+                                                  fontFamily: "Montserrat",
+                                                  fontWeight: FontWeight.w500,
+                                                  fontSize: 15,
+                                                  color: Colors.blue),
+                                            ),
+                                          ],
+                                        ),
+                                        SizedBox(
+                                          height: 7,
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    SizedBox(
+                                      width: 246,
+                                      height: 1,
+                                      child: DecoratedBox(
+                                        decoration: const BoxDecoration(
+                                            color: Color(0xffededed)),
+                                      ),
+                                    ),
+                                    Text(
+                                      "Total Amount",
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.w500,
+                                          fontFamily: "Montserrat",
+                                          fontSize: 12),
                                     )
                                   ],
                                 ),
-                              ),
-                            );
-                          });
-                    } else {
-                      return CircularProgressIndicator();
-                    }
-                  }),
-            )));
+                                Container(
+                                  height: 35,
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Text(
+                                            "Booking ID: " +
+                                                snapshot.data![index].bookingId,
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.w500,
+                                                fontFamily: "Montserrat",
+                                                fontSize: 15),
+                                          ),
+                                        ],
+                                      ),
+                                      Text(
+                                        snapshot.data![index].totalAmt,
+                                        style: TextStyle(
+                                            fontFamily: "Montserrat",
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold),
+                                      )
+                                    ],
+                                  ),
+                                )
+                              ],
+                            ),
+                          ),
+                        );
+                      });
+                } else {
+                  return CircularProgressIndicator();
+                }
+              }),
+        ));
   }
 }

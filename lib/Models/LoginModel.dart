@@ -1,77 +1,84 @@
 class LoginModel {
-  final String UserType;
-  final String UserTypeId;
-  final String UserID;
-  final String Username;
-  final String Name;
-  final String Password;
-  final String TransactionPassword;
-  final String ContactEmail;
-  final String Mobile;
-  final String Timein;
-  final String Timeout;
-  final String Status;
-  final String Two;
-  final String Photo;
-  final String Paypal;
-  final String Payza;
-  final String Datecreated;
-  final String Currency;
-  final String StaffId;
-  final String AgentId;
-  final String AgentTypeId;
-  final String BranchId;
-//<editor-fold desc="Data Methods">
+  final String userType;
+  final String userTypeId;
+  final String userId;
+  final String username;
+  final String name;
+  final String password;
+  final String transactionPassword;
+  final String contactEmail;
+  final String approveStatus;
+  final String mobile;
+  final String timein;
+  final String timeout;
+  final String isActive;
+  final String two;
+  final String photo;
+  final String paypal;
+  final String dateCreated;
+  final dynamic currency;
 
   LoginModel({
-    required this.UserType,
-    required this.UserTypeId,
-    required this.UserID,
-    required this.Username,
-    required this.Name,
-    required this.Password,
-    required this.TransactionPassword,
-    required this.ContactEmail,
-    required this.Mobile,
-    required this.Timein,
-    required this.Timeout,
-    required this.Status,
-    required this.Two,
-    required this.Photo,
-    required this.Paypal,
-    required this.Payza,
-    required this.Datecreated,
-    required this.Currency,
-    required this.StaffId,
-    required this.AgentId,
-    required this.AgentTypeId,
-    required this.BranchId,
+    required this.userType,
+    required this.userTypeId,
+    required this.userId,
+    required this.username,
+    required this.name,
+    required this.password,
+    required this.transactionPassword,
+    required this.contactEmail,
+    required this.approveStatus,
+    required this.mobile,
+    required this.timein,
+    required this.timeout,
+    required this.isActive,
+    required this.two,
+    required this.photo,
+    required this.paypal,
+    required this.dateCreated,
+    required this.currency,
   });
 
-  factory LoginModel.fromJson(Map<String, dynamic> map) {
+  factory LoginModel.fromJson(Map<String, dynamic> json) {
     return LoginModel(
-      UserType: map['UserType'].toString(),
-      UserTypeId: map['UserTypeId'].toString(),
-      UserID: map['UserID'].toString(),
-      Username: map['Username'].toString(),
-      Name: map['Name'].toString(),
-      Password: map['Password'].toString(),
-      TransactionPassword: map['TransactionPassword'].toString(),
-      ContactEmail: map['ContactEmail'].toString(),
-      Mobile: map['Mobile'].toString(),
-      Timein: map['Timein'].toString(),
-      Timeout: map['Timeout'].toString(),
-      Status: map['Status'].toString().toString(),
-      Two: map['Two'].toString().toString(),
-      Photo: map['Photo'].toString(),
-      Paypal: map['Paypal'].toString().toString(),
-      Payza: map['Payza'].toString().toString(),
-      Datecreated: map['Datecreated'].toString(),
-      Currency: map['Currency'].toString(),
-      StaffId: map['StaffId'].toString(),
-      AgentId: map['AgentId'].toString(),
-      AgentTypeId: map['AgentTypeId'].toString(),
-      BranchId: map['BranchId'].toString(),
+      userType: json['UserType'].toString(),
+      userTypeId: json['UserTypeId'].toString(),
+      userId: json['UserID'].toString(),
+      username: json['Username'].toString(),
+      name: json['Name'].toString(),
+      password: json['Password'].toString(),
+      transactionPassword: json['TransactionPassword'].toString(),
+      contactEmail: json['ContactEmail'].toString(),
+      approveStatus: json['ApproveStatus'].toString(),
+      mobile: json['Mobile'].toString(),
+      timein: json['Timein'].toString(),
+      timeout: json['Timeout'].toString(),
+      isActive: json['IsActive'].toString(),
+      two: json['Two'].toString(),
+      photo: json['Photo'].toString(),
+      paypal: json['Paypal'].toString(),
+      dateCreated: json['Datecreated'].toString(),
+      currency: json['Currency'].toString(),
+    );
+  }
+}
+
+class Table1Model {
+  final String symbol;
+  final String code;
+  final String countryId;
+
+  Table1Model({
+    required this.symbol,
+    required this.code,
+    required this.countryId,
+  });
+
+  factory Table1Model.fromJson(Map<String, dynamic> json) {
+    return Table1Model(
+      symbol: json['Symbol'].toString(),
+      code: json['Code'].toString(),
+      countryId: json['CountryID'].toString(),
     );
   }
 }

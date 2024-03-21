@@ -13,20 +13,9 @@ import 'CancelBookingListModel.dart';
 import 'PassengerModel.dart';
 import 'PaymentModel.dart';
 
-void main() {
-  runApp(MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      home: BookingCancelScreen(),
-    );
-  }
-}
-
 class BookingCancelScreen extends StatefulWidget {
+  final id;
+  BookingCancelScreen({super.key, required this.id});
   @override
   _MyRechargePageState createState() => _MyRechargePageState();
 }
@@ -239,7 +228,7 @@ class _MyRechargePageState extends State<BookingCancelScreen> {
 
   Future<String?> getLabels() async {
     Future<http.Response>? __futureLabels = ResponseHandler.performPost(
-        "BookingCardViewGet", "BookFlightId=${savedId}&StaffId=0");
+        "BookingCardViewGet", "BookFlightId=${widget.id}&StaffId=0");
     print('jfghhjgh' + savedId);
     return await __futureLabels?.then((value) {
       String jsonResponse = ResponseHandler.parseData(value.body);
@@ -263,22 +252,42 @@ class _MyRechargePageState extends State<BookingCancelScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: Text(
-            "Booking Cancellation",
-            style: TextStyle(fontFamily: "Montserrat", fontSize: 17),
+          automaticallyImplyLeading: false,
+          titleSpacing: 1,
+          title: Row(
+            children: [
+              IconButton(
+                icon: Icon(
+                  Icons.arrow_back,
+                  color: Colors.black,
+                  size: 27,
+                ),
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+              ),
+
+              SizedBox(width: 1), // Set the desired width
+              Text(
+                "Booking cancellation",
+                style: TextStyle(
+                    color: Colors.black,
+                    fontFamily: "Montserrat",
+                    fontSize: 17),
+              ),
+            ],
           ),
-          //title: Image.asset('assets/images/logo.png', width: 150, height: 30,),
           actions: [
             Image.asset(
               'assets/images/logo.png',
-               width: 120,
+              width: 120,
               height: 50,
             ),
             SizedBox(
               width: 10,
             )
           ],
-         backgroundColor: Colors.white,
+          backgroundColor: Colors.white,
         ),
         body: Center(
           child: FutureBuilder<String?>(
@@ -870,15 +879,11 @@ class _MyRechargePageState extends State<BookingCancelScreen> {
                                               KYCApplication()));*/
                                               },
                                               style: ElevatedButton.styleFrom(
-                                                shape: RoundedRectangleBorder(
+                                                foregroundColor: Colors.white, backgroundColor: Colors.blue, shape: RoundedRectangleBorder(
                                                   borderRadius:
                                                       BorderRadius.circular(
                                                           5), // Adjust the radius as needed
-                                                ),
-                                                primary:
-                                                    Colors.blue, // Button color
-                                                onPrimary:
-                                                    Colors.white, // Text color
+                                                ), // Text color
                                               ),
                                               child: SizedBox(
                                                   width: 115,
@@ -904,15 +909,11 @@ class _MyRechargePageState extends State<BookingCancelScreen> {
                                                   AddReview()));*/
                                               },
                                               style: ElevatedButton.styleFrom(
-                                                shape: RoundedRectangleBorder(
+                                                foregroundColor: Colors.white, backgroundColor: Colors.red, shape: RoundedRectangleBorder(
                                                   borderRadius:
                                                       BorderRadius.circular(
                                                           5), // Adjust the radius as needed
-                                                ),
-                                                primary:
-                                                    Colors.red, // Button color
-                                                onPrimary:
-                                                    Colors.white, // Text color
+                                                ), // Text color
                                               ),
                                               child: SizedBox(
                                                   width: 115,

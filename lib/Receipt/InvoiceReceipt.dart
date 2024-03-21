@@ -13,22 +13,42 @@ class _BookingCardGeneralDetailsState extends State<Receipt> {
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
-          title: Text(
-            "Invoice List",
-            style: TextStyle(fontFamily: "Montserrat", fontSize: 16),
+          automaticallyImplyLeading: false,
+          titleSpacing: 1,
+          title: Row(
+            children: [
+              IconButton(
+                icon: Icon(
+                  Icons.arrow_back,
+                  color: Colors.black,
+                  size: 27,
+                ),
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+              ),
+
+              SizedBox(width: 1), // Set the desired width
+              Text(
+                "Invoice List",
+                style: TextStyle(
+                    color: Colors.black,
+                    fontFamily: "Montserrat",
+                    fontSize: 17),
+              ),
+            ],
           ),
-          //title: Image.asset('assets/images/logo.png', width: 150, height: 30,),
           actions: [
             Image.asset(
               'assets/images/logo.png',
               width: 120,
-              height: 30,
+              height: 50,
             ),
             SizedBox(
               width: 10,
             )
           ],
-          backgroundColor: Color(0xFF152238),
+          backgroundColor: Colors.white,
         ),
         body: SingleChildScrollView(
           child: Container(

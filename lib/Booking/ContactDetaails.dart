@@ -17,7 +17,8 @@ import 'HotelAgentModel.dart';
 import 'PassengerModel.dart';
 
 class ContactDetaails extends StatefulWidget {
-  const ContactDetaails({super.key});
+  final id;
+  ContactDetaails({super.key, required this.id});
 
   @override
   State<ContactDetaails> createState() => _ContactDetaailsState();
@@ -72,8 +73,7 @@ class _ContactDetaailsState extends State<ContactDetaails> {
 
   Future<String?> getLabels() async {
     Future<http.Response>? __futureLabels = ResponseHandler.performPost(
-        "BookingCardViewGet", "BookFlightId=${savedId}&StaffId=0");
-    print('jfghhjgh' + savedId);
+        "BookingCardViewGet", "BookFlightId=${widget.id}&StaffId=0");
     return await __futureLabels?.then((value) {
       String jsonResponse = ResponseHandler.parseData(value.body);
 

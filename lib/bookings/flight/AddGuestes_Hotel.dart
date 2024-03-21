@@ -48,6 +48,7 @@ class _MyPageState extends State<AddGuestes_Hotel> {
   void initState() {
     super.initState();
     //_loadSavedString();
+    roomCount = "1";
     _selectedCheckInDate = widget.checkInDate;
     _selectedCheckOutDate = widget.checkOutDate;
     adultsCount = widget.adultsCount ?? 1;
@@ -157,6 +158,7 @@ class _MyPageState extends State<AddGuestes_Hotel> {
   void incrementAdultRoom1() {
     setState(() {
       adultsCount = adultsCount < 4 ? adultsCount + 1 : 4;
+      print('kfjgk' + adultsCount.toString());
     });
   }
 
@@ -1845,7 +1847,7 @@ class _MyPageState extends State<AddGuestes_Hotel> {
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  primary: Color(0xff74206b), // Background color of the button
+                  backgroundColor: Color(0xff74206b), // Background color of the button
                   shape: RoundedRectangleBorder(
                     borderRadius:
                         BorderRadius.circular(20), // Circular radius of 20

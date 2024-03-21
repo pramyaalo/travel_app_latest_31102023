@@ -2,10 +2,13 @@ import 'dart:convert';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../Models/BookingRefundDuegetModel.dart';
 import '../utils/response_handler.dart';
 import 'package:http/http.dart' as http;
+
+import '../utils/shared_preferences.dart';
 
 class BookingRefundsDue extends StatefulWidget {
   const BookingRefundsDue({Key? key}) : super(key: key);
@@ -15,11 +18,29 @@ class BookingRefundsDue extends StatefulWidget {
 }
 
 class _BookingCardGeneralDetailsState extends State<BookingRefundsDue> {
+  static late String userTypeID;
+  static late String userID;
+  @override
+  void initState() {
+    super.initState();
+    _retrieveSavedValues();
+  }
+
+  Future<void> _retrieveSavedValues() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      userTypeID = prefs.getString(Prefs.PREFS_USER_TYPE_ID) ?? '';
+      userID = prefs.getString(Prefs.PREFS_USER_ID) ?? '';
+      print("userTypeID" + userTypeID);
+      print("userID" + userID);
+    });
+  }
+
   static Future<List<BookingRefundDuegetModel>?> getPartPaymentData() async {
     List<BookingRefundDuegetModel> bookingCardData = [];
     Future<http.Response>? __futureLabels = ResponseHandler.performPost(
         "BookingRefundsDueGet",
-        "AgencyId=1107&UserTypeId=2&UserId=1107&BookingType=");
+        "AgencyId=$userID&UserTypeId=$userTypeID&UserId=$userID&BookingType=");
 
     return await __futureLabels?.then((value) {
       String jsonResponse = ResponseHandler.parseData(value.body);
@@ -60,21 +81,24 @@ class _BookingCardGeneralDetailsState extends State<BookingRefundsDue> {
                   SizedBox(width: 1), // Set the desired width
                   Text(
                     "Booking Refunds Due",
-                    style: TextStyle( color: Colors.black,fontFamily: "Montserrat", fontSize: 19),
+                    style: TextStyle(
+                        color: Colors.black,
+                        fontFamily: "Montserrat",
+                        fontSize: 17),
                   ),
                 ],
               ),
               actions: [
                 Image.asset(
                   'assets/images/logo.png',
-                   width: 120,
+                  width: 120,
                   height: 50,
                 ),
                 SizedBox(
                   width: 10,
                 )
               ],
-             backgroundColor: Colors.white,
+              backgroundColor: Colors.white,
             ),
             body: Center(
                 child: FutureBuilder<List<BookingRefundDuegetModel>?>(
@@ -82,318 +106,341 @@ class _BookingCardGeneralDetailsState extends State<BookingRefundsDue> {
                     builder: (context, snapshot) {
                       if (snapshot.hasData &&
                           snapshot.connectionState == ConnectionState.done) {
-                        return ListView.builder(
-                            itemCount: snapshot.data!.length,
-                            itemBuilder: (context, index) {
-                              return Container(
-                                  child: SingleChildScrollView(
-                                      child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                    Column(children: [
-                                      Card(
-                                        margin: const EdgeInsets.only(
-                                            right: 10, left: 10, top: 7),
-                                        elevation: 5,
-                                        color: Colors.white,
+                        if (snapshot.data!.length > 0) {
+                          return ListView.builder(
+                              itemCount: snapshot.data!.length,
+                              itemBuilder: (context, index) {
+                                return Container(
+                                    child: SingleChildScrollView(
                                         child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
-                                              children: [
-                                                Padding(
-                                                  padding:
-                                                      const EdgeInsets.only(
-                                                          left: 10, top: 10),
-                                                  child: Text(
-                                                    snapshot
-                                                        .data![index].passenger,
-                                                    style: TextStyle(
-                                                      fontFamily: "Montserrat",
-                                                      fontSize: 17,
-                                                      fontWeight:
-                                                          FontWeight.bold,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                      Column(children: [
+                                        Card(
+                                          margin: const EdgeInsets.only(
+                                              right: 10, left: 10, top: 7),
+                                          elevation: 5,
+                                          color: Colors.white,
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                children: [
+                                                  Padding(
+                                                    padding:
+                                                        const EdgeInsets.only(
+                                                            left: 10, top: 10),
+                                                    child: Text(
+                                                      snapshot.data![index]
+                                                          .passenger,
+                                                      style: TextStyle(
+                                                        fontFamily:
+                                                            "Montserrat",
+                                                        fontSize: 17,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
                                                     ),
                                                   ),
-                                                ),
-                                                Padding(
-                                                  padding:
-                                                      const EdgeInsets.only(
-                                                          right: 5, top: 10),
-                                                  child: Text(
-                                                    "Pay Mode: " +
-                                                        snapshot.data![index]
-                                                            .payMode,
-                                                    style: TextStyle(
-                                                      fontFamily: "Montserrat",
-                                                      fontSize: 15,
-                                                      fontWeight:
-                                                          FontWeight.w500,
+                                                  Padding(
+                                                    padding:
+                                                        const EdgeInsets.only(
+                                                            right: 5, top: 10),
+                                                    child: Text(
+                                                      "Pay Mode: " +
+                                                          snapshot.data![index]
+                                                              .payMode,
+                                                      style: TextStyle(
+                                                        fontFamily:
+                                                            "Montserrat",
+                                                        fontSize: 15,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                      ),
                                                     ),
                                                   ),
-                                                ),
-                                              ],
-                                            ),
-                                            SizedBox(
-                                              height: 3,
-                                            ),
-                                            Row(
-                                              children: [
-                                                Padding(
-                                                  padding:
-                                                      const EdgeInsets.only(
-                                                          left: 10),
-                                                  child: Row(
+                                                ],
+                                              ),
+                                              SizedBox(
+                                                height: 3,
+                                              ),
+                                              Row(
+                                                children: [
+                                                  Padding(
+                                                    padding:
+                                                        const EdgeInsets.only(
+                                                            left: 10),
+                                                    child: Row(
+                                                      children: [
+                                                        Icon(
+                                                          const IconData(0xefc6,
+                                                              fontFamily:
+                                                                  'MaterialIcons'),
+                                                          size: 15,
+                                                        ),
+                                                        Padding(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .only(
+                                                                  right: 0),
+                                                          child: Text(
+                                                            "Product: " +
+                                                                snapshot
+                                                                    .data![
+                                                                        index]
+                                                                    .bookedProduct,
+                                                            style: TextStyle(
+                                                              fontFamily:
+                                                                  "Montserrat",
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w500,
+                                                              fontSize: 15,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                  Spacer(), // Adds space between the two parts of the row
+                                                  Row(
                                                     children: [
-                                                      Icon(
-                                                        const IconData(0xefc6,
-                                                            fontFamily:
-                                                                'MaterialIcons'),
-                                                        size: 15,
+                                                      Image(
+                                                        image: AssetImage(
+                                                            'assets/images/tickiconpng.png'),
+                                                        width: 16,
+                                                        height: 16,
+                                                        color: Colors.blue,
                                                       ),
                                                       Padding(
                                                         padding:
                                                             const EdgeInsets
-                                                                .only(right: 0),
+                                                                .only(right: 5),
                                                         child: Text(
-                                                          "Product: " +
+                                                          "Paid Status: " +
                                                               snapshot
                                                                   .data![index]
-                                                                  .bookedProduct,
+                                                                  .paidStatus,
                                                           style: TextStyle(
                                                             fontFamily:
                                                                 "Montserrat",
                                                             fontWeight:
                                                                 FontWeight.w500,
                                                             fontSize: 15,
+                                                            color: Colors.blue,
                                                           ),
                                                         ),
                                                       ),
                                                     ],
                                                   ),
-                                                ),
-                                                Spacer(), // Adds space between the two parts of the row
-                                                Row(
-                                                  children: [
-                                                    Image(
-                                                      image: AssetImage(
-                                                          'assets/images/tickiconpng.png'),
-                                                      width: 16,
-                                                      height: 16,
-                                                      color: Colors.blue,
-                                                    ),
-                                                    Padding(
-                                                      padding:
-                                                          const EdgeInsets.only(
-                                                              right: 5),
-                                                      child: Text(
-                                                        "Paid Status: " +
-                                                            snapshot
-                                                                .data![index]
-                                                                .paidStatus,
-                                                        style: TextStyle(
-                                                          fontFamily:
-                                                              "Montserrat",
-                                                          fontWeight:
-                                                              FontWeight.w500,
-                                                          fontSize: 15,
-                                                          color: Colors.blue,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ],
-                                            ),
-                                            SizedBox(
-                                              height: 5,
-                                            ),
-                                            Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
-                                              children: [
-                                                Padding(
-                                                  padding:
-                                                      const EdgeInsets.only(
-                                                          left: 10),
-                                                  child: Column(
-                                                    children: [
-                                                      Container(
-                                                        padding:
-                                                            EdgeInsets.fromLTRB(
-                                                                10.0, 5, 10, 5),
-                                                        decoration:
-                                                            new BoxDecoration(
-                                                          color: _getBackgroundColor(
-                                                              snapshot
-                                                                  .data![index]
-                                                                  .bookingStatus),
-                                                          border: Border.all(
-                                                              width: 0.1,
-                                                              color: Colors
-                                                                  .blue), //https://stackoverflow.com/a/67395539/16076689
-                                                          borderRadius:
-                                                              new BorderRadius
-                                                                  .circular(
-                                                                  5.0),
-                                                        ),
-                                                        child: Text(
-                                                          snapshot.data![index]
-                                                              .bookingStatus,
-                                                          style: TextStyle(
-                                                              fontFamily:
-                                                                  "Montserrat",
-                                                              fontSize: 15,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w500,
-                                                              color:
-                                                                  Colors.white),
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                                Padding(
-                                                  padding:
-                                                      const EdgeInsets.only(
-                                                          right: 5),
-                                                  child: Column(
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment.end,
-                                                    children: [
-                                                      Row(
-                                                        children: [
-                                                          Padding(
-                                                            padding:
-                                                                const EdgeInsets
-                                                                    .only(
-                                                                    bottom: 15),
-                                                            child: Image(
-                                                              image: AssetImage(
-                                                                  'assets/images/tickiconpng.png'),
-                                                              color:
-                                                                  Colors.blue,
-                                                              width: 16,
-                                                              height: 16,
-                                                            ),
-                                                          ),
-                                                          Padding(
-                                                            padding:
-                                                                const EdgeInsets
-                                                                    .only(
-                                                                    bottom: 15),
-                                                            child: Text(
-                                                              "Trip Date: " +
-                                                                  snapshot
-                                                                      .data![
-                                                                          index]
-                                                                      .tripDate,
-                                                              style: TextStyle(
-                                                                  fontFamily:
-                                                                      "Montserrat",
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .w500,
-                                                                  fontSize: 15,
-                                                                  color: Colors
-                                                                      .blue),
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ],
-                                                  ),
-                                                )
-                                              ],
-                                            ),
-                                            Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
-                                              children: [
-                                                SizedBox(
-                                                  width: 250,
-                                                  height: 1,
-                                                  child: DecoratedBox(
-                                                    decoration:
-                                                        const BoxDecoration(
-                                                            color: Color(
-                                                                0xffededed)),
-                                                  ),
-                                                ),
-                                                Text(
-                                                  "Price(Incl. Tax)",
-                                                  style: TextStyle(
-                                                      fontFamily: "Montserrat",
-                                                      fontSize: 12,
-                                                      fontWeight:
-                                                          FontWeight.w500),
-                                                )
-                                              ],
-                                            ),
-                                            Container(
-                                              height: 35,
-                                              child: Row(
+                                                ],
+                                              ),
+                                              SizedBox(
+                                                height: 5,
+                                              ),
+                                              Row(
                                                 mainAxisAlignment:
                                                     MainAxisAlignment
                                                         .spaceBetween,
                                                 children: [
-                                                  Row(
-                                                    children: [
-                                                      SizedBox(
-                                                        width: 10,
-                                                      ),
-                                                      Text(
-                                                        "Booking ID: ",
-                                                        style: TextStyle(
-                                                            fontFamily:
-                                                                "Montserrat",
-                                                            fontWeight:
-                                                                FontWeight.w500,
-                                                            fontSize: 15),
-                                                      ),
-                                                      Container(
-                                                        width: 130,
-                                                        child: Text(
-                                                          snapshot.data![index]
-                                                              .bookingId,
-                                                          style: TextStyle(
-                                                              fontFamily:
-                                                                  "Montserrat",
-                                                              fontSize: 15,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold),
+                                                  Padding(
+                                                    padding:
+                                                        const EdgeInsets.only(
+                                                            left: 10),
+                                                    child: Column(
+                                                      children: [
+                                                        Container(
+                                                          padding: EdgeInsets
+                                                              .fromLTRB(10.0, 5,
+                                                                  10, 5),
+                                                          decoration:
+                                                              new BoxDecoration(
+                                                            color: _getBackgroundColor(
+                                                                snapshot
+                                                                    .data![
+                                                                        index]
+                                                                    .bookingStatus),
+                                                            border: Border.all(
+                                                                width: 0.1,
+                                                                color: Colors
+                                                                    .blue), //https://stackoverflow.com/a/67395539/16076689
+                                                            borderRadius:
+                                                                new BorderRadius
+                                                                    .circular(
+                                                                    5.0),
+                                                          ),
+                                                          child: Text(
+                                                            snapshot
+                                                                .data![index]
+                                                                .bookingStatus,
+                                                            style: TextStyle(
+                                                                fontFamily:
+                                                                    "Montserrat",
+                                                                fontSize: 15,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w500,
+                                                                color: Colors
+                                                                    .white),
+                                                          ),
                                                         ),
-                                                      ),
-                                                    ],
+                                                      ],
+                                                    ),
                                                   ),
-                                                  Text(
-                                                    snapshot
-                                                        .data![index].totalAmt,
-                                                    style: TextStyle(
-                                                        fontFamily:
-                                                            "Montserrat",
-                                                        fontSize: 18,
-                                                        fontWeight:
-                                                            FontWeight.bold),
+                                                  Padding(
+                                                    padding:
+                                                        const EdgeInsets.only(
+                                                            right: 5),
+                                                    child: Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .end,
+                                                      children: [
+                                                        Row(
+                                                          children: [
+                                                            Padding(
+                                                              padding:
+                                                                  const EdgeInsets
+                                                                      .only(
+                                                                      bottom:
+                                                                          15),
+                                                              child: Image(
+                                                                image: AssetImage(
+                                                                    'assets/images/tickiconpng.png'),
+                                                                color:
+                                                                    Colors.blue,
+                                                                width: 16,
+                                                                height: 16,
+                                                              ),
+                                                            ),
+                                                            Padding(
+                                                              padding:
+                                                                  const EdgeInsets
+                                                                      .only(
+                                                                      bottom:
+                                                                          15),
+                                                              child: Text(
+                                                                "Trip Date: " +
+                                                                    snapshot
+                                                                        .data![
+                                                                            index]
+                                                                        .tripDate,
+                                                                style: TextStyle(
+                                                                    fontFamily:
+                                                                        "Montserrat",
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .w500,
+                                                                    fontSize:
+                                                                        15,
+                                                                    color: Colors
+                                                                        .blue),
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ],
+                                                    ),
                                                   )
                                                 ],
                                               ),
-                                            )
-                                          ],
+                                              Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                children: [
+                                                  SizedBox(
+                                                    width: 250,
+                                                    height: 1,
+                                                    child: DecoratedBox(
+                                                      decoration:
+                                                          const BoxDecoration(
+                                                              color: Color(
+                                                                  0xffededed)),
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    "Price(Incl. Tax)",
+                                                    style: TextStyle(
+                                                        fontFamily:
+                                                            "Montserrat",
+                                                        fontSize: 12,
+                                                        fontWeight:
+                                                            FontWeight.w500),
+                                                  )
+                                                ],
+                                              ),
+                                              Container(
+                                                height: 35,
+                                                child: Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
+                                                  children: [
+                                                    Row(
+                                                      children: [
+                                                        SizedBox(
+                                                          width: 10,
+                                                        ),
+                                                        Text(
+                                                          "Booking ID: ",
+                                                          style: TextStyle(
+                                                              fontFamily:
+                                                                  "Montserrat",
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w500,
+                                                              fontSize: 15),
+                                                        ),
+                                                        Container(
+                                                          width: 130,
+                                                          child: Text(
+                                                            snapshot
+                                                                .data![index]
+                                                                .bookingId,
+                                                            style: TextStyle(
+                                                                fontFamily:
+                                                                    "Montserrat",
+                                                                fontSize: 15,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    Text(
+                                                      snapshot.data![index]
+                                                          .totalAmt,
+                                                      style: TextStyle(
+                                                          fontFamily:
+                                                              "Montserrat",
+                                                          fontSize: 18,
+                                                          fontWeight:
+                                                              FontWeight.bold),
+                                                    )
+                                                  ],
+                                                ),
+                                              )
+                                            ],
+                                          ),
                                         ),
-                                      ),
-                                    ]),
-                                  ])));
-                            });
+                                      ]),
+                                    ])));
+                              });
+                        } else {
+                          return Center(
+                            child: Text(
+                              'No data found',
+                              style: TextStyle(fontSize: 18),
+                            ),
+                          );
+                        }
                       } else {
                         return CircularProgressIndicator();
                       }

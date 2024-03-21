@@ -1,3 +1,7 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:xml/xml.dart' as xml;
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
@@ -7,6 +11,7 @@ import '../../models/hotel_destination_models.dart';
 import '../flight/AddGuestes_Hotel.dart';
 import '../flight/AddTravellers_Flight.dart';
 import 'AddGuestsHolidays.dart';
+import 'AutoFillHolidayModel.dart';
 import 'holiday_list_screen.dart';
 
 class Holidays extends StatefulWidget {
@@ -25,6 +30,7 @@ class _HotelsScreenState extends State<Holidays> {
   String RoomType = '1';
   int TotAdultCount = 1;
   int TotChildrenCount = 0;
+  String LocationId = '';
   TextEditingController orginController = new TextEditingController();
   List hotelDestination = [
     HotelDestination(
@@ -54,6 +60,26 @@ class _HotelsScreenState extends State<Holidays> {
   void navigate(Widget screen) {
     Navigator.push(
         context, MaterialPageRoute(builder: (BuildContext context) => screen));
+  }
+
+  Future<List<AutoFillHolidayModel>> fetchAutocompleteData(
+      String cityName) async {
+    final url =
+        'https://traveldemo.org/travelapp/b2capi.asmx/TourGetCitiesAutocomplete?cityName=$cityName';
+
+    final response = await http.get(Uri.parse(url));
+    if (response.statusCode == 200) {
+      final xmlDocument = xml.XmlDocument.parse(response.body);
+      final responseData = xmlDocument.findAllElements('string').first.text;
+
+      final decodedData = json.decode(responseData);
+      return decodedData
+          .map<AutoFillHolidayModel>(
+              (data) => AutoFillHolidayModel.fromJson(data))
+          .toList();
+    } else {
+      throw Exception('Failed to load autocomplete data');
+    }
   }
 
   DateTime selectedDate = DateTime.now();
@@ -166,21 +192,46 @@ class _HotelsScreenState extends State<Holidays> {
                                             mainAxisAlignment:
                                                 MainAxisAlignment.spaceBetween,
                                             children: [
-                                              Expanded(
-                                                child: TextField(
-                                                  controller: orginController,
-                                                  style: TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                  decoration: InputDecoration(
-                                                    border: InputBorder.none,
-                                                  ),
+                                              SizedBox(
+                                                width: 250,
+                                                child: Autocomplete<
+                                                    AutoFillHolidayModel>(
+                                                  optionsBuilder: (TextEditingValue
+                                                      textEditingValue) async {
+                                                    if (textEditingValue
+                                                        .text.isEmpty) {
+                                                      return const Iterable<
+                                                          AutoFillHolidayModel>.empty();
+                                                    }
+                                                    return await fetchAutocompleteData(
+                                                        textEditingValue.text);
+                                                  },
+                                                  displayStringForOption:
+                                                      (AutoFillHolidayModel
+                                                              option) =>
+                                                          '${option.latinFullName}, ${option.country}, ${option.locationId}',
+                                                  onSelected:
+                                                      (AutoFillHolidayModel?
+                                                          selectedOption) {
+                                                    if (selectedOption !=
+                                                        null) {
+                                                      print(
+                                                          'Selected: ${selectedOption.latinFullName} (${selectedOption.locationId})');
+                                                      setState(() {
+                                                        LocationId =
+                                                            selectedOption
+                                                                .locationId;
+                                                        print(LocationId);
+                                                      });
+                                                      // Do something with the selected option
+                                                    }
+                                                  },
                                                 ),
                                               ),
                                               Image.asset(
                                                 'assets/images/currentlocation.jpg',
                                                 alignment: Alignment.center,
-                                                width: 35,
+                                                width: 30,
                                                 height: 25,
                                               ),
                                             ],
@@ -544,24 +595,27 @@ class _HotelsScreenState extends State<Holidays> {
                                                 print(
                                                     'adfjhiufhiu$selectedDate$selectedReturnDate$RoomType$AdultCount$childrenCount$AdultCount1$childrenCount1$AdultCount2$childrenCount2$AdultCount3$childrenCount3');
                                                 navigate(HolidayListScreen(
-                                                  checkinDate: selectedDate,
-                                                  RoomCount: RoomType,
-                                                  AdultCountRoom1: AdultCount,
-                                                  ChildrenCountRoom1:
-                                                      childrenCount,
-                                                  AdultCountRoom2: AdultCount1,
-                                                  ChildrenCountRoom2:
-                                                      childrenCount1,
-                                                  AdultCountRoom3: AdultCount2,
-                                                  ChildrenCountRoom3:
-                                                      childrenCount2,
-                                                  AdultCountRoom4: AdultCount3,
-                                                  ChildrenCountRoom4:
-                                                      childrenCount3,
-                                                ));
+                                                    checkinDate: selectedDate,
+                                                    RoomCount: RoomType,
+                                                    AdultCountRoom1: AdultCount,
+                                                    ChildrenCountRoom1:
+                                                        childrenCount,
+                                                    AdultCountRoom2:
+                                                        AdultCount1,
+                                                    ChildrenCountRoom2:
+                                                        childrenCount1,
+                                                    AdultCountRoom3:
+                                                        AdultCount2,
+                                                    ChildrenCountRoom3:
+                                                        childrenCount2,
+                                                    AdultCountRoom4:
+                                                        AdultCount3,
+                                                    ChildrenCountRoom4:
+                                                        childrenCount3,
+                                                    Locationid: LocationId));
                                               },
                                               style: ElevatedButton.styleFrom(
-                                                primary: Color(0xff74206b),
+                                                backgroundColor: Color(0xff74206b),
 
                                                 // Background color of the button
                                                 shape: RoundedRectangleBorder(

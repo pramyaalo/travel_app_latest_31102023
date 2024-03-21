@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../Finance/Add_AssetEntry.dart';
 import '../Finance/CorporateInformationTable5.dart';
 import '../Finance/CorporateTable4.dart';
 import '../Finance/PaymentMethodTable7.dart';
@@ -90,40 +91,42 @@ class _MyRechargePageState extends State<ViewCreditBalanceRequest> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          automaticallyImplyLeading: false,
-          titleSpacing: 1,
-          title: Row(
-            children: [
-              IconButton(
-                icon: Icon(
-                  Icons.arrow_back,
-                  color: Colors.black,
-                  size: 27,
+            automaticallyImplyLeading: false,
+            titleSpacing: 1,
+            title: Row(
+              children: [
+                IconButton(
+                  icon: Icon(
+                    Icons.arrow_back,
+                    color: Colors.black,
+                    size: 27,
+                  ),
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
                 ),
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-              ),
 
-              SizedBox(width: 1), // Set the desired width
-              Text(
-                "View Credit Balance Request",
-                style: TextStyle( color: Colors.black,fontFamily: "Montserrat", fontSize: 19),
-              ),
-            ],
-          ),
-          actions: [
-            Image.asset(
-              'assets/images/logo.png',
-              width: 120,
-              height: 50,
+                SizedBox(width: 1), // Set the desired width
+                Text(
+                  "View Request",
+                  style: TextStyle(
+                      color: Colors.black,
+                      fontFamily: "Montserrat",
+                      fontSize: 19),
+                ),
+              ],
             ),
-            SizedBox(
-              width: 10,
-            )
-          ],
-         backgroundColor: Colors.white
-        ),
+            actions: [
+              Image.asset(
+                'assets/images/logo.png',
+                width: 120,
+                height: 50,
+              ),
+              SizedBox(
+                width: 10,
+              )
+            ],
+            backgroundColor: Colors.white),
         body: Center(
           child: FutureBuilder<List<ViewCreditBalanceRequestModel>?>(
               future: getFlightTicketOrderQueue(),

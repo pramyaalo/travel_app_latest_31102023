@@ -708,12 +708,12 @@ class _BookingCardGeneralDetailsState extends State<EditJournalEntry> {
                                           KYCApplication()));*/
                                         },
                                         style: ElevatedButton.styleFrom(
+                                          foregroundColor: Colors.white,
+                                          backgroundColor: Colors.blue,
                                           shape: RoundedRectangleBorder(
                                             borderRadius: BorderRadius.circular(
                                                 5), // Adjust the radius as needed
-                                          ),
-                                          primary: Colors.blue, // Button color
-                                          onPrimary: Colors.white, // Text color
+                                          ), // Text color
                                         ),
                                         child: SizedBox(
                                             width: 115,
@@ -739,12 +739,12 @@ class _BookingCardGeneralDetailsState extends State<EditJournalEntry> {
                                               AddReview()));*/
                                         },
                                         style: ElevatedButton.styleFrom(
+                                          foregroundColor: Colors.white,
+                                          backgroundColor: Colors.red,
                                           shape: RoundedRectangleBorder(
                                             borderRadius: BorderRadius.circular(
                                                 5), // Adjust the radius as needed
-                                          ),
-                                          primary: Colors.red, // Button color
-                                          onPrimary: Colors.white, // Text color
+                                          ), // Text color
                                         ),
                                         child: SizedBox(
                                             width: 115,

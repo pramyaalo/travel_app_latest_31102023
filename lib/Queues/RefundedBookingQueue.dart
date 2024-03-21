@@ -3,9 +3,11 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../Booking/ViewBookingDetails.dart';
 import '../utils/response_handler.dart';
+import '../utils/shared_preferences.dart';
 import 'RefundedBookingQueueModel.dart';
 
 class RefundedBookingQueue extends StatefulWidget {
@@ -17,11 +19,30 @@ class RefundedBookingQueue extends StatefulWidget {
 }
 
 class _BookingCardGeneralDetailsState extends State<RefundedBookingQueue> {
+  static late String userTypeID;
+  static late String userID;
+  @override
+  void initState() {
+    super.initState();
+    _retrieveSavedValues();
+  }
+
+  Future<void> _retrieveSavedValues() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      userTypeID = prefs.getString(Prefs.PREFS_USER_TYPE_ID) ?? '';
+      userID = prefs.getString(Prefs.PREFS_USER_ID) ?? '';
+      print("userTypeID" + userTypeID);
+      print("userID" + userID);
+    });
+  }
+
   static Future<List<RefundedBookingQueueModel>?>
       getFlightTicketOrderQueue() async {
     List<RefundedBookingQueueModel> bookingCardData = [];
     Future<http.Response>? __futureLabels = ResponseHandler.performPost(
-        "RefundOnHoldQueueGet", "UserTypeId=2&UserId=1107&BookingType=");
+        "RefundOnHoldQueueGet",
+        "UserTypeId=$userTypeID&UserId=$userID&BookingType=");
 
     return await __futureLabels?.then((value) {
       String jsonResponse = ResponseHandler.parseData(value.body);
@@ -41,8 +62,7 @@ class _BookingCardGeneralDetailsState extends State<RefundedBookingQueue> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-        child: Scaffold(
+    return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
         titleSpacing: 1,
@@ -61,9 +81,9 @@ class _BookingCardGeneralDetailsState extends State<RefundedBookingQueue> {
 
             SizedBox(width: 1), // Set the desired width
             Text(
-              "Refunded OnHold Queue",
+              "Refunded Booking Queue",
               style: TextStyle(
-                  color: Colors.black, fontFamily: "Montserrat", fontSize: 16),
+                  color: Colors.black, fontFamily: "Montserrat", fontSize: 15),
             ),
           ],
         ),
@@ -105,25 +125,32 @@ class _BookingCardGeneralDetailsState extends State<RefundedBookingQueue> {
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceBetween,
                                       children: [
-                                        Padding(
-                                          padding: const EdgeInsets.only(
-                                              left: 10, top: 10),
-                                          child: Text(
-                                            snapshot.data![index].bookingId,
-                                            style: TextStyle(
-                                              fontFamily: "Montserrat",
-                                              fontSize: 15,
-                                              fontWeight: FontWeight.bold,
+                                        Container(
+                                          child: Padding(
+                                            padding: const EdgeInsets.only(
+                                                left: 10, top: 10),
+                                            child: Text(
+                                              "ID: " +
+                                                  snapshot
+                                                      .data![index].bookingId,
+                                              style: TextStyle(
+                                                fontFamily: "Montserrat",
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.bold,
+                                              ),
                                             ),
                                           ),
                                         ),
-                                        GestureDetector(
+                                        /*GestureDetector(
                                           onTap: () {
                                             Navigator.push(
                                               context,
                                               MaterialPageRoute(
                                                 builder: (context) =>
-                                                    ViewBookingDetails(),
+                                                    ViewBookingDetails(
+                                                        id: snapshot
+                                                            .data![index]
+                                                            .bookFlightId),
                                               ),
                                             );
                                           },
@@ -185,7 +212,7 @@ class _BookingCardGeneralDetailsState extends State<RefundedBookingQueue> {
                                               ],
                                             ),
                                           ),
-                                        ),
+                                        ),*/
                                       ],
                                     ),
                                     SizedBox(
@@ -198,13 +225,16 @@ class _BookingCardGeneralDetailsState extends State<RefundedBookingQueue> {
                                         Padding(
                                           padding: const EdgeInsets.only(
                                               left: 10, top: 0),
-                                          child: Text(
-                                            snapshot
-                                                .data![index].bookCardPassenger,
-                                            style: TextStyle(
-                                              fontFamily: "Montserrat",
-                                              fontSize: 15,
-                                              fontWeight: FontWeight.w500,
+                                          child: Container(
+                                            width: 320,
+                                            child: Text(
+                                              snapshot.data![index]
+                                                  .bookCardPassenger,
+                                              style: TextStyle(
+                                                fontFamily: "Montserrat",
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.w500,
+                                              ),
                                             ),
                                           ),
                                         ),
@@ -364,8 +394,8 @@ class _BookingCardGeneralDetailsState extends State<RefundedBookingQueue> {
                                             MainAxisAlignment.spaceBetween,
                                         children: [
                                           Padding(
-                                            padding:
-                                                const EdgeInsets.only(left: 0),
+                                            padding: const EdgeInsets.only(
+                                                left: 8, bottom: 10),
                                             child: Row(
                                               mainAxisAlignment:
                                                   MainAxisAlignment.start,
@@ -388,8 +418,8 @@ class _BookingCardGeneralDetailsState extends State<RefundedBookingQueue> {
                                             ),
                                           ),
                                           Padding(
-                                            padding:
-                                                const EdgeInsets.only(left: 0),
+                                            padding: const EdgeInsets.only(
+                                                right: 5, bottom: 10),
                                             child: Text(
                                               snapshot.data![index].totalRefund,
                                               style: TextStyle(
@@ -415,6 +445,6 @@ class _BookingCardGeneralDetailsState extends State<RefundedBookingQueue> {
               }
             }),
       ),
-    ));
+    );
   }
 }

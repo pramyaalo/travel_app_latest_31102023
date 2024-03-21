@@ -638,12 +638,10 @@ class _BookingCardGeneralDetailsState extends State<EditAssetEntry> {
                                           KYCApplication()));*/
                           },
                           style: ElevatedButton.styleFrom(
-                            shape: RoundedRectangleBorder(
+                            foregroundColor: Colors.white, backgroundColor: Colors.blue, shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(
                                   5), // Adjust the radius as needed
-                            ),
-                            primary: Colors.blue, // Button color
-                            onPrimary: Colors.white, // Text color
+                            ), // Text color
                           ),
                           child: SizedBox(
                               width: 115,
@@ -669,12 +667,10 @@ class _BookingCardGeneralDetailsState extends State<EditAssetEntry> {
                                               AddReview()));*/
                           },
                           style: ElevatedButton.styleFrom(
-                            shape: RoundedRectangleBorder(
+                            foregroundColor: Colors.white, backgroundColor: Colors.red, shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(
                                   5), // Adjust the radius as needed
-                            ),
-                            primary: Colors.red, // Button color
-                            onPrimary: Colors.white, // Text color
+                            ), // Text color
                           ),
                           child: SizedBox(
                               width: 115,

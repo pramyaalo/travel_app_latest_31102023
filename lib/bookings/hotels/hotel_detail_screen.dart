@@ -8,9 +8,12 @@ import 'dart:developer' as developer;
 
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shimmer/shimmer.dart';
 
 import '../../models/hotel_model.dart';
 import '../../utils/response_handler.dart';
+import '../../utils/shared_preferences.dart';
 import 'hotel_description.dart';
 
 class HotelDetail extends StatefulWidget {
@@ -24,7 +27,9 @@ class HotelDetail extends StatefulWidget {
       AdultCountRoom3,
       ChildrenCountRoom3,
       AdultCountRoom4,
-      ChildrenCountRoom4;
+      ChildrenCountRoom4,
+      cityid,
+      countrycode;
   const HotelDetail(
       {super.key,
       required this.checkinDate,
@@ -37,21 +42,41 @@ class HotelDetail extends StatefulWidget {
       required this.AdultCountRoom3,
       required this.ChildrenCountRoom3,
       required this.AdultCountRoom4,
-      required this.ChildrenCountRoom4});
+      required this.ChildrenCountRoom4,
+      required this.cityid,
+      required this.countrycode});
 
   @override
   State<HotelDetail> createState() => _HotelDetailState();
 }
 
 class _HotelDetailState extends State<HotelDetail> {
-  bool isLoading = false;
-  var hotelResult = [];
+  late String userTypeID = '';
+  late String userID = '';
+  late String Currency = '';
+
   @override
   void initState() {
-    // TODO: implement initState
-    getHotelList();
     super.initState();
+    _retrieveSavedValues();
   }
+
+  Future<void> _retrieveSavedValues() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      userTypeID = prefs.getString(Prefs.PREFS_USER_TYPE_ID) ?? '';
+      userID = prefs.getString(Prefs.PREFS_USER_ID) ?? '';
+      Currency = prefs.getString(Prefs.PREFS_CURRENCY) ?? '';
+      print('Currency: $Currency');
+      setState(() {
+        getHotelList();
+      });
+      // Call sendFlightSearchRequest() here after SharedPreferences values are retrieved
+    });
+  }
+
+  bool isLoading = false;
+  var hotelResult = [];
 
   Future<void> getHotelList() async {
     DateTime checkinDateTime = DateTime.parse(widget.checkinDate.toString());
@@ -68,57 +93,49 @@ class _HotelDetailState extends State<HotelDetail> {
 
     final headers = {'Content-Type': 'application/x-www-form-urlencoded'};
     final requestBody = {
-      'CityId': '115936',
-      'CountryCode': 'AE',
-      'DefaultCurrency': 'INR',
+      'CityId': widget.cityid.toString(),
+      'CountryCode': widget.countrycode.toString(),
+      'APICurrencyCode': 'INR',
+      'DefaultCurrency': Currency.toString(),
+      'UserID': userID.toString(),
+      'UserTypeID': userTypeID.toString(),
       'CheckIn': finDate,
       'CheckOut': finDate1,
-      'Rooms': widget.RoomCount,
-      'AdultCountRoom1': (widget.AdultCountRoom1 != null)
-          ? widget.AdultCountRoom1.toString()
-          : '',
-      'ChildrenCountRoom1': /* (widget.ChildrenCountRoom1 != null)
-          ? widget.ChildrenCountRoom1.toString()
-          : ''*/
-          '1',
+      'Rooms': widget.RoomCount.toString(),
+      'AdultCountRoom1': widget.AdultCountRoom1.toString(),
+      'ChildrenCountRoom1': '1',
       'Child1AgeRoom1': '8',
       'Child2AgeRoom1': '',
-      'AdultCountRoom2': /*(widget.AdultCountRoom2 != null)
-          ? widget.AdultCountRoom2.toString()
-          : ''*/
-          '',
-      'ChildrenCountRoom2': /*(widget.ChildrenCountRoom2 != null)
-          ? widget.ChildrenCountRoom2.toString()
-          : ''*/
-          '',
+      'AdultCountRoom2': '',
+      'ChildrenCountRoom2': '',
       'Child1AgeRoom2': '',
       'Child2AgeRoom2': '',
-      'AdultCountRoom3': /*(widget.AdultCountRoom3 != null)
-          ? widget.AdultCountRoom3.toString()
-          : ''*/
-          '',
-      'ChildrenCountRoom3': /*(widget.ChildrenCountRoom3 != null)
-          ? widget.ChildrenCountRoom3.toString()
-          : ''*/
-          "",
+      'AdultCountRoom3': '',
+      'ChildrenCountRoom3': '',
       'Child1AgeRoom3': '',
       'Child2AgeRoom3': '',
     };
-    print('CityId: ${'115936'}');
-    print('CountryCode: ${'AE'}');
-    print('DefaultCurrency: ${'INR'}');
-    print('CheckIn: ${finDate}');
-    print('CheckOut: ${finDate1}');
-    print('Rooms: ${widget.RoomCount}');
-    print('adultcount1: ${widget.AdultCountRoom1}');
-    print('Child1AgeRoom1: ${'8'}');
-    print('Child2AgeRoom1: ${''}');
-
-    print('Child1AgeRoom2: ${''}');
-    print('Child2AgeRoom2: ${''}');
-
-    print('Child1AgeRoom3: ${' '}');
-    print('Child2AgeRoom3: ${' '}');
+    print('CityId: ${widget.cityid.toString()}');
+    print('CountryCode: ${widget.countrycode.toString()}');
+    print('APICurrencyCode: INR');
+    print('DefaultCurrency: ${Currency.toString()}');
+    print('UserID: ${userID.toString()}');
+    print('UserTypeID: ${userTypeID.toString()}');
+    print('CheckIn: $finDate');
+    print('CheckOut: $finDate1');
+    print('Rooms: ${widget.RoomCount.toString()}');
+    print('AdultCountRoom1: ${widget.AdultCountRoom1.toString()}');
+    print('ChildrenCountRoom1: 1');
+    print('Child1AgeRoom1: 8');
+    print('Child2AgeRoom1: ');
+    print('AdultCountRoom2: ');
+    print('ChildrenCountRoom2:');
+    print('Child1AgeRoom2: ');
+    print('Child2AgeRoom2: ');
+    print('AdultCountRoom3: ');
+    print('ChildrenCountRoom3: ');
+    print('Child1AgeRoom3: ');
+    print('Child2AgeRoom3: ');
 
     try {
       setState(() {
@@ -198,9 +215,47 @@ class _HotelDetailState extends State<HotelDetail> {
           backgroundColor: Colors.white,
         ),
         body: isLoading
-            ? Center(
-                child: CircularProgressIndicator(),
-              )
+            ? ListView.builder(
+                itemCount: 10, // Number of skeleton items
+                itemBuilder: (context, index) {
+                  return Shimmer.fromColors(
+                    baseColor: Colors.grey[300]!,
+                    highlightColor: Colors.grey[100]!,
+                    child: ListTile(
+                      leading: Container(
+                        width: 64.0,
+                        height: 64.0,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white,
+                        ),
+                      ),
+                      title: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: double.infinity,
+                            height: 16.0,
+                            margin: EdgeInsets.symmetric(vertical: 4.0),
+                            color: Colors.white,
+                          ),
+                          Container(
+                            width: double.infinity,
+                            height: 12.0,
+                            margin: EdgeInsets.symmetric(vertical: 4.0),
+                            color: Colors.white,
+                          ),
+                          Container(
+                            width: double.infinity,
+                            height: 12.0,
+                            margin: EdgeInsets.symmetric(vertical: 4.0),
+                            color: Colors.white,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                })
             : ListView.builder(
                 itemCount: hotelResult.length,
                 itemBuilder: (context, index) {
@@ -381,14 +436,14 @@ class _HotelDetailState extends State<HotelDetail> {
                                                 style: const TextStyle(
                                                     color: Colors.black,
                                                     fontWeight: FontWeight.w500,
-                                                    fontSize: 15),
+                                                    fontSize: 12.5),
                                               ),
                                               Text(
-                                                '${hotelResult[index]['Currency']} ${hotelResult[index]['TotalPrice']}',
+                                                '${Currency} ${hotelResult[index]['TotalPrice']}',
                                                 style: const TextStyle(
                                                     color: Colors.red,
                                                     fontWeight: FontWeight.bold,
-                                                    fontSize: 16),
+                                                    fontSize: 15),
                                               ),
                                             ],
                                           ),
@@ -448,16 +503,27 @@ class _HotelDetailState extends State<HotelDetail> {
                                                       hotelResult[index]
                                                               ['ResultIndex']
                                                           .toString();
-                                                  String TraceId =
+                                                  print('traceid:' +
                                                       hotelResult[index]
                                                               ['TraceId']
+                                                          .toString());
+                                                  String Hotelname =
+                                                      hotelResult[index]
+                                                              ['HotelName']
+                                                          .toString();
+                                                  String Hoteladdress =
+                                                      hotelResult[index]
+                                                              ['Address']
                                                           .toString();
                                                   navigate(HotelDescription(
                                                       hotelDetail:
                                                           hotelResult[index],
                                                       hotelid: HotelId,
                                                       resultindex: ResultIndex,
-                                                      traceid: TraceId,
+                                                      traceid:
+                                                          hotelResult[index]
+                                                                  ['TraceId']
+                                                              .toString(),
                                                       Starcategory:
                                                           StarCategory,
                                                       RoomCount:
@@ -469,7 +535,18 @@ class _HotelDetailState extends State<HotelDetail> {
                                                       Checkindate:
                                                           widget.checkinDate,
                                                       CheckoutDate:
-                                                          widget.checkoutDate));
+                                                          widget.checkoutDate,
+                                                      hotelname: Hotelname,
+                                                      hoteladdress:
+                                                          Hoteladdress,
+                                                      imageurl:
+                                                          hotelResult[index]
+                                                                  ['ImageUrl']
+                                                              .toString(),
+                                                      totaldays:
+                                                          hotelResult[index]
+                                                                  ['TotalDays']
+                                                              .toString()));
                                                 },
                                                 child: Text(
                                                   'View Details',

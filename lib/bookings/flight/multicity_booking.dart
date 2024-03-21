@@ -2,10 +2,12 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:developer' as developer;
 
 import '../../Booking/CommonUtils.dart';
 import '../../utils/response_handler.dart';
+import '../../utils/shared_preferences.dart';
 import 'MultiCityBookFlightNow.dart';
 
 class MultiCityBooking extends StatefulWidget {
@@ -257,6 +259,29 @@ class _TwoWayBookingState extends State<MultiCityBooking> {
       print('Error sending request: $error');
       // Handle any exceptions or errors that occurred during the request
     }
+  }
+
+  late String userTypeID = '';
+  late String userID = '';
+  late String Currency = '';
+
+  @override
+  void initState() {
+    super.initState();
+
+    _retrieveSavedValues();
+  }
+
+  Future<void> _retrieveSavedValues() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      userTypeID = prefs.getString(Prefs.PREFS_USER_TYPE_ID) ?? '';
+      userID = prefs.getString(Prefs.PREFS_USER_ID) ?? '';
+      Currency = prefs.getString(Prefs.PREFS_CURRENCY) ?? '';
+      print('Currency: $Currency');
+      // Call sendFlightSearchRequest() here after SharedPreferences values are retrieved
+      getAdivahaFlightDetails();
+    });
   }
 
   Future<void> getAdivahaFlightDetails() async {
@@ -880,7 +905,7 @@ class _TwoWayBookingState extends State<MultiCityBooking> {
                                       )));
                         },
                         style: ElevatedButton.styleFrom(
-                          primary: Color(0xff74206b),
+                          backgroundColor: Color(0xff74206b),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(
                                 10.0), // Adjust the radius as needed
@@ -905,11 +930,5 @@ class _TwoWayBookingState extends State<MultiCityBooking> {
               ),
             ),
     );
-  }
-
-  @override
-  void initState() {
-    getAdivahaFlightDetails();
-    super.initState();
   }
 }

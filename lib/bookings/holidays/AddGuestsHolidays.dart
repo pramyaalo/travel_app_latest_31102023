@@ -1845,7 +1845,7 @@ class _MyPageState extends State<AddGuestsHolidays> {
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  primary: Color(0xff74206b), // Background color of the button
+                  backgroundColor: Color(0xff74206b), // Background color of the button
                   shape: RoundedRectangleBorder(
                     borderRadius:
                         BorderRadius.circular(20), // Circular radius of 20

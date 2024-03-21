@@ -4,10 +4,12 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../Booking/ViewBookingDetails.dart';
 import '../Models/TicketOrderQueueModel.dart';
 import '../utils/response_handler.dart';
+import '../utils/shared_preferences.dart';
 import 'InvoiceReceipt.dart';
 
 class TicketOrderQueue extends StatefulWidget {
@@ -18,16 +20,34 @@ class TicketOrderQueue extends StatefulWidget {
 }
 
 class _BookingCardGeneralDetailsState extends State<TicketOrderQueue> {
+  static late String userTypeID;
+  static late String userID;
+  @override
+  void initState() {
+    super.initState();
+    _retrieveSavedValues();
+  }
+
+  Future<void> _retrieveSavedValues() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      userTypeID = prefs.getString(Prefs.PREFS_USER_TYPE_ID) ?? '';
+      userID = prefs.getString(Prefs.PREFS_USER_ID) ?? '';
+      print("userTypeID" + userTypeID);
+      print("userID" + userID);
+    });
+  }
+
   static Future<List<TicketOrderQueueModel>?>
       getFlightTicketOrderQueue() async {
     List<TicketOrderQueueModel> bookingCardData = [];
     Future<http.Response>? __futureLabels = ResponseHandler.performPost(
         "FlightTicketOrderQueueGet",
-        "UserTypeId=8&UserId=2312&Bookingdt=&BookingNo=&BookingType=");
+        "UserTypeId=$userTypeID&UserId=$userID&Bookingdt=&BookingNo=&BookingType=");
 
     return await __futureLabels?.then((value) {
       String jsonResponse = ResponseHandler.parseData(value.body);
-      log(jsonResponse);
+      log("asdf" + jsonResponse);
       try {
         Map<String, dynamic> map = json.decode(jsonResponse);
         List<dynamic> list = map["Table"];
@@ -42,86 +62,91 @@ class _BookingCardGeneralDetailsState extends State<TicketOrderQueue> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        appBar: AppBar(
-          automaticallyImplyLeading: false,
-          titleSpacing: 1,
-          title: Row(
-            children: [
-              IconButton(
-                icon: Icon(
-                  Icons.arrow_back,
-                  color: Colors.black,
-                  size: 27,
-                ),
-                onPressed: () {
-                  Navigator.pop(context);
-                },
+    return Scaffold(
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        titleSpacing: 1,
+        title: Row(
+          children: [
+            IconButton(
+              icon: Icon(
+                Icons.arrow_back,
+                color: Colors.black,
+                size: 27,
               ),
-
-              SizedBox(width: 1), // Set the desired width
-              Text(
-                "Ticket Order Queue",
-                style: TextStyle(
-                    color: Colors.black,
-                    fontFamily: "Montserrat",
-                    fontSize: 19),
-              ),
-            ],
-          ),
-          actions: [
-            Image.asset(
-              'assets/images/logo.png',
-               width: 120,
-              height: 50,
+              onPressed: () {
+                Navigator.pop(context);
+              },
             ),
-            SizedBox(
-              width: 10,
-            )
+
+            SizedBox(width: 1), // Set the desired width
+            Text(
+              "Ticket Order Queue",
+              style: TextStyle(
+                  color: Colors.black, fontFamily: "Montserrat", fontSize: 19),
+            ),
           ],
-          backgroundColor: Colors.white,
         ),
-        body: Center(
-            child: FutureBuilder<List<TicketOrderQueueModel>?>(
-                future: getFlightTicketOrderQueue(),
-                builder: (context, snapshot) {
-                  if (snapshot.hasData &&
-                      snapshot.connectionState == ConnectionState.done) {
-                    return ListView.builder(
-                        itemCount: snapshot.data!.length,
-                        itemBuilder: (context, index) {
-                          return Container(
-                              child: SingleChildScrollView(
+        actions: [
+          Image.asset(
+            'assets/images/logo.png',
+            width: 120,
+            height: 50,
+          ),
+          SizedBox(
+            width: 10,
+          )
+        ],
+        backgroundColor: Colors.white,
+      ),
+      body: Center(
+          child: FutureBuilder<List<TicketOrderQueueModel>?>(
+              future: getFlightTicketOrderQueue(),
+              builder: (context, snapshot) {
+                if (snapshot.hasData &&
+                    snapshot.connectionState == ConnectionState.done) {
+                  return ListView.builder(
+                      itemCount: snapshot.data!.length,
+                      itemBuilder: (context, index) {
+                        /* var amount = snapshot.data![index].bookCardAmount;
+                        var displayAmount = amount.length > 19
+                            ? amount.substring(0, 10) +
+                                '...' +
+                                amount.substring(amount.length - 9)
+                            : amount;*/
+                        return Container(
+                            child: SingleChildScrollView(
+                                child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                              Column(children: [
+                                Card(
+                                  margin: const EdgeInsets.only(
+                                      right: 10, left: 10, top: 7),
+                                  elevation: 5,
+                                  color: Colors.white,
                                   child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                Column(children: [
-                                  Card(
-                                    margin: const EdgeInsets.only(
-                                        right: 10, left: 10, top: 7),
-                                    elevation: 5,
-                                    color: Colors.white,
-                                    child: Column(
-                                      children: [
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Padding(
-                                              padding: const EdgeInsets.only(
-                                                  left: 10, top: 10),
-                                              child: Text(
-                                                snapshot.data![index].bookingId,
-                                                style: TextStyle(
-                                                  fontFamily: "Montserrat",
-                                                  fontSize: 15,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                                left: 10, top: 10),
+                                            child: Text(
+                                              "Booking ID: " +
+                                                  snapshot
+                                                      .data![index].bookingId,
+                                              style: TextStyle(
+                                                fontFamily: "Montserrat",
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.bold,
                                               ),
                                             ),
-                                            GestureDetector(
+                                          ),
+                                          /*   GestureDetector(
                                               onTap: () {
                                                 Navigator.push(
                                                   context,
@@ -195,62 +220,43 @@ class _BookingCardGeneralDetailsState extends State<TicketOrderQueue> {
                                                   ],
                                                 ),
                                               ),
-                                            ),
-                                          ],
-                                        ),
-                                        SizedBox(
-                                          height: 3,
-                                        ),
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Padding(
-                                              padding: const EdgeInsets.only(
-                                                  left: 10, top: 0),
-                                              child: Text(
-                                                snapshot.data![index]
-                                                    .bookCardPassenger,
-                                                style: TextStyle(
-                                                  fontFamily: "Montserrat",
-                                                  fontSize: 15,
-                                                  fontWeight: FontWeight.w500,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        Row(
-                                          children: [
-                                            Padding(
-                                              padding: const EdgeInsets.only(
-                                                  left: 10),
-                                              child: Row(
-                                                children: [
-                                                  Padding(
-                                                    padding:
-                                                        const EdgeInsets.only(
-                                                            right: 0),
-                                                    child: Container(
-                                                      width: 250,
-                                                      child: Text(
-                                                        snapshot.data![index]
-                                                            .bookCardDiscription,
-                                                        style: TextStyle(
-                                                          fontFamily:
-                                                              "Montserrat",
-                                                          fontWeight:
-                                                              FontWeight.w500,
-                                                          fontSize: 15,
-                                                        ),
+                                            ),*/
+                                        ],
+                                      ),
+                                      SizedBox(
+                                        height: 3,
+                                      ),
+                                      Row(
+                                        children: [
+                                          Padding(
+                                            padding:
+                                                const EdgeInsets.only(left: 10),
+                                            child: Row(
+                                              children: [
+                                                Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                          right: 0),
+                                                  child: Container(
+                                                    width: 250,
+                                                    child: Text(
+                                                      snapshot.data![index]
+                                                          .bookCardDiscription,
+                                                      style: TextStyle(
+                                                        fontFamily:
+                                                            "Montserrat",
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                        fontSize: 15,
                                                       ),
                                                     ),
                                                   ),
-                                                ],
-                                              ),
+                                                ),
+                                              ],
                                             ),
-                                            Spacer(), // Adds space between the two parts of the row
-                                            /*   Row(
+                                          ),
+                                          Spacer(), // Adds space between the two parts of the row
+                                          /*   Row(
                                               children: [
                                                 Image(
                                                   image: AssetImage(
@@ -278,26 +284,60 @@ class _BookingCardGeneralDetailsState extends State<TicketOrderQueue> {
                                                 ),
                                               ],
                                             ),*/
-                                          ],
-                                        ),
-                                        SizedBox(
-                                          height: 3,
-                                        ),
-                                        Row(
-                                          children: [
-                                            Padding(
-                                              padding: const EdgeInsets.only(
-                                                  left: 10),
-                                              child: Row(
-                                                children: [
-                                                  Padding(
-                                                    padding:
-                                                        const EdgeInsets.only(
-                                                            right: 0),
+                                        ],
+                                      ),
+                                      SizedBox(
+                                        height: 3,
+                                      ),
+                                      Row(
+                                        children: [
+                                          Padding(
+                                            padding:
+                                                const EdgeInsets.only(left: 10),
+                                            child: Row(
+                                              children: [
+                                                Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                          right: 0),
+                                                  child: Text(
+                                                    "Booking Date: " +
+                                                        snapshot.data![index]
+                                                            .bookedOnDt,
+                                                    style: TextStyle(
+                                                      fontFamily: "Montserrat",
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                      fontSize: 15,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          // Adds space between the two parts of the row
+                                        ],
+                                      ),
+                                      SizedBox(
+                                        height: 3,
+                                      ),
+                                      Row(
+                                        children: [
+                                          Padding(
+                                            padding:
+                                                const EdgeInsets.only(left: 10),
+                                            child: Row(
+                                              children: [
+                                                Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                          right: 0),
+                                                  child: Container(
+                                                    width: 320,
                                                     child: Text(
-                                                      "Booking Date: " +
+                                                      "Trip Date: " +
                                                           snapshot.data![index]
-                                                              .bookedOnDt,
+                                                              .bookCardServiceDt,
                                                       style: TextStyle(
                                                         fontFamily:
                                                             "Montserrat",
@@ -307,251 +347,217 @@ class _BookingCardGeneralDetailsState extends State<TicketOrderQueue> {
                                                       ),
                                                     ),
                                                   ),
-                                                ],
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          // Adds space between the two parts of the row
+                                        ],
+                                      ),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                                left: 10, top: 0),
+                                            child: Text(
+                                              snapshot.data![index]
+                                                  .bookCardPassenger,
+                                              style: TextStyle(
+                                                fontFamily: "Montserrat",
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.w500,
                                               ),
                                             ),
-                                            // Adds space between the two parts of the row
-                                          ],
-                                        ),
-                                        SizedBox(
-                                          height: 3,
-                                        ),
-                                        Row(
+                                          ),
+                                        ],
+                                      ),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          SizedBox(
+                                            width: 250,
+                                            height: 1,
+                                            child: DecoratedBox(
+                                              decoration: const BoxDecoration(
+                                                  color: Color(0xffededed)),
+                                            ),
+                                          ),
+                                          Padding(
+                                            padding:
+                                                const EdgeInsets.only(right: 4),
+                                            child: Text(
+                                              "Price(Incl. Tax)",
+                                              style: TextStyle(
+                                                  fontFamily: "Montserrat",
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w500),
+                                            ),
+                                          )
+                                        ],
+                                      ),
+                                      Container(
+                                        height: 35,
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
                                           children: [
                                             Padding(
                                               padding: const EdgeInsets.only(
-                                                  left: 10),
+                                                  left: 8),
                                               child: Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
                                                 children: [
-                                                  Padding(
-                                                    padding:
-                                                        const EdgeInsets.only(
-                                                            right: 0),
-                                                    child: Container(
-                                                      width: 320,
-                                                      child: Text(
-                                                        "Trip Date: " +
-                                                            snapshot
-                                                                .data![index]
-                                                                .bookCardServiceDt,
-                                                        style: TextStyle(
-                                                          fontFamily:
-                                                              "Montserrat",
-                                                          fontWeight:
-                                                              FontWeight.w500,
-                                                          fontSize: 15,
-                                                        ),
-                                                      ),
-                                                    ),
+                                                  Icon(
+                                                    Icons.book_outlined,
+                                                    size: 14,
+                                                  ),
+                                                  Text(
+                                                    "BookingType: " +
+                                                        snapshot.data![index]
+                                                            .bookingType,
+                                                    style: TextStyle(
+                                                        fontFamily:
+                                                            "Montserrat",
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                        fontSize: 15),
                                                   ),
                                                 ],
                                               ),
                                             ),
-                                            // Adds space between the two parts of the row
-                                          ],
-                                        ),
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            SizedBox(
-                                              width: 250,
-                                              height: 1,
-                                              child: DecoratedBox(
-                                                decoration: const BoxDecoration(
-                                                    color: Color(0xffededed)),
-                                              ),
-                                            ),
-                                            Padding(
-                                              padding: const EdgeInsets.only(
-                                                  right: 4),
-                                              child: Text(
-                                                "Price(Incl. Tax)",
-                                                style: TextStyle(
-                                                    fontFamily: "Montserrat",
-                                                    fontSize: 12,
-                                                    fontWeight:
-                                                        FontWeight.w500),
-                                              ),
-                                            )
-                                          ],
-                                        ),
-                                        Container(
-                                          height: 35,
-                                          child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceEvenly,
-                                            children: [
-                                              Padding(
+                                            /*   GestureDetector(
+                                              onTap: () {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        Receipt(),
+                                                  ),
+                                                );
+                                              },
+                                              child: Padding(
                                                 padding: const EdgeInsets.only(
                                                     left: 0),
                                                 child: Row(
                                                   mainAxisAlignment:
                                                       MainAxisAlignment.center,
                                                   children: [
-                                                    Icon(
-                                                      Icons.book_outlined,
-                                                      size: 14,
-                                                    ),
-                                                    Text(
-                                                      snapshot
-                                                                  .data![index]
-                                                                  .bookCardAmount
-                                                                  .length >
-                                                              10
-                                                          ? snapshot
-                                                              .data![index]
-                                                              .bookCardAmount
-                                                              .substring(10, 19)
-                                                          : snapshot
-                                                              .data![index]
-                                                              .bookCardAmount,
-                                                      style: TextStyle(
-                                                          fontFamily:
-                                                              "Montserrat",
-                                                          fontWeight:
-                                                              FontWeight.w500,
-                                                          fontSize: 15),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                              GestureDetector(
-                                                onTap: () {
-                                                  Navigator.push(
-                                                    context,
-                                                    MaterialPageRoute(
-                                                      builder: (context) =>
-                                                          Receipt(),
-                                                    ),
-                                                  );
-                                                },
-                                                child: Padding(
-                                                  padding:
-                                                      const EdgeInsets.only(
-                                                          left: 0),
-                                                  child: Row(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .center,
-                                                    children: [
-                                                      Padding(
-                                                        padding:
-                                                            const EdgeInsets
-                                                                .only(left: 10),
-                                                        child: Row(
-                                                          children: [
-                                                            Container(
-                                                              padding:
-                                                                  EdgeInsets
-                                                                      .fromLTRB(
-                                                                          10.0,
-                                                                          5,
-                                                                          10,
-                                                                          5),
-                                                              decoration:
-                                                                  BoxDecoration(
-                                                                color: Colors
-                                                                    .orange,
-                                                                border: Border.all(
-                                                                    width: 0.1,
-                                                                    color: Colors
-                                                                        .blue),
-                                                                borderRadius:
-                                                                    BorderRadius
-                                                                        .circular(
-                                                                            5.0),
-                                                              ),
-                                                              child: Text(
-                                                                'Invoice',
-                                                                style:
-                                                                    TextStyle(
-                                                                  fontFamily:
-                                                                      "Montserrat",
-                                                                  fontSize: 15,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .w500,
+                                                    Padding(
+                                                      padding:
+                                                          const EdgeInsets.only(
+                                                              left: 10),
+                                                      child: Row(
+                                                        children: [
+                                                          Container(
+                                                            padding: EdgeInsets
+                                                                .fromLTRB(10.0,
+                                                                    5, 10, 5),
+                                                            decoration:
+                                                                BoxDecoration(
+                                                              color:
+                                                                  Colors.orange,
+                                                              border: Border.all(
+                                                                  width: 0.1,
                                                                   color: Colors
-                                                                      .white,
-                                                                ),
+                                                                      .blue),
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .circular(
+                                                                          5.0),
+                                                            ),
+                                                            child: Text(
+                                                              'Invoice',
+                                                              style: TextStyle(
+                                                                fontFamily:
+                                                                    "Montserrat",
+                                                                fontSize: 15,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w500,
+                                                                color: Colors
+                                                                    .white,
                                                               ),
                                                             ),
-                                                          ],
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ),
-                                              Padding(
-                                                padding: const EdgeInsets.only(
-                                                    left: 0),
-                                                child: Row(
-                                                  children: [
-                                                    Container(
-                                                      padding:
-                                                          EdgeInsets.fromLTRB(
-                                                              10.0, 5, 10, 5),
-                                                      decoration: BoxDecoration(
-                                                        color: Colors.blue,
-                                                        border: Border.all(
-                                                            width: 0.1,
-                                                            color: Colors.blue),
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(5.0),
-                                                      ),
-                                                      child: Text(
-                                                        'Issue',
-                                                        style: TextStyle(
-                                                          fontFamily:
-                                                              "Montserrat",
-                                                          fontSize: 15,
-                                                          fontWeight:
-                                                              FontWeight.w500,
-                                                          color: Colors.white,
-                                                        ),
+                                                          ),
+                                                        ],
                                                       ),
                                                     ),
                                                   ],
                                                 ),
                                               ),
-                                              Padding(
-                                                padding: const EdgeInsets.only(
-                                                    right: 4),
-                                                child: Text(
-                                                  snapshot
-                                                              .data![index]
-                                                              .bookCardAmount
-                                                              .length >
-                                                          10
-                                                      ? snapshot.data![index]
-                                                          .bookCardAmount
-                                                          .substring(0, 10)
-                                                      : snapshot.data![index]
-                                                          .bookCardAmount,
-                                                  style: TextStyle(
-                                                      fontFamily: "Montserrat",
-                                                      fontSize: 17,
-                                                      fontWeight:
-                                                          FontWeight.bold),
-                                                ),
-                                              )
-                                            ],
-                                          ),
-                                        )
-                                      ],
-                                    ),
+                                            ),*/
+                                            Padding(
+                                              padding: const EdgeInsets.only(
+                                                  left: 0),
+                                              child: Row(
+                                                children: [
+                                                  Container(
+                                                    padding:
+                                                        EdgeInsets.fromLTRB(
+                                                            10.0, 5, 10, 5),
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.teal,
+                                                      border: Border.all(
+                                                          width: 0.1,
+                                                          color: Colors.blue),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              5.0),
+                                                    ),
+                                                    child: Text(
+                                                      'Issue',
+                                                      style: TextStyle(
+                                                        fontFamily:
+                                                            "Montserrat",
+                                                        fontSize: 15,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                        color: Colors.white,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            Padding(
+                                              padding: const EdgeInsets.only(
+                                                  right: 4),
+                                              child: Text(
+                                                snapshot
+                                                            .data![index]
+                                                            .bookCardAmount
+                                                            .length >
+                                                        10
+                                                    ? snapshot.data![index]
+                                                        .bookCardAmount
+                                                        .substring(0, 10)
+                                                    : snapshot.data![index]
+                                                        .bookCardAmount,
+                                                style: TextStyle(
+                                                    fontFamily: "Montserrat",
+                                                    fontSize: 17,
+                                                    fontWeight:
+                                                        FontWeight.bold),
+                                              ),
+                                            )
+                                          ],
+                                        ),
+                                      )
+                                    ],
                                   ),
-                                ]),
-                              ])));
-                        });
-                  } else {
-                    return CircularProgressIndicator();
-                  }
-                })),
-      ),
+                                ),
+                              ]),
+                            ])));
+                      });
+                } else {
+                  return CircularProgressIndicator();
+                }
+              })),
     );
   }
 }

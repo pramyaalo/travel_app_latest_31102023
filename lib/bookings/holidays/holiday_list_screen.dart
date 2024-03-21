@@ -2,10 +2,13 @@ import 'dart:convert';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
- import 'package:http/http.dart' as http;
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shimmer/shimmer.dart';
 import 'dart:developer' as developer;
 import 'package:xml/xml.dart' as xml;
 
+import '../../utils/shared_preferences.dart';
 import 'holiday_detail_screen.dart';
 
 class HolidayListScreen extends StatefulWidget {
@@ -18,7 +21,8 @@ class HolidayListScreen extends StatefulWidget {
       AdultCountRoom3,
       ChildrenCountRoom3,
       AdultCountRoom4,
-      ChildrenCountRoom4;
+      ChildrenCountRoom4,
+      Locationid;
   const HolidayListScreen(
       {super.key,
       required this.checkinDate,
@@ -30,7 +34,8 @@ class HolidayListScreen extends StatefulWidget {
       required this.AdultCountRoom3,
       required this.ChildrenCountRoom3,
       required this.AdultCountRoom4,
-      required this.ChildrenCountRoom4});
+      required this.ChildrenCountRoom4,
+      required this.Locationid});
 
   @override
   State<HolidayListScreen> createState() => _HolidayListNewState();
@@ -40,6 +45,28 @@ class _HolidayListNewState extends State<HolidayListScreen> {
   bool isLoading = false;
 
   var holidayList = [];
+  String featuresInclusion = '';
+  late String userTypeID = '';
+  late String userID = '';
+  late String Currency = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _retrieveSavedValues();
+  }
+
+  Future<void> _retrieveSavedValues() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      userTypeID = prefs.getString(Prefs.PREFS_USER_TYPE_ID) ?? '';
+      userID = prefs.getString(Prefs.PREFS_USER_ID) ?? '';
+      Currency = prefs.getString(Prefs.PREFS_CURRENCY) ?? '';
+      print('Currency: $Currency');
+      // Call sendFlightSearchRequest() here after SharedPreferences values are retrieved
+      fetchTourList();
+    });
+  }
 
   List<Map<String, dynamic>> extractJsonFromXml(String xmlString) {
     // Parse the XML string
@@ -61,19 +88,28 @@ class _HolidayListNewState extends State<HolidayListScreen> {
   }
 
   Future<void> fetchTourList() async {
+    String fin_date =
+        widget.checkinDate.toString().split(' ')[0].replaceAll('/', '-');
+    print('fin_date' + fin_date);
     final url =
         Uri.parse('https://traveldemo.org/travelapp/b2capi.asmx/TourGetList');
     final headers = {'Content-Type': 'application/x-www-form-urlencoded'};
     final body = {
-      'DestinationName': 'DXB',
-      'FromDate': '2024-02-10',
-      'ToDate': '2024-02-12',
-      'AdultCount': '1',
-      'ChildCount': '0',
-      'DefaultCurrency': 'KES',
-      'UserId': '1107',
+      'DestinationName': widget.Locationid,
+      'FromDate': fin_date,
+      'ToDate': fin_date,
+      'AdultCount': widget.AdultCountRoom1.toString(),
+      'ChildCount': widget.ChildrenCountRoom1.toString(),
+      'DefaultCurrency': Currency.toString(),
+      'UserId': userID.toString(),
     };
-
+    print('Destination Name: ${widget.Locationid.toString()}');
+    print('From Date: ${fin_date.toString()}');
+    print('To Date: $fin_date');
+    print('Adult Count: ${widget.AdultCountRoom1.toString()}');
+    print('Child Count: ${widget.ChildrenCountRoom1.toString()}');
+    print('Default Currency: ${Currency.toString()}');
+    print('User ID: ${userID.toString()}');
     setState(() {
       isLoading = true;
     });
@@ -89,6 +125,8 @@ class _HolidayListNewState extends State<HolidayListScreen> {
         //print('Response: ${response.body}');
         setState(() {
           holidayList = extractJsonFromXml(response.body).toList();
+          featuresInclusion = holidayList[0]['featuresInclusion'].toString();
+          print('featuresInchjtlusion' + featuresInclusion);
           print('holidayList length: ');
           print(holidayList.length);
         });
@@ -106,8 +144,29 @@ class _HolidayListNewState extends State<HolidayListScreen> {
     });
   }
 
+  List<Widget> createIconsForWords(String features) {
+    List<String> words = features.split("||");
+    List<Widget> icons = [];
+    for (String word in words) {
+      icons.add(Row(
+        children: [
+          Icon(Icons.check),
+          Container(
+              width: 148,
+              child: Text(
+                word,
+                style: TextStyle(color: Colors.green),
+              )),
+        ],
+      ));
+    }
+    return icons;
+  }
+
   @override
   Widget build(BuildContext context) {
+    List<Widget> iconsForFeaturesInclusion =
+        createIconsForWords(featuresInclusion);
     return Scaffold(
         appBar: AppBar(
           automaticallyImplyLeading: false,
@@ -148,9 +207,47 @@ class _HolidayListNewState extends State<HolidayListScreen> {
           backgroundColor: Colors.white,
         ),
         body: isLoading
-            ? Center(
-                child: CircularProgressIndicator(),
-              )
+            ? ListView.builder(
+                itemCount: 10, // Number of skeleton items
+                itemBuilder: (context, index) {
+                  return Shimmer.fromColors(
+                    baseColor: Colors.grey[300]!,
+                    highlightColor: Colors.grey[100]!,
+                    child: ListTile(
+                      leading: Container(
+                        width: 64.0,
+                        height: 64.0,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white,
+                        ),
+                      ),
+                      title: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: double.infinity,
+                            height: 16.0,
+                            margin: EdgeInsets.symmetric(vertical: 4.0),
+                            color: Colors.white,
+                          ),
+                          Container(
+                            width: double.infinity,
+                            height: 12.0,
+                            margin: EdgeInsets.symmetric(vertical: 4.0),
+                            color: Colors.white,
+                          ),
+                          Container(
+                            width: double.infinity,
+                            height: 12.0,
+                            margin: EdgeInsets.symmetric(vertical: 4.0),
+                            color: Colors.white,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                })
             : ListView.builder(
                 itemCount: holidayList.length,
                 itemBuilder: (context, index) {
@@ -411,6 +508,8 @@ class _HolidayListNewState extends State<HolidayListScreen> {
                                                         .ChildrenCountRoom1,
                                                     Checkindate:
                                                         widget.checkinDate,
+                                                    imageUrl: holidayList[index]
+                                                        ['imgUrl'],
                                                   ));
                                                 },
                                                 child: Text(
@@ -441,11 +540,5 @@ class _HolidayListNewState extends State<HolidayListScreen> {
                   );
                 },
               ));
-  }
-
-  @override
-  void initState() {
-    fetchTourList();
-    super.initState();
   }
 }

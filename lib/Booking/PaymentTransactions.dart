@@ -21,8 +21,8 @@ import 'ReceivedPaymentModel.dart';
 import 'RefundPaymentModel.dart';
 
 class PaymentTransactions extends StatefulWidget {
-  const PaymentTransactions({super.key});
-
+  final id;
+  PaymentTransactions({super.key, required this.id});
   @override
   State<PaymentTransactions> createState() => _PaymentTransactionsState();
 }
@@ -85,7 +85,7 @@ class _PaymentTransactionsState extends State<PaymentTransactions> {
 
   Future<String?> getLabels() async {
     Future<http.Response>? __futureLabels = ResponseHandler.performPost(
-        "BookingCardViewGet", "BookFlightId=${savedId}&StaffId=0");
+        "BookingCardViewGet", "BookFlightId=${widget.id}&StaffId=0");
     print('jfghhjgh' + savedId);
     return await __futureLabels?.then((value) {
       String jsonResponse = ResponseHandler.parseData(value.body);
@@ -281,8 +281,7 @@ class _PaymentTransactionsState extends State<PaymentTransactions> {
                                   );
                                 },
                                 style: ElevatedButton.styleFrom(
-                                    primary: Colors.yellow,
-                                    onPrimary: Colors.black,
+                                    foregroundColor: Colors.black, backgroundColor: Colors.yellow,
                                     side: BorderSide(
                                         color: Colors.yellow, width: 1),
                                     minimumSize: Size(150, 40),
@@ -300,8 +299,7 @@ class _PaymentTransactionsState extends State<PaymentTransactions> {
                                   // Add your onPressed logic here
                                 },
                                 style: ElevatedButton.styleFrom(
-                                    primary: Colors.yellow,
-                                    onPrimary: Colors.black,
+                                    foregroundColor: Colors.black, backgroundColor: Colors.yellow,
                                     side: BorderSide(
                                         color: Colors.yellow, width: 1),
                                     minimumSize: Size(150, 40),

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 class ChangingDetails extends StatefulWidget {
-  const ChangingDetails({super.key});
-
+  final id;
+  ChangingDetails({super.key, required this.id});
   @override
   State<ChangingDetails> createState() => _ChangingDetailsState();
 }

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -7,7 +8,11 @@ import 'package:get/get.dart';
 import 'dart:developer' as developer;
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../utils/response_handler.dart';
+import '../../utils/shared_preferences.dart';
+import '../flight/TravellerDetailsModel.dart';
+import 'package:xml/xml.dart' as xml;
 
 class HolidayReviewBooking extends StatefulWidget {
   final holidayName,
@@ -20,7 +25,9 @@ class HolidayReviewBooking extends StatefulWidget {
       featuresExclusion,
       price,
       modalities_rateKey,
-      childrenCount;
+      ModalitiesCode,
+      childrenCount,
+      imageurl;
   const HolidayReviewBooking({
     super.key,
     required this.holidayName,
@@ -33,7 +40,9 @@ class HolidayReviewBooking extends StatefulWidget {
     required this.featuresExclusion,
     required this.price,
     required this.modalities_rateKey,
+    required this.ModalitiesCode,
     required this.childrenCount,
+    required this.imageurl,
   });
 
   @override
@@ -44,7 +53,15 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
   bool isDetailsLoading = false;
   var hotelResult = [];
   var RoomResult = [];
-
+  String AdultName1 = '',
+      AdultTravellerId1 = '',
+      AdultName2 = '',
+      AdultTravellerId2 = '',
+      AdultName3 = '',
+      AdultTravellerId3 = '',
+      AdultName4 = '',
+      AdultTravellerId4 = '';
+  int Status = 2;
   List<Widget> createIconsForWords(String features) {
     List<String> words = features.split(",");
     List<Widget> icons = [];
@@ -64,6 +81,90 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
     return icons;
   }
 
+  Future<void> _selectExpiryDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null && picked != ExpiryDateController) {
+      setState(() {
+        ExpiryDateController.text = DateFormat('yyyy-MM-dd').format(picked);
+      });
+    }
+  }
+
+  /* Future<void> bookTour() async {
+    final Uri url = Uri.parse(
+        'https://traveldemo.org/travelapp/b2capi.asmx/TourPreconfirmBooking');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: <String, String>{
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: <String, String>{
+          'AmountWithoutTax': widget.price,
+          'TourCurrency': 'INR',
+          'StayHotelName': 'stayHotelName',
+          'TourRateKey': widget.modalities_rateKey,
+          'FromDate': widget.CheckinDate,
+          'ToDate': '2024-02-12',
+          'Adult1Title': 'Mr',
+          'Adult1FirstName': 'Shanthini',
+          'Adult1LastName': 'Vasan',
+          'Adult1DOB': '1990/01/01',
+          'Address': 'MainRoad',
+          'ZipCode': '629004',
+          'Country': 'India',
+          'Email': 'abc@abc.com',
+          'Phone': '9988776655',
+          'Adult2Title': '',
+          'Adult2FirstName': '',
+          'Adult2LastName': '',
+          'Adult2DOB': '',
+          'Adult3Title': '',
+          'Adult3FirstName': '',
+          'Adult3LastName': '',
+          'Adult3DOB': '',
+          'Adult4Title': '',
+          'Adult4FirstName': '',
+          'Adult4LastName': '',
+          'Adult4DOB': '',
+          'Adult5Title': '',
+          'Adult5FirstName': '',
+          'Adult5LastName': '',
+          'Adult5DOB': '',
+          'Adult6Title': '',
+          'Adult6FirstName': '',
+          'Adult6LastName': '',
+          'Adult6DOB': '',
+          'Adult7Title': '',
+          'Adult7FirstName': '',
+          'Adult7LastName': '',
+          'Adult7DOB': '',
+          'Adult8Title': '',
+          'Adult8FirstName': '',
+          'Adult8LastName': '',
+          'Adult8DOB': '',
+          'Adult9Title': '',
+          'Adult9FirstName': '',
+          'Adult9LastName': '',
+          'Adult9DOB': '',
+          'Adult10Title': '',
+          'Adult10FirstName': '',
+          'Adult10LastName': '',
+          'Adult10DOB': '',
+        },
+      );
+
+      print(response.body);
+    } catch (ex) {
+      print(ex);
+    }
+  }*/
   List<Widget> createIconsForWords1(String features) {
     List<String> words = features.split(",");
     List<Widget> icons = [];
@@ -126,8 +227,6 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
   String selectedGendarInfant4 = 'Male';
   String selectedGendarInfant5 = 'Male';
 
-  String selectedGendarContactDetail = 'Male';
-
   TextEditingController adultFname_controller = new TextEditingController();
   TextEditingController adultLname_controller = new TextEditingController();
 
@@ -138,6 +237,10 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
   TextEditingController contactMobileController = new TextEditingController();
   TextEditingController contactAddressController = new TextEditingController();
   TextEditingController contactCityController = new TextEditingController();
+  TextEditingController CountryController = new TextEditingController();
+  TextEditingController adult2_Lname_controller = new TextEditingController();
+  TextEditingController adult3_Lname_controller = new TextEditingController();
+  TextEditingController adult4_Lname_controller = new TextEditingController();
 
   var selectedDate = DateTime.now().obs;
   TextEditingController dateControllerAdult1 = TextEditingController();
@@ -159,6 +262,27 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
   TextEditingController dateControllerInfant4 = TextEditingController();
   TextEditingController dateControllerInfant5 = TextEditingController();
 
+  TextEditingController Documentype_controller = new TextEditingController();
+  TextEditingController ExpiryDateController = TextEditingController();
+  TextEditingController Documentnumber_controller = new TextEditingController();
+
+  TextEditingController Documentype_controllerAdult2 =
+      new TextEditingController();
+  TextEditingController ExpiryDateControllerAdult2 = TextEditingController();
+  TextEditingController Documentnumber_controllerAdult2 =
+      new TextEditingController();
+  TextEditingController Documentype_controllerAdult3 =
+      new TextEditingController();
+  TextEditingController ExpiryDateControllerAdult3 = TextEditingController();
+  TextEditingController Documentnumber_controllerAdult3 =
+      new TextEditingController();
+
+  TextEditingController Documentype_controllerAdult4 =
+      new TextEditingController();
+  TextEditingController ExpiryDateControllerAdult4 = TextEditingController();
+  TextEditingController Documentnumber_controllerAdult4 =
+      new TextEditingController();
+
   Future<void> _selectDateAdult1(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -171,6 +295,521 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
         dateControllerAdult1.text = DateFormat('yyyy-MM-dd').format(picked);
       });
     }
+  }
+
+  String selectedGendarContactDetail = 'Male',
+      selectedGendarContactDetailAdult2 = 'Male',
+      selectedGendarContactDetailAdult3 = 'Male',
+      selectedGendarContactDetailAdult4 = 'Male';
+
+  late String userTypeID = '';
+  late String userID = '';
+  late String Currency = '';
+  @override
+  void initState() {
+    super.initState();
+
+    setState(() {
+      _retrieveSavedValues();
+    });
+  }
+
+  /* Future<void> HotelRoomBooking() async {
+    final Uri url = Uri.parse(
+        'https://traveldemo.org/travelapp/b2capi.asmx/AdivahaHotelRoomBooking');
+    DateTime checkinDateTime = DateTime.parse(widget.Checkindate.toString());
+    String finDate = DateFormat('yyyy-MM-dd').format(checkinDateTime);
+
+    DateTime checkoutDateTime = DateTime.parse(widget.CheckoutDate.toString());
+    String finDate1 = DateFormat('yyyy-MM-dd').format(checkoutDateTime);
+
+    try {
+      final response = await http.post(
+        url,
+        headers: <String, String>{
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: <String, String>{
+          'UserID': userID.toString(),
+          'HotelID': widget.hotelid.toString(),
+          'HotelName': widget.hotelname.toString(),
+          'HotelAddress': widget.hoteladdress.toString(),
+          'HotelImageUrl': widget.imageurl.toString(),
+          'Nationality': 'IN',
+          'Price': widget.Roomprice.toString(),
+          'CheckInDate': finDate,
+          'CheckOutDate': finDate1,
+          'TotalDays': widget.totaldays.toString(),
+          'TotAdultCount': widget.adultCount.toString(),
+          'TotChildCount': '1',
+          'ResultIndex': widget.resultindex.toString(),
+          'TraceId': widget.traceid.toString(),
+          'RoomIndex': widget.roomindex.toString(),
+          'RoomTypeCode': widget.roomtypecode.toString(),
+          'RoomCount': '1',
+          'Room1AdultSalu1': '0',
+          'Room1AdultFName1': AdultName1.toString(),
+          'Room1AdultLName1': adultLname_controller.text.toString(),
+          'Room1AdultLDOB1': formattedDate.toString(),
+          'Room1AdultTravellerId1': AdultTravellerId1.toString(),
+          'Room1AdultSalu2': '',
+          'Room1AdultFName2': AdultName2.toString(),
+          'Room1AdultLName2': adult2_Lname_controller.text.toString(),
+          'Room1AdultLDOB2': formattedDate2.toString(),
+          'Room1AdultTravellerId2': AdultTravellerId2.toString(),
+          'Room1AdultSalu3': '',
+          'Room1AdultFName3': '',
+          'Room1AdultLName3': '',
+          'Room1AdultLDOB3': '',
+          'Room1AdultTravellerId3': '',
+          'Room1AdultSalu4': '',
+          'Room1AdultFName4': '',
+          'Room1AdultLName4': '',
+          'Room1AdultLDOB4': '',
+          'Room1AdultTravellerId4': '',
+          'Room1ChildSalu1': '0',
+          'Room1ChildFName1': 'Anu',
+          'Room1ChildLName1': 'lal',
+          'Room1ChildLDOB1': '2016/02/16',
+          'Room1ChildSalu2': '',
+          'Room1ChildFName2': '',
+          'Room1ChildLName2': '',
+          'Room1ChildLDOB2': '',
+          'Room2AdultSalu1': '',
+          'Room2AdultFName1': '',
+          'Room2AdultLName1': '',
+          'Room2AdultLDOB1': '',
+          'Room2AdultTravellerId1': '',
+          'Room2AdultSalu2': '',
+          'Room2AdultFName2': '',
+          'Room2AdultLName2': '',
+          'Room2AdultLDOB2': '',
+          'Room2AdultTravellerId2': '',
+          'Room2AdultSalu3': '',
+          'Room2AdultFName3': '',
+          'Room2AdultLName3': '',
+          'Room2AdultLDOB3': '',
+          'Room2AdultTravellerId3': '',
+          'Room2AdultSalu4': '',
+          'Room2AdultFName4': '',
+          'Room2AdultLName4': '',
+          'Room2AdultLDOB4': '',
+          'Room2AdultTravellerId4': '',
+          'Room2ChildSalu1': '',
+          'Room2ChildFName1': '',
+          'Room2ChildLName1': '',
+          'Room2ChildLDOB1': '',
+          'Room2ChildSalu2': '',
+          'Room2ChildFName2': '',
+          'Room2ChildLName2': '',
+          'Room2ChildLDOB2': '',
+          'Room3AdultSalu1': '',
+          'Room3AdultFName1': '',
+          'Room3AdultLName1': '',
+          'Room3AdultLDOB1': '',
+          'Room3AdultTravellerId1': '',
+          'Room3AdultSalu2': '',
+          'Room3AdultFName2': '',
+          'Room3AdultLName2': '',
+          'Room3AdultLDOB2': '',
+          'Room3AdultTravellerId2': '',
+          'Room3AdultSalu3': '',
+          'Room3AdultFName3': '',
+          'Room3AdultLName3': '',
+          'Room3AdultLDOB3': '',
+          'Room3AdultTravellerId3': '',
+          'Room3AdultSalu4': '',
+          'Room3AdultFName4': '',
+          'Room3AdultLName4': '',
+          'Room3AdultLDOB4': '',
+          'Room3AdultTravellerId4': '',
+          'Room3ChildSalu1': '',
+          'Room3ChildFName1': '',
+          'Room3ChildLName1': '',
+          'Room3ChildLDOB1': '',
+          'Room3ChildSalu2': '',
+          'Room3ChildFName2': '',
+          'Room3ChildLName2': '',
+          'Room3ChildLDOB2': '',
+          'Room4AdultSalu1': '',
+          'Room4AdultFName1': '',
+          'Room4AdultLName1': '',
+          'Room4AdultLDOB1': '',
+          'Room4AdultTravellerId1': '',
+          'Room4AdultSalu2': '',
+          'Room4AdultFName2': '',
+          'Room4AdultLName2': '',
+          'Room4AdultLDOB2': '',
+          'Room4AdultTravellerId2': '',
+          'Room4AdultSalu3': '',
+          'Room4AdultFName3': '',
+          'Room4AdultLName3': '',
+          'Room4AdultLDOB3': '',
+          'Room4AdultTravellerId3': '',
+          'Room4AdultSalu4': '',
+          'Room4AdultFName4': '',
+          'Room4AdultLName4': '',
+          'Room4AdultLDOB4': '',
+          'Room4AdultTravellerId4': '',
+          'Room4ChildSalu1': '',
+          'Room4ChildFName1': '',
+          'Room4ChildLName1': '',
+          'Room4ChildLDOB1': '',
+          'Room4ChildSalu2': '',
+          'Room4ChildFName2': '',
+          'Room4ChildLName2': '',
+          'Room4ChildLDOB2': '',
+          'CustomerPhone': contactMobileController.text.toString(),
+          'CustomerEmail': contactEmailController.text.toString(),
+        },
+      );
+      print('UserID: ${userID.toString()}');
+      print('HotelID: ${widget.hotelid.toString()}');
+      print('HotelName: ${widget.hotelname.toString()}');
+      print('HotelAddress: ${widget.hoteladdress.toString()}');
+      print('HotelImageUrl: ${widget.imageurl.toString()}');
+      print('Nationality: IN');
+      print('Price: ${widget.Roomprice.toString()}');
+      print('CheckInDate: $finDate');
+      print('CheckOutDate: $finDate1');
+      print('TotalDays: ${widget.totaldays.toString()}');
+      print('TotAdultCount: ${widget.adultCount.toString()}');
+      print('TotChildCount: 1');
+      print('ResultIndex: ${widget.resultindex.toString()}');
+      print('TraceId: ${widget.traceid.toString()}');
+      print('RoomIndex: ${widget.roomindex.toString()}');
+      print('RoomTypeCode: ${widget.roomtypecode.toString()}');
+      print('RoomCount: 1');
+      print('Room1AdultSalu1: 0');
+      print('Room1AdultFName1: ${AdultName1.toString()}');
+      print('Room1AdultLName1: ${adultLname_controller.text.toString()}');
+      print('Room1AdultLDOB1: ${formattedDate.toString()}');
+      print('Room1AdultTravellerId1: ${AdultTravellerId1.toString()}');
+      print('Room1ChildSalu1: 0');
+      print('Room1ChildFName1: Anu');
+      print('Room1ChildLName1: lal');
+      print('Room1ChildLDOB1: 2016/02/16');
+      print('CustomerPhone: ${contactMobileController.text}');
+      print('CustomerEmail: ${contactEmailController.text}');
+
+      if (response.statusCode == 200) {
+        print('Response: ${response.body}');
+      } else {
+        print('Request failed with status: ${response.statusCode}');
+        print('Response Body: ${response.body}');
+      }
+    } catch (error) {
+      print('Error making POST request: $error');
+    }
+  }*/
+  Future<void> callSecondApiAdult2(String id) async {
+    final url =
+        'https://traveldemo.org/travelapp/b2capi.asmx/BookingSearchTravellerDetails?TravellerId=$id&UID=35510b94-5342-TDemoB2CAPI-a2e3-2e722772';
+    print('object' + id);
+
+    final response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      final responseData = response.body;
+
+      // Parse XML and extract JSON string
+      final startTag = '<string xmlns="http://tempuri.org/">';
+      final endTag = '</string>';
+      final startIndex = responseData.indexOf(startTag) + startTag.length;
+      final endIndex = responseData.indexOf(endTag);
+      final jsonString = responseData.substring(startIndex, endIndex);
+
+      // Parse JSON string
+      final jsonData = json.decode(jsonString);
+
+      // Extract data from Table
+      final tableData = jsonData['Table'];
+      final table1Data = jsonData['Table1'];
+
+      if (tableData != null &&
+          tableData.isNotEmpty &&
+          table1Data != null &&
+          table1Data.isNotEmpty) {
+        final traveller = tableData[0];
+        final passportInfo =
+            table1Data[0]; // Assuming there's only one entry in Table1
+
+        setState(() {
+          adult2_Lname_controller.text = traveller['UDLastName'];
+          dateControllerAdult2.text = traveller['UDDOB'];
+          String inputDate2 = dateControllerAdult2.text;
+          formattedDate2 = convertDate(inputDate2);
+          print("formattedDate" + formattedDate2);
+
+          if (traveller['GenderId'] == 0) {
+            selectedGendarContactDetailAdult2 = "Male";
+          } else if (traveller['GenderId'] == 1) {
+            selectedGendarContactDetailAdult2 = "Female";
+          }
+          // Get data from Table1
+          Documentnumber_controllerAdult2.text = passportInfo['PDPassportNo'];
+
+          String dateOfBirth = passportInfo['PDDateofBirth'];
+          Documentype_controllerAdult2.text = passportInfo['PDDocument'];
+          String issuingCountry = passportInfo['PDIssuingCountry'];
+          ExpiryDateControllerAdult2.text = passportInfo['PDDateofExpiry'];
+          DateTime checkinDateTime =
+              DateTime.parse(ExpiryDateControllerAdult2.text);
+          String finDate = DateFormat('yyyy/MM/dd').format(checkinDateTime);
+
+          ExpiryDateControllerAdult2.text = finDate;
+          print('finDate' + ExpiryDateControllerAdult2.text.toString());
+          // Update other text controllers with relevant fields
+        });
+      } else {
+        throw Exception('Failed to load traveller details');
+      }
+    }
+  }
+
+  Future<void> callSecondApiAdult3(String id) async {
+    final url =
+        'https://traveldemo.org/travelapp/b2capi.asmx/BookingSearchTravellerDetails?TravellerId=$id&UID=35510b94-5342-TDemoB2CAPI-a2e3-2e722772';
+    print('object' + id);
+
+    final response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      final responseData = response.body;
+
+      // Parse XML and extract JSON string
+      final startTag = '<string xmlns="http://tempuri.org/">';
+      final endTag = '</string>';
+      final startIndex = responseData.indexOf(startTag) + startTag.length;
+      final endIndex = responseData.indexOf(endTag);
+      final jsonString = responseData.substring(startIndex, endIndex);
+
+      // Parse JSON string
+      final jsonData = json.decode(jsonString);
+
+      // Extract data from Table
+      final tableData = jsonData['Table'];
+      final table1Data = jsonData['Table1'];
+
+      if (tableData != null &&
+          tableData.isNotEmpty &&
+          table1Data != null &&
+          table1Data.isNotEmpty) {
+        final traveller = tableData[0];
+        final passportInfo =
+            table1Data[0]; // Assuming there's only one entry in Table1
+
+        setState(() {
+          adult3_Lname_controller.text = traveller['UDLastName'];
+          dateControllerAdult3.text = traveller['UDDOB'];
+          String inputDate2 = dateControllerAdult3.text;
+          formattedDate3 = convertDate(inputDate2);
+          print("formattedDate" + formattedDate3);
+
+          if (traveller['GenderId'] == 0) {
+            selectedGendarContactDetailAdult3 = "Male";
+          } else if (traveller['GenderId'] == 1) {
+            selectedGendarContactDetailAdult3 = "Female";
+          }
+          // Get data from Table1
+          Documentnumber_controllerAdult3.text = passportInfo['PDPassportNo'];
+
+          String dateOfBirth = passportInfo['PDDateofBirth'];
+          Documentype_controllerAdult3.text = passportInfo['PDDocument'];
+          String issuingCountry = passportInfo['PDIssuingCountry'];
+          ExpiryDateControllerAdult3.text = passportInfo['PDDateofExpiry'];
+          DateTime checkinDateTime =
+              DateTime.parse(ExpiryDateControllerAdult3.text);
+          String finDate = DateFormat('yyyy/MM/dd').format(checkinDateTime);
+
+          ExpiryDateControllerAdult3.text = finDate;
+          print('finDate' + ExpiryDateControllerAdult3.text.toString());
+          // Update other text controllers with relevant fields
+        });
+      } else {
+        throw Exception('Failed to load traveller details');
+      }
+    }
+  }
+
+  Future<void> callSecondApiAdult4(String id) async {
+    final url =
+        'https://traveldemo.org/travelapp/b2capi.asmx/BookingSearchTravellerDetails?TravellerId=$id&UID=35510b94-5342-TDemoB2CAPI-a2e3-2e722772';
+    print('object' + id);
+
+    final response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      final responseData = response.body;
+
+      // Parse XML and extract JSON string
+      final startTag = '<string xmlns="http://tempuri.org/">';
+      final endTag = '</string>';
+      final startIndex = responseData.indexOf(startTag) + startTag.length;
+      final endIndex = responseData.indexOf(endTag);
+      final jsonString = responseData.substring(startIndex, endIndex);
+
+      // Parse JSON string
+      final jsonData = json.decode(jsonString);
+
+      // Extract data from Table
+      final tableData = jsonData['Table'];
+      final table1Data = jsonData['Table1'];
+
+      if (tableData != null &&
+          tableData.isNotEmpty &&
+          table1Data != null &&
+          table1Data.isNotEmpty) {
+        final traveller = tableData[0];
+        final passportInfo =
+            table1Data[0]; // Assuming there's only one entry in Table1
+
+        setState(() {
+          adult4_Lname_controller.text = traveller['UDLastName'];
+          dateControllerAdult4.text = traveller['UDDOB'];
+          String inputDate2 = dateControllerAdult3.text;
+          formattedDate4 = convertDate(inputDate2);
+          print("formattedDate" + formattedDate4);
+
+          if (traveller['GenderId'] == 0) {
+            selectedGendarContactDetailAdult4 = "Male";
+          } else if (traveller['GenderId'] == 1) {
+            selectedGendarContactDetailAdult4 = "Female";
+          }
+          // Get data from Table1
+          Documentnumber_controllerAdult4.text = passportInfo['PDPassportNo'];
+
+          Documentype_controllerAdult4.text = passportInfo['PDDocument'];
+          String issuingCountry = passportInfo['PDIssuingCountry'];
+          ExpiryDateControllerAdult4.text = passportInfo['PDDateofExpiry'];
+          DateTime checkinDateTime =
+              DateTime.parse(ExpiryDateControllerAdult4.text);
+          String finDate = DateFormat('yyyy/MM/dd').format(checkinDateTime);
+
+          ExpiryDateControllerAdult4.text = finDate;
+          print('finDate' + ExpiryDateControllerAdult4.text.toString());
+          // Update other text controllers with relevant fields
+        });
+      } else {
+        throw Exception('Failed to load traveller details');
+      }
+    }
+  }
+
+  Future<void> _retrieveSavedValues() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      userTypeID = prefs.getString(Prefs.PREFS_USER_TYPE_ID) ?? '';
+      userID = prefs.getString(Prefs.PREFS_USER_ID) ?? '';
+      Currency = prefs.getString(Prefs.PREFS_CURRENCY) ?? '';
+      print('Currency: $Currency');
+    });
+  }
+
+  Future<List<TravellerDetailsModel>> fetchAutocompleteData(
+      String empName) async {
+    final url =
+        'https://traveldemo.org/travelapp/b2capi.asmx/BookingSearchTravellers?UserId=$userID&UserTypeId=$userTypeID&SearchFilter=$empName&UID=35510b94-5342-TDemoB2CAPI-a2e3-2e722772';
+    print('userID' + userID);
+    print('userTypeID' + userTypeID);
+    print('empName' + empName);
+
+    final response = await http.get(Uri.parse(url));
+    print('response: ${response.statusCode}');
+    if (response.statusCode == 200) {
+      final xmlDocument = xml.XmlDocument.parse(response.body);
+      final responseData = xmlDocument.findAllElements('string').first.text;
+
+      final decodedData = json.decode(responseData);
+      return decodedData
+          .map<TravellerDetailsModel>(
+              (data) => TravellerDetailsModel.fromJson(data))
+          .toList();
+    } else {
+      print('Failed to load autocomplete data: ${response.statusCode}');
+      throw Exception('Failed to load autocomplete data');
+    }
+  }
+
+  String formattedDate = '',
+      formattedDate2 = '',
+      formattedDate3 = '',
+      formattedDate4 = '';
+
+  Future<void> callSecondApi(String id) async {
+    final url =
+        'https://traveldemo.org/travelapp/b2capi.asmx/BookingSearchTravellerDetails?TravellerId=$id&UID=35510b94-5342-TDemoB2CAPI-a2e3-2e722772';
+    print('object' + id);
+
+    final response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      final responseData = response.body;
+
+      // Parse XML and extract JSON string
+      final startTag = '<string xmlns="http://tempuri.org/">';
+      final endTag = '</string>';
+      final startIndex = responseData.indexOf(startTag) + startTag.length;
+      final endIndex = responseData.indexOf(endTag);
+      final jsonString = responseData.substring(startIndex, endIndex);
+
+      // Parse JSON string
+      final jsonData = json.decode(jsonString);
+
+      // Extract data from Table
+      final tableData = jsonData['Table'];
+      final table1Data = jsonData['Table1'];
+
+      if (tableData != null &&
+          tableData.isNotEmpty &&
+          table1Data != null &&
+          table1Data.isNotEmpty) {
+        final traveller = tableData[0];
+        final passportInfo =
+            table1Data[0]; // Assuming there's only one entry in Table1
+
+        setState(() {
+          String _firstNameController = traveller['UDFirstName'];
+          adultLname_controller.text = traveller['UDLastName'];
+          dateControllerAdult1.text = traveller['UDDOB'];
+          String inputDate = dateControllerAdult1.text;
+          formattedDate = convertDate(inputDate);
+          print("formattedDate" + formattedDate);
+
+          print('finDate' + dateControllerAdult1.text.toString());
+          if (traveller['GenderId'] == 0) {
+            selectedGendarContactDetail = "Male";
+          } else if (traveller['GenderId'] == 1) {
+            selectedGendarContactDetail = "Female";
+          }
+          // Get data from Table1
+          Documentnumber_controller.text = passportInfo['PDPassportNo'];
+
+          String dateOfBirth = passportInfo['PDDateofBirth'];
+          Documentype_controller.text = passportInfo['PDDocument'];
+          String issuingCountry = passportInfo['PDIssuingCountry'];
+          ExpiryDateController.text = passportInfo['PDDateofExpiry'];
+          DateTime checkinDateTime = DateTime.parse(ExpiryDateController.text);
+          String finDate = DateFormat('yyyy/MM/dd').format(checkinDateTime);
+
+          ExpiryDateController.text = finDate;
+          print('finDate' + ExpiryDateController.text.toString());
+          // Update other text controllers with relevant fields
+        });
+      } else {
+        throw Exception('Failed to load traveller details');
+      }
+    }
+  }
+
+  String convertDate(String inputDate) {
+    // Parse the input date string
+    DateTime date = DateFormat('dd MMM yyyy').parse(inputDate);
+
+    // Format the date in the desired format
+    String formattedDate = DateFormat('yyyy/MM/dd').format(date);
+
+    return formattedDate;
   }
 
   Future<void> _selectDateAdult2(BuildContext context) async {
@@ -300,9 +939,10 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
   }
 
   Future<void> bookTour() async {
-    final Uri url = Uri.parse(
-        'https://traveldemo.org/travelapp/b2capi.asmx/TourPreconfirmBooking');
-
+    final Uri url =
+        Uri.parse('https://traveldemo.org/travelapp/b2capi.asmx/TourBooking');
+    DateTime checkinDateTime = DateTime.parse(widget.CheckinDate);
+    String finDate = DateFormat('yyyy-MM-dd').format(checkinDateTime);
     try {
       final response = await http.post(
         url,
@@ -310,57 +950,95 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: <String, String>{
-          'AmountWithoutTax': widget.price,
-          'TourCurrency': 'INR',
+          'AmountWithoutTax': widget.price.toString(),
+          'TourCurrency': Currency.toString(),
           'StayHotelName': 'stayHotelName',
-          'TourRateKey': widget.modalities_rateKey,
-          'FromDate': widget.CheckinDate,
-          'ToDate': '2024-02-12',
-          'Adult1Title': 'Mr',
-          'Adult1FirstName': 'Shanthini',
-          'Adult1LastName': 'Vasan',
-          'Adult1DOB': '1990/01/01',
-          'Address': 'MainRoad',
-          'ZipCode': '629004',
-          'Country': 'India',
-          'Email': 'abc@abc.com',
-          'Phone': '9988776655',
+          'TourRateKey': widget.modalities_rateKey.toString(),
+          'FromDate': finDate.toString(),
+          'ToDate': finDate.toString(),
+          'DefaultCurrency': Currency.toString(),
+          'userID': userID.toString(),
+          'userTypeID': userTypeID.toString(),
+          'AdultCount': widget.adultCount.toString(),
+          'ChildCount': widget.childrenCount.toString(),
+          'InfantCount': '0',
+          'TourCode': widget.Tourcode.toString(),
+          'ModalitiesCode': widget.ModalitiesCode.toString(),
+          'Adult1Title': '0',
+          'Adult1FirstName': AdultName1.toString(),
+          'Adult1LastName': adultLname_controller.text.toString(),
+          'Adult1DOB': formattedDate.toString(),
+          'AdultTravellerId1': AdultTravellerId1.toString(),
           'Adult2Title': '',
           'Adult2FirstName': '',
           'Adult2LastName': '',
           'Adult2DOB': '',
+          'AdultTravellerId2': '',
           'Adult3Title': '',
           'Adult3FirstName': '',
           'Adult3LastName': '',
           'Adult3DOB': '',
+          'AdultTravellerId3': '',
           'Adult4Title': '',
           'Adult4FirstName': '',
           'Adult4LastName': '',
           'Adult4DOB': '',
+          'AdultTravellerId4': '',
           'Adult5Title': '',
           'Adult5FirstName': '',
           'Adult5LastName': '',
           'Adult5DOB': '',
+          'AdultTravellerId5': '',
           'Adult6Title': '',
           'Adult6FirstName': '',
           'Adult6LastName': '',
           'Adult6DOB': '',
+          'AdultTravellerId6': '',
           'Adult7Title': '',
           'Adult7FirstName': '',
           'Adult7LastName': '',
           'Adult7DOB': '',
+          'AdultTravellerId7': '',
           'Adult8Title': '',
           'Adult8FirstName': '',
           'Adult8LastName': '',
           'Adult8DOB': '',
+          'AdultTravellerId8': '',
           'Adult9Title': '',
           'Adult9FirstName': '',
           'Adult9LastName': '',
           'Adult9DOB': '',
+          'AdultTravellerId9': '',
           'Adult10Title': '',
           'Adult10FirstName': '',
           'Adult10LastName': '',
           'Adult10DOB': '',
+          'AdultTravellerId10': '',
+          'Child1Title': '0',
+          'Child1FirstName': AdultName1.toString(),
+          'Child1LastName': adultLname_controller.text.toString(),
+          'Child1DOB': formattedDate.toString(),
+          'Child2Title': '',
+          'Child2FirstName': '',
+          'Child2LastName': '',
+          'Child2DOB': '',
+          'Child3Title': '',
+          'Child3FirstName': '',
+          'Child3LastName': '',
+          'Child3DOB': '',
+          'Child4Title': '',
+          'Child4FirstName': '',
+          'Child4LastName': '',
+          'Child4DOB': '',
+          'Child5Title': '',
+          'Child5FirstName': '',
+          'Child5LastName': '',
+          'Child5DOB': '',
+          'Address': contactAddressController.text.toString(),
+          'ZipCode': '629004',
+          'Country': CountryController.text.toString(),
+          'Email': contactEmailController.text.toString(),
+          'Phone': contactMobileController.text.toString(),
         },
       );
 
@@ -420,15 +1098,19 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          width: 120,
-                          height: 170,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8.0),
-                            image: DecorationImage(
-                              image: AssetImage('assets/images/hotel2.jpg'),
-                              fit: BoxFit.cover,
-                            ),
+                        SizedBox(
+                          width: 110,
+                          height: 140,
+                          child: CachedNetworkImage(
+                            imageUrl: widget.imageurl,
+                            placeholder: (context, url) => const Center(
+                                child: SizedBox(
+                                    height: 30,
+                                    width: 35,
+                                    child: CircularProgressIndicator())),
+                            errorWidget: (context, url, error) =>
+                                const Icon(Icons.error),
+                            fit: BoxFit.cover,
                           ),
                         ),
                         SizedBox(width: 10),
@@ -504,7 +1186,7 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Checkin',
+                          'Start Date',
                           style: TextStyle(
                             fontSize: 15,
                             color: Colors.red,
@@ -512,7 +1194,7 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                           ),
                         ),
                         Text(
-                          ('CheckOut'),
+                          ('End Date'),
                           style: TextStyle(
                             fontSize: 15,
                             color: Colors.red,
@@ -535,7 +1217,7 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                           ),
                         ),
                         Text(
-                          ('-'),
+                          widget.CheckinDate.toString(),
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w500,
@@ -551,14 +1233,7 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
                         Text(
-                          widget.RoomCount.toString() + " " + "Room",
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                          " " + (widget.adultCount.toString() + " " + "Adult"),
+                          (widget.adultCount.toString() + " " + "Adult"),
                           style: TextStyle(
                             fontSize: 17,
                             fontWeight: FontWeight.bold,
@@ -587,11 +1262,10 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                   Container(
                       margin: EdgeInsets.fromLTRB(15, 0, 0, 0),
                       child: Text(
-                        'Inclusions',
+                        'Inclusions: ',
                         style: TextStyle(
                             fontSize: 17, fontWeight: FontWeight.bold),
                       )),
-                  Divider(),
                   Padding(
                     padding: const EdgeInsets.only(right: 15, left: 15),
                     child: Column(
@@ -602,7 +1276,7 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                   Padding(
                     padding: const EdgeInsets.only(left: 15, right: 15),
                     child: Text(
-                      'Exclusions',
+                      'Exclusions: ',
                       style: TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.bold,
@@ -618,23 +1292,6 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                       children: createIconsForWords1(widget.featuresExclusion),
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.only(right: 15, left: 15),
-                    child: Row(
-                      children: [
-                        Icon(Icons.check),
-                        SizedBox(width: 10),
-                        Text(
-                          'Pets are Not Allowed',
-                          // Remove leading and trailing spaces
-                          style: TextStyle(fontSize: 14),
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(
-                    height: 20,
-                  ),
                   SizedBox(
                     height: 20,
                   ),
@@ -648,23 +1305,27 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                               padding: const EdgeInsets.all(8.0),
                               child: Align(
                                 alignment: Alignment.topLeft,
-                                child: Text("Adult 1:",
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 18)),
+                                child: Text(
+                                  "Adult 1:",
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 18),
+                                ),
                               ),
                             ),
                             SizedBox(
-                              height: 15,
+                              height: 0,
                             ),
                             Padding(
                               padding: const EdgeInsets.all(8.0),
                               child: Align(
                                 alignment: Alignment.topLeft,
-                                child: Text("Traveller details",
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 17)),
+                                child: Text(
+                                  "Traveller details",
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 17),
+                                ),
                               ),
                             ),
                             Row(
@@ -712,56 +1373,90 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Padding(
-                                  padding: const EdgeInsets.only(
-                                      right: 10, left: 10),
+                                  padding: const EdgeInsets.only(left: 10),
                                   child: Container(
-                                    width: 135,
+                                    width: 160,
                                     height: 50,
-                                    child: TextFormField(
-                                      controller: adultFname_controller,
-                                      decoration: InputDecoration(
-                                        label: const Text('FirstName'),
-                                        hintText: 'First Name',
-                                        enabledBorder: OutlineInputBorder(
-                                          borderSide: const BorderSide(
-                                              color: Colors.grey),
-                                          borderRadius:
-                                              BorderRadius.circular(5),
-                                        ),
-                                        focusedBorder: OutlineInputBorder(
-                                          borderSide: const BorderSide(
-                                            color: Colors.black,
-                                            width: 1.5,
+                                    child: Autocomplete<TravellerDetailsModel>(
+                                      optionsBuilder: (TextEditingValue
+                                          textEditingValue) async {
+                                        if (textEditingValue.text.isEmpty) {
+                                          return const Iterable<
+                                              TravellerDetailsModel>.empty();
+                                        }
+                                        return await fetchAutocompleteData(
+                                            textEditingValue.text);
+                                      },
+                                      displayStringForOption:
+                                          (TravellerDetailsModel option) =>
+                                              '${option.name}',
+                                      onSelected: (TravellerDetailsModel?
+                                          selectedOption) {
+                                        if (selectedOption != null) {
+                                          print(
+                                              'Selected: ${selectedOption.name}');
+                                          setState(() async {
+                                            await callSecondApi(
+                                                selectedOption.id);
+                                            AdultName1 = selectedOption.name;
+                                            AdultTravellerId1 =
+                                                selectedOption.id;
+                                          });
+                                        }
+                                      },
+                                      fieldViewBuilder: (BuildContext context,
+                                          TextEditingController
+                                              textEditingController,
+                                          FocusNode focusNode,
+                                          VoidCallback onFieldSubmitted) {
+                                        return TextFormField(
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.w500,
+                                              fontSize: 14),
+                                          controller: textEditingController,
+                                          focusNode: focusNode,
+                                          onFieldSubmitted: (value) {
+                                            onFieldSubmitted();
+                                          },
+                                          decoration: InputDecoration(
+                                            label: const Text('First Name'),
+                                            hintText: 'First Name',
+                                            enabledBorder: OutlineInputBorder(
+                                              borderSide: const BorderSide(
+                                                  color: Colors.grey),
+                                              borderRadius:
+                                                  BorderRadius.circular(5),
+                                            ),
+                                            focusedBorder: OutlineInputBorder(
+                                              borderSide: const BorderSide(
+                                                  color: Colors.black,
+                                                  width: 1.5),
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                            labelStyle: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                            errorBorder: OutlineInputBorder(
+                                              borderSide: const BorderSide(
+                                                  color: Colors.red, width: 2),
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
                                           ),
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                        ),
-                                        labelStyle: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                        errorBorder: OutlineInputBorder(
-                                          borderSide: const BorderSide(
-                                            color: Colors.red,
-                                            width: 2,
-                                          ),
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                        ),
-                                      ),
+                                        );
+                                      },
                                     ),
                                   ),
                                 ),
-
-                                SizedBox(
-                                    width:
-                                        10), // Adjust the space between the text fields
-
                                 Padding(
                                   padding: const EdgeInsets.only(right: 10),
                                   child: Container(
-                                    width: 150,
+                                    width: 160,
                                     height: 50,
                                     child: TextFormField(
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.w500),
                                       controller: adultLname_controller,
                                       decoration: InputDecoration(
                                         label: const Text('SurName'),
@@ -774,9 +1469,7 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                                         ),
                                         focusedBorder: OutlineInputBorder(
                                           borderSide: const BorderSide(
-                                            color: Colors.black,
-                                            width: 1.5,
-                                          ),
+                                              color: Colors.black, width: 1.5),
                                           borderRadius:
                                               BorderRadius.circular(10),
                                         ),
@@ -785,9 +1478,7 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                                         ),
                                         errorBorder: OutlineInputBorder(
                                           borderSide: const BorderSide(
-                                            color: Colors.red,
-                                            width: 2,
-                                          ),
+                                              color: Colors.red, width: 2),
                                           borderRadius:
                                               BorderRadius.circular(10),
                                         ),
@@ -810,6 +1501,7 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                                     _selectDateAdult1(context);
                                   },
                                   controller: dateControllerAdult1,
+                                  style: TextStyle(fontWeight: FontWeight.w500),
                                   readOnly: true,
                                   decoration: InputDecoration(
                                     label: const Text('DOB'),
@@ -831,9 +1523,7 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                                     ),
                                     focusedBorder: OutlineInputBorder(
                                       borderSide: const BorderSide(
-                                        color: Colors.black,
-                                        width: 1.5,
-                                      ),
+                                          color: Colors.black, width: 1.5),
                                       borderRadius: BorderRadius.circular(10),
                                     ),
                                     labelStyle: TextStyle(
@@ -841,9 +1531,7 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                                     ),
                                     errorBorder: OutlineInputBorder(
                                       borderSide: const BorderSide(
-                                        color: Colors.red,
-                                        width: 2,
-                                      ),
+                                          color: Colors.red, width: 2),
                                       borderRadius: BorderRadius.circular(10),
                                     ),
                                   ),
@@ -854,8 +1542,7 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                               height: 20,
                             ),
                             Padding(
-                              padding:
-                                  const EdgeInsets.only(left: 10, right: 10),
+                              padding: EdgeInsets.only(left: 10, right: 10),
                               child: Container(
                                 decoration: BoxDecoration(
                                   border: Border.all(
@@ -869,10 +1556,10 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                                   children: [
                                     Radio(
                                       value: 'Male',
-                                      groupValue: selectedGendarAdult1,
+                                      groupValue: selectedGendarContactDetail,
                                       onChanged: (value) {
                                         setState(() {
-                                          selectedGendarAdult1 =
+                                          selectedGendarContactDetail =
                                               value.toString();
                                         });
                                       },
@@ -882,10 +1569,10 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                                             fontWeight: FontWeight.bold)),
                                     Radio(
                                       value: 'Female',
-                                      groupValue: selectedGendarAdult1,
+                                      groupValue: selectedGendarContactDetail,
                                       onChanged: (value) {
                                         setState(() {
-                                          selectedGendarAdult1 =
+                                          selectedGendarContactDetail =
                                               value.toString();
                                         });
                                       },
@@ -900,6 +1587,143 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                             SizedBox(
                               height: 20,
                             ),
+                            Visibility(
+                              visible:
+                                  Status == 2, // Show or hide based on status
+                              child: Column(
+                                children: [
+                                  // Fields to show when status is 1
+                                  // Modify or add more fields as needed
+                                  Padding(
+                                    padding: const EdgeInsets.only(
+                                        left: 10, right: 10),
+                                    child: Container(
+                                      height: 50,
+                                      child: TextFormField(
+                                        controller: Documentype_controller,
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.w500),
+                                        decoration: InputDecoration(
+                                          label: const Text('Document Type'),
+                                          hintText: 'Document Type',
+                                          enabledBorder: OutlineInputBorder(
+                                            borderSide: const BorderSide(
+                                                color: Colors.grey),
+                                            borderRadius:
+                                                BorderRadius.circular(5),
+                                          ),
+                                          focusedBorder: OutlineInputBorder(
+                                            borderSide: const BorderSide(
+                                                color: Colors.black,
+                                                width: 1.5),
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                          ),
+                                          labelStyle: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          errorBorder: OutlineInputBorder(
+                                            borderSide: const BorderSide(
+                                                color: Colors.red, width: 2),
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    height: 20,
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.only(
+                                        left: 10, right: 10),
+                                    child: Container(
+                                      height: 50,
+                                      child: TextFormField(
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.w500),
+                                        controller: Documentnumber_controller,
+                                        decoration: InputDecoration(
+                                          label: const Text('Document Number'),
+                                          hintText: 'Document Number',
+                                          enabledBorder: OutlineInputBorder(
+                                            borderSide: const BorderSide(
+                                                color: Colors.grey),
+                                            borderRadius:
+                                                BorderRadius.circular(5),
+                                          ),
+                                          focusedBorder: OutlineInputBorder(
+                                            borderSide: const BorderSide(
+                                                color: Colors.black,
+                                                width: 1.5),
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                          ),
+                                          labelStyle: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          errorBorder: OutlineInputBorder(
+                                            borderSide: const BorderSide(
+                                                color: Colors.red, width: 2),
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    height: 20,
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.only(
+                                        left: 10, right: 10),
+                                    child: Container(
+                                      height: 50,
+                                      child: TextField(
+                                        onTap: () {
+                                          _selectExpiryDate(context);
+                                        },
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.w500),
+                                        controller: ExpiryDateController,
+                                        readOnly: true,
+                                        decoration: InputDecoration(
+                                          label: const Text('Expiry Date'),
+                                          hintText: 'Expiry Date',
+                                          enabledBorder: OutlineInputBorder(
+                                            borderSide: const BorderSide(
+                                                color: Colors.grey),
+                                            borderRadius:
+                                                BorderRadius.circular(5),
+                                          ),
+                                          focusedBorder: OutlineInputBorder(
+                                            borderSide: const BorderSide(
+                                                color: Colors.black,
+                                                width: 1.5),
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                          ),
+                                          labelStyle: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          errorBorder: OutlineInputBorder(
+                                            borderSide: const BorderSide(
+                                                color: Colors.red, width: 2),
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    height: 20,
+                                  ),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
 
@@ -907,7 +1731,8 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                             ? Column(
                                 children: [
                                   Padding(
-                                    padding: const EdgeInsets.all(8.0),
+                                    padding: const EdgeInsets.only(
+                                        left: 10, bottom: 9),
                                     child: Align(
                                       alignment: Alignment.topLeft,
                                       child: Text("Adult 2:",
@@ -917,10 +1742,11 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                                     ),
                                   ),
                                   SizedBox(
-                                    height: 15,
+                                    height: 5,
                                   ),
                                   Padding(
-                                    padding: const EdgeInsets.all(8.0),
+                                    padding: const EdgeInsets.only(
+                                        left: 10, bottom: 7),
                                     child: Align(
                                       alignment: Alignment.topLeft,
                                       child: Text("Traveller details",
@@ -978,55 +1804,109 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                                         MainAxisAlignment.spaceBetween,
                                     children: [
                                       Padding(
-                                        padding: const EdgeInsets.only(
-                                            right: 10, left: 10),
+                                        padding:
+                                            const EdgeInsets.only(left: 10),
                                         child: Container(
-                                          width: 135,
+                                          width: 160,
                                           height: 50,
-                                          child: TextFormField(
-                                            decoration: InputDecoration(
-                                              label: const Text('FirstName'),
-                                              hintText: 'First Name',
-                                              enabledBorder: OutlineInputBorder(
-                                                borderSide: const BorderSide(
-                                                    color: Colors.grey),
-                                                borderRadius:
-                                                    BorderRadius.circular(5),
-                                              ),
-                                              focusedBorder: OutlineInputBorder(
-                                                borderSide: const BorderSide(
-                                                  color: Colors.black,
-                                                  width: 1.5,
+                                          child: Autocomplete<
+                                              TravellerDetailsModel>(
+                                            optionsBuilder: (TextEditingValue
+                                                textEditingValue) async {
+                                              if (textEditingValue
+                                                  .text.isEmpty) {
+                                                return const Iterable<
+                                                    TravellerDetailsModel>.empty();
+                                              }
+                                              return await fetchAutocompleteData(
+                                                  textEditingValue.text);
+                                            },
+                                            displayStringForOption:
+                                                (TravellerDetailsModel
+                                                        option) =>
+                                                    '${option.name}',
+                                            onSelected: (TravellerDetailsModel?
+                                                selectedOption) {
+                                              if (selectedOption != null) {
+                                                print(
+                                                    'Selected: ${selectedOption.name}');
+                                                setState(() async {
+                                                  await callSecondApiAdult2(
+                                                      selectedOption.id);
+                                                  AdultName2 =
+                                                      selectedOption.name;
+                                                  AdultTravellerId2 =
+                                                      selectedOption.id;
+                                                });
+                                              }
+                                            },
+                                            fieldViewBuilder: (BuildContext
+                                                    context,
+                                                TextEditingController
+                                                    textEditingController,
+                                                FocusNode focusNode,
+                                                VoidCallback onFieldSubmitted) {
+                                              return TextFormField(
+                                                style: TextStyle(
+                                                    fontWeight: FontWeight.w500,
+                                                    fontSize: 14),
+                                                controller:
+                                                    textEditingController,
+                                                focusNode: focusNode,
+                                                onFieldSubmitted: (value) {
+                                                  onFieldSubmitted();
+                                                },
+                                                decoration: InputDecoration(
+                                                  label:
+                                                      const Text('First Name'),
+                                                  hintText: 'First Name',
+                                                  enabledBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.grey),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            5),
+                                                  ),
+                                                  focusedBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.black,
+                                                            width: 1.5),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                  labelStyle: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                  errorBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.red,
+                                                            width: 2),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
                                                 ),
-                                                borderRadius:
-                                                    BorderRadius.circular(10),
-                                              ),
-                                              labelStyle: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                              errorBorder: OutlineInputBorder(
-                                                borderSide: const BorderSide(
-                                                  color: Colors.red,
-                                                  width: 2,
-                                                ),
-                                                borderRadius:
-                                                    BorderRadius.circular(10),
-                                              ),
-                                            ),
+                                              );
+                                            },
                                           ),
                                         ),
                                       ),
-                                      SizedBox(
-                                          width:
-                                              10), // Adjust the space between the text fields
+                                      // Adjust the space between the text fields
 
                                       Padding(
-                                        padding:
-                                            const EdgeInsets.only(right: 10),
+                                        padding: EdgeInsets.only(right: 10),
                                         child: Container(
-                                          width: 150,
+                                          width: 160,
                                           height: 50,
                                           child: TextFormField(
+                                            controller: adult2_Lname_controller,
                                             decoration: InputDecoration(
                                               label: const Text('SurName'),
                                               hintText: 'SurName',
@@ -1138,10 +2018,11 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                                         children: [
                                           Radio(
                                             value: 'Male',
-                                            groupValue: selectedGendarAdult2,
+                                            groupValue:
+                                                selectedGendarContactDetailAdult2,
                                             onChanged: (value) {
                                               setState(() {
-                                                selectedGendarAdult2 =
+                                                selectedGendarContactDetailAdult2 =
                                                     value.toString();
                                               });
                                             },
@@ -1151,10 +2032,11 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                                                   fontWeight: FontWeight.bold)),
                                           Radio(
                                             value: 'Female',
-                                            groupValue: selectedGendarAdult2,
+                                            groupValue:
+                                                selectedGendarContactDetailAdult2,
                                             onChanged: (value) {
                                               setState(() {
-                                                selectedGendarAdult2 =
+                                                selectedGendarContactDetailAdult2 =
                                                     value.toString();
                                               });
                                             },
@@ -1169,6 +2051,158 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                                   SizedBox(
                                     height: 20,
                                   ),
+                                  Visibility(
+                                    visible: Status ==
+                                        2, // Show or hide based on status
+                                    child: Column(
+                                      children: [
+                                        // Fields to show when status is 1
+                                        // Modify or add more fields as needed
+                                        Padding(
+                                          padding: const EdgeInsets.only(
+                                              left: 10, right: 10),
+                                          child: Container(
+                                            height: 50,
+                                            child: TextFormField(
+                                              controller:
+                                                  Documentype_controllerAdult2,
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.w500),
+                                              decoration: InputDecoration(
+                                                label:
+                                                    const Text('Document Type'),
+                                                hintText: 'Document Type',
+                                                enabledBorder:
+                                                    OutlineInputBorder(
+                                                  borderSide: const BorderSide(
+                                                      color: Colors.grey),
+                                                  borderRadius:
+                                                      BorderRadius.circular(5),
+                                                ),
+                                                focusedBorder:
+                                                    OutlineInputBorder(
+                                                  borderSide: const BorderSide(
+                                                      color: Colors.black,
+                                                      width: 1.5),
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
+                                                ),
+                                                labelStyle: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                                errorBorder: OutlineInputBorder(
+                                                  borderSide: const BorderSide(
+                                                      color: Colors.red,
+                                                      width: 2),
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        SizedBox(
+                                          height: 20,
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.only(
+                                              left: 10, right: 10),
+                                          child: Container(
+                                            height: 50,
+                                            child: TextFormField(
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.w500),
+                                              controller:
+                                                  Documentnumber_controllerAdult2,
+                                              decoration: InputDecoration(
+                                                label: const Text(
+                                                    'Document Number'),
+                                                hintText: 'Document Number',
+                                                enabledBorder:
+                                                    OutlineInputBorder(
+                                                  borderSide: const BorderSide(
+                                                      color: Colors.grey),
+                                                  borderRadius:
+                                                      BorderRadius.circular(5),
+                                                ),
+                                                focusedBorder:
+                                                    OutlineInputBorder(
+                                                  borderSide: const BorderSide(
+                                                      color: Colors.black,
+                                                      width: 1.5),
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
+                                                ),
+                                                labelStyle: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                                errorBorder: OutlineInputBorder(
+                                                  borderSide: const BorderSide(
+                                                      color: Colors.red,
+                                                      width: 2),
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        SizedBox(
+                                          height: 20,
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.only(
+                                              left: 10, right: 10),
+                                          child: Container(
+                                            height: 50,
+                                            child: TextField(
+                                              onTap: () {
+                                                _selectExpiryDate(context);
+                                              },
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.w500),
+                                              controller:
+                                                  ExpiryDateControllerAdult2,
+                                              readOnly: true,
+                                              decoration: InputDecoration(
+                                                label:
+                                                    const Text('Expiry Date'),
+                                                hintText: 'Expiry Date',
+                                                enabledBorder:
+                                                    OutlineInputBorder(
+                                                  borderSide: const BorderSide(
+                                                      color: Colors.grey),
+                                                  borderRadius:
+                                                      BorderRadius.circular(5),
+                                                ),
+                                                focusedBorder:
+                                                    OutlineInputBorder(
+                                                  borderSide: const BorderSide(
+                                                      color: Colors.black,
+                                                      width: 1.5),
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
+                                                ),
+                                                labelStyle: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                                errorBorder: OutlineInputBorder(
+                                                  borderSide: const BorderSide(
+                                                      color: Colors.red,
+                                                      width: 2),
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        SizedBox(
+                                          height: 20,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ],
                               )
                             : Container(),
@@ -1176,7 +2210,8 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                             ? Column(
                                 children: [
                                   Padding(
-                                    padding: const EdgeInsets.all(8.0),
+                                    padding: const EdgeInsets.only(
+                                        left: 10, bottom: 9),
                                     child: Align(
                                       alignment: Alignment.topLeft,
                                       child: Text("Adult 3:",
@@ -1186,10 +2221,11 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                                     ),
                                   ),
                                   SizedBox(
-                                    height: 15,
+                                    height: 5,
                                   ),
                                   Padding(
-                                    padding: const EdgeInsets.all(8.0),
+                                    padding: const EdgeInsets.only(
+                                        left: 10, bottom: 7),
                                     child: Align(
                                       alignment: Alignment.topLeft,
                                       child: Text("Traveller details",
@@ -1247,41 +2283,97 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                                         MainAxisAlignment.spaceBetween,
                                     children: [
                                       Padding(
-                                        padding: const EdgeInsets.only(
-                                            right: 10, left: 10),
+                                        padding:
+                                            const EdgeInsets.only(left: 10),
                                         child: Container(
-                                          width: 135,
+                                          width: 160,
                                           height: 50,
-                                          child: TextFormField(
-                                            decoration: InputDecoration(
-                                              label: const Text('FirstName'),
-                                              hintText: 'First Name',
-                                              enabledBorder: OutlineInputBorder(
-                                                borderSide: const BorderSide(
-                                                    color: Colors.grey),
-                                                borderRadius:
-                                                    BorderRadius.circular(5),
-                                              ),
-                                              focusedBorder: OutlineInputBorder(
-                                                borderSide: const BorderSide(
-                                                  color: Colors.black,
-                                                  width: 1.5,
+                                          child: Autocomplete<
+                                              TravellerDetailsModel>(
+                                            optionsBuilder: (TextEditingValue
+                                                textEditingValue) async {
+                                              if (textEditingValue
+                                                  .text.isEmpty) {
+                                                return const Iterable<
+                                                    TravellerDetailsModel>.empty();
+                                              }
+                                              return await fetchAutocompleteData(
+                                                  textEditingValue.text);
+                                            },
+                                            displayStringForOption:
+                                                (TravellerDetailsModel
+                                                        option) =>
+                                                    '${option.name}',
+                                            onSelected: (TravellerDetailsModel?
+                                                selectedOption) {
+                                              if (selectedOption != null) {
+                                                print(
+                                                    'Selected: ${selectedOption.name}');
+                                                setState(() async {
+                                                  await callSecondApiAdult3(
+                                                      selectedOption.id);
+                                                  AdultName3 =
+                                                      selectedOption.name;
+                                                  AdultTravellerId3 =
+                                                      selectedOption.id;
+                                                });
+                                              }
+                                            },
+                                            fieldViewBuilder: (BuildContext
+                                                    context,
+                                                TextEditingController
+                                                    textEditingController,
+                                                FocusNode focusNode,
+                                                VoidCallback onFieldSubmitted) {
+                                              return TextFormField(
+                                                style: TextStyle(
+                                                    fontWeight: FontWeight.w500,
+                                                    fontSize: 14),
+                                                controller:
+                                                    textEditingController,
+                                                focusNode: focusNode,
+                                                onFieldSubmitted: (value) {
+                                                  onFieldSubmitted();
+                                                },
+                                                decoration: InputDecoration(
+                                                  label:
+                                                      const Text('First Name'),
+                                                  hintText: 'First Name',
+                                                  enabledBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.grey),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            5),
+                                                  ),
+                                                  focusedBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.black,
+                                                            width: 1.5),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                  labelStyle: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                  errorBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.red,
+                                                            width: 2),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
                                                 ),
-                                                borderRadius:
-                                                    BorderRadius.circular(10),
-                                              ),
-                                              labelStyle: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                              errorBorder: OutlineInputBorder(
-                                                borderSide: const BorderSide(
-                                                  color: Colors.red,
-                                                  width: 2,
-                                                ),
-                                                borderRadius:
-                                                    BorderRadius.circular(10),
-                                              ),
-                                            ),
+                                              );
+                                            },
                                           ),
                                         ),
                                       ),
@@ -1296,6 +2388,7 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                                           width: 150,
                                           height: 50,
                                           child: TextFormField(
+                                            controller: adult3_Lname_controller,
                                             decoration: InputDecoration(
                                               label: const Text('SurName'),
                                               hintText: 'SurName',
@@ -1407,10 +2500,11 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                                         children: [
                                           Radio(
                                             value: 'Male',
-                                            groupValue: selectedGendarAdult3,
+                                            groupValue:
+                                                selectedGendarContactDetailAdult3,
                                             onChanged: (value) {
                                               setState(() {
-                                                selectedGendarAdult3 =
+                                                selectedGendarContactDetailAdult3 =
                                                     value.toString();
                                               });
                                             },
@@ -1420,10 +2514,11 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                                                   fontWeight: FontWeight.bold)),
                                           Radio(
                                             value: 'Female',
-                                            groupValue: selectedGendarAdult3,
+                                            groupValue:
+                                                selectedGendarContactDetailAdult3,
                                             onChanged: (value) {
                                               setState(() {
-                                                selectedGendarAdult3 =
+                                                selectedGendarContactDetailAdult3 =
                                                     value.toString();
                                               });
                                             },
@@ -1438,6 +2533,158 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                                   SizedBox(
                                     height: 20,
                                   ),
+                                  Visibility(
+                                    visible: Status ==
+                                        2, // Show or hide based on status
+                                    child: Column(
+                                      children: [
+                                        // Fields to show when status is 1
+                                        // Modify or add more fields as needed
+                                        Padding(
+                                          padding: const EdgeInsets.only(
+                                              left: 10, right: 10),
+                                          child: Container(
+                                            height: 50,
+                                            child: TextFormField(
+                                              controller:
+                                                  Documentype_controllerAdult3,
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.w500),
+                                              decoration: InputDecoration(
+                                                label:
+                                                    const Text('Document Type'),
+                                                hintText: 'Document Type',
+                                                enabledBorder:
+                                                    OutlineInputBorder(
+                                                  borderSide: const BorderSide(
+                                                      color: Colors.grey),
+                                                  borderRadius:
+                                                      BorderRadius.circular(5),
+                                                ),
+                                                focusedBorder:
+                                                    OutlineInputBorder(
+                                                  borderSide: const BorderSide(
+                                                      color: Colors.black,
+                                                      width: 1.5),
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
+                                                ),
+                                                labelStyle: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                                errorBorder: OutlineInputBorder(
+                                                  borderSide: const BorderSide(
+                                                      color: Colors.red,
+                                                      width: 2),
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        SizedBox(
+                                          height: 20,
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.only(
+                                              left: 10, right: 10),
+                                          child: Container(
+                                            height: 50,
+                                            child: TextFormField(
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.w500),
+                                              controller:
+                                                  Documentnumber_controllerAdult3,
+                                              decoration: InputDecoration(
+                                                label: const Text(
+                                                    'Document Number'),
+                                                hintText: 'Document Number',
+                                                enabledBorder:
+                                                    OutlineInputBorder(
+                                                  borderSide: const BorderSide(
+                                                      color: Colors.grey),
+                                                  borderRadius:
+                                                      BorderRadius.circular(5),
+                                                ),
+                                                focusedBorder:
+                                                    OutlineInputBorder(
+                                                  borderSide: const BorderSide(
+                                                      color: Colors.black,
+                                                      width: 1.5),
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
+                                                ),
+                                                labelStyle: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                                errorBorder: OutlineInputBorder(
+                                                  borderSide: const BorderSide(
+                                                      color: Colors.red,
+                                                      width: 2),
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        SizedBox(
+                                          height: 20,
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.only(
+                                              left: 10, right: 10),
+                                          child: Container(
+                                            height: 50,
+                                            child: TextField(
+                                              onTap: () {
+                                                _selectExpiryDate(context);
+                                              },
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.w500),
+                                              controller:
+                                                  ExpiryDateControllerAdult3,
+                                              readOnly: true,
+                                              decoration: InputDecoration(
+                                                label:
+                                                    const Text('Expiry Date'),
+                                                hintText: 'Expiry Date',
+                                                enabledBorder:
+                                                    OutlineInputBorder(
+                                                  borderSide: const BorderSide(
+                                                      color: Colors.grey),
+                                                  borderRadius:
+                                                      BorderRadius.circular(5),
+                                                ),
+                                                focusedBorder:
+                                                    OutlineInputBorder(
+                                                  borderSide: const BorderSide(
+                                                      color: Colors.black,
+                                                      width: 1.5),
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
+                                                ),
+                                                labelStyle: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                                errorBorder: OutlineInputBorder(
+                                                  borderSide: const BorderSide(
+                                                      color: Colors.red,
+                                                      width: 2),
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        SizedBox(
+                                          height: 20,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ],
                               )
                             : Container(),
@@ -1445,7 +2692,8 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                             ? Column(
                                 children: [
                                   Padding(
-                                    padding: const EdgeInsets.all(8.0),
+                                    padding: const EdgeInsets.only(
+                                        left: 10, bottom: 9),
                                     child: Align(
                                       alignment: Alignment.topLeft,
                                       child: Text("Adult 4:",
@@ -1455,10 +2703,11 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                                     ),
                                   ),
                                   SizedBox(
-                                    height: 15,
+                                    height: 5,
                                   ),
                                   Padding(
-                                    padding: const EdgeInsets.all(8.0),
+                                    padding: const EdgeInsets.only(
+                                        left: 10, bottom: 7),
                                     child: Align(
                                       alignment: Alignment.topLeft,
                                       child: Text("Traveller details",
@@ -1516,41 +2765,97 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                                         MainAxisAlignment.spaceBetween,
                                     children: [
                                       Padding(
-                                        padding: const EdgeInsets.only(
-                                            right: 10, left: 10),
+                                        padding:
+                                            const EdgeInsets.only(left: 10),
                                         child: Container(
-                                          width: 135,
+                                          width: 160,
                                           height: 50,
-                                          child: TextFormField(
-                                            decoration: InputDecoration(
-                                              label: const Text('FirstName'),
-                                              hintText: 'First Name',
-                                              enabledBorder: OutlineInputBorder(
-                                                borderSide: const BorderSide(
-                                                    color: Colors.grey),
-                                                borderRadius:
-                                                    BorderRadius.circular(5),
-                                              ),
-                                              focusedBorder: OutlineInputBorder(
-                                                borderSide: const BorderSide(
-                                                  color: Colors.black,
-                                                  width: 1.5,
+                                          child: Autocomplete<
+                                              TravellerDetailsModel>(
+                                            optionsBuilder: (TextEditingValue
+                                                textEditingValue) async {
+                                              if (textEditingValue
+                                                  .text.isEmpty) {
+                                                return const Iterable<
+                                                    TravellerDetailsModel>.empty();
+                                              }
+                                              return await fetchAutocompleteData(
+                                                  textEditingValue.text);
+                                            },
+                                            displayStringForOption:
+                                                (TravellerDetailsModel
+                                                        option) =>
+                                                    '${option.name}',
+                                            onSelected: (TravellerDetailsModel?
+                                                selectedOption) {
+                                              if (selectedOption != null) {
+                                                print(
+                                                    'Selected: ${selectedOption.name}');
+                                                setState(() async {
+                                                  await callSecondApiAdult4(
+                                                      selectedOption.id);
+                                                  AdultName4 =
+                                                      selectedOption.name;
+                                                  AdultTravellerId4 =
+                                                      selectedOption.id;
+                                                });
+                                              }
+                                            },
+                                            fieldViewBuilder: (BuildContext
+                                                    context,
+                                                TextEditingController
+                                                    textEditingController,
+                                                FocusNode focusNode,
+                                                VoidCallback onFieldSubmitted) {
+                                              return TextFormField(
+                                                style: TextStyle(
+                                                    fontWeight: FontWeight.w500,
+                                                    fontSize: 14),
+                                                controller:
+                                                    textEditingController,
+                                                focusNode: focusNode,
+                                                onFieldSubmitted: (value) {
+                                                  onFieldSubmitted();
+                                                },
+                                                decoration: InputDecoration(
+                                                  label:
+                                                      const Text('First Name'),
+                                                  hintText: 'First Name',
+                                                  enabledBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.grey),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            5),
+                                                  ),
+                                                  focusedBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.black,
+                                                            width: 1.5),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                  labelStyle: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                  errorBorder:
+                                                      OutlineInputBorder(
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Colors.red,
+                                                            width: 2),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
                                                 ),
-                                                borderRadius:
-                                                    BorderRadius.circular(10),
-                                              ),
-                                              labelStyle: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                              errorBorder: OutlineInputBorder(
-                                                borderSide: const BorderSide(
-                                                  color: Colors.red,
-                                                  width: 2,
-                                                ),
-                                                borderRadius:
-                                                    BorderRadius.circular(10),
-                                              ),
-                                            ),
+                                              );
+                                            },
                                           ),
                                         ),
                                       ),
@@ -1565,6 +2870,7 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                                           width: 150,
                                           height: 50,
                                           child: TextFormField(
+                                            controller: adult4_Lname_controller,
                                             decoration: InputDecoration(
                                               label: const Text('SurName'),
                                               hintText: 'SurName',
@@ -1676,10 +2982,11 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                                         children: [
                                           Radio(
                                             value: 'Male',
-                                            groupValue: selectedGendarAdult4,
+                                            groupValue:
+                                                selectedGendarContactDetailAdult4,
                                             onChanged: (value) {
                                               setState(() {
-                                                selectedGendarAdult4 =
+                                                selectedGendarContactDetailAdult4 =
                                                     value.toString();
                                               });
                                             },
@@ -1689,10 +2996,11 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                                                   fontWeight: FontWeight.bold)),
                                           Radio(
                                             value: 'Female',
-                                            groupValue: selectedGendarAdult4,
+                                            groupValue:
+                                                selectedGendarContactDetailAdult4,
                                             onChanged: (value) {
                                               setState(() {
-                                                selectedGendarAdult4 =
+                                                selectedGendarContactDetailAdult4 =
                                                     value.toString();
                                               });
                                             },
@@ -1707,6 +3015,145 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                                   SizedBox(
                                     height: 20,
                                   ),
+                                  Padding(
+                                    padding: const EdgeInsets.only(
+                                        left: 10, right: 10),
+                                    child: Container(
+                                      height: 50,
+                                      child: TextFormField(
+                                        controller:
+                                            Documentype_controllerAdult4,
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.w500),
+                                        decoration: InputDecoration(
+                                          label: const Text('Document Type'),
+                                          hintText: 'Document Type',
+                                          enabledBorder: OutlineInputBorder(
+                                            borderSide: const BorderSide(
+                                                color: Colors.grey),
+                                            borderRadius:
+                                                BorderRadius.circular(5),
+                                          ),
+                                          focusedBorder: OutlineInputBorder(
+                                            borderSide: const BorderSide(
+                                                color: Colors.black,
+                                                width: 1.5),
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                          ),
+                                          labelStyle: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          errorBorder: OutlineInputBorder(
+                                            borderSide: const BorderSide(
+                                                color: Colors.red, width: 2),
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    height: 20,
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.only(
+                                        left: 10, right: 10),
+                                    child: Container(
+                                      height: 50,
+                                      child: TextFormField(
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.w500),
+                                        controller:
+                                            Documentnumber_controllerAdult4,
+                                        decoration: InputDecoration(
+                                          label: const Text('Document Number'),
+                                          hintText: 'Document Number',
+                                          enabledBorder: OutlineInputBorder(
+                                            borderSide: const BorderSide(
+                                                color: Colors.grey),
+                                            borderRadius:
+                                                BorderRadius.circular(5),
+                                          ),
+                                          focusedBorder: OutlineInputBorder(
+                                            borderSide: const BorderSide(
+                                                color: Colors.black,
+                                                width: 1.5),
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                          ),
+                                          labelStyle: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          errorBorder: OutlineInputBorder(
+                                            borderSide: const BorderSide(
+                                                color: Colors.red, width: 2),
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    height: 20,
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.only(
+                                        left: 10, right: 10),
+                                    child: Container(
+                                      height: 50,
+                                      child: TextField(
+                                        onTap: () {
+                                          _selectExpiryDate(context);
+                                        },
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.w500),
+                                        controller: ExpiryDateControllerAdult4,
+                                        readOnly: true,
+                                        decoration: InputDecoration(
+                                          label: const Text('Expiry Date'),
+                                          hintText: 'Expiry Date',
+                                          enabledBorder: OutlineInputBorder(
+                                            borderSide: const BorderSide(
+                                                color: Colors.grey),
+                                            borderRadius:
+                                                BorderRadius.circular(5),
+                                          ),
+                                          focusedBorder: OutlineInputBorder(
+                                            borderSide: const BorderSide(
+                                                color: Colors.black,
+                                                width: 1.5),
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                          ),
+                                          labelStyle: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          errorBorder: OutlineInputBorder(
+                                            borderSide: const BorderSide(
+                                                color: Colors.red, width: 2),
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    height: 20,
+                                  ),
+                                  /*  Visibility(
+                              visible:
+                                  Status == 2,
+                              child: Column(
+                                children: [
+
+
+                                ],
+                              ),
+                            ),*/
                                 ],
                               )
                             : Container(),
@@ -1980,7 +3427,7 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                               )
                             : Container(),
 
-//Children
+                        //Children
 
                         int.parse(widget.childrenCount.toString()) > 0
                             ? Column(
@@ -3350,10 +4797,9 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Padding(
-                              padding:
-                                  const EdgeInsets.only(right: 10, left: 10),
+                              padding: EdgeInsets.only(right: 10, left: 10),
                               child: Container(
-                                width: 310,
+                                width: 340,
                                 height: 50,
                                 child: TextFormField(
                                   textCapitalization: TextCapitalization.words,
@@ -3392,52 +4838,6 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                         SizedBox(
                           height: 20,
                         ),
-                        Padding(
-                          padding: const EdgeInsets.only(left: 10, right: 10),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: Colors.grey,
-                                width: 1.0,
-                              ),
-                              borderRadius: BorderRadius.circular(5.0),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              children: [
-                                Radio(
-                                  value: 'Male',
-                                  groupValue: selectedGendarContactDetail,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      selectedGendarContactDetail =
-                                          value.toString();
-                                    });
-                                  },
-                                ),
-                                Text('Male.',
-                                    style:
-                                        TextStyle(fontWeight: FontWeight.bold)),
-                                Radio(
-                                  value: 'Female',
-                                  groupValue: selectedGendarContactDetail,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      selectedGendarContactDetail =
-                                          value.toString();
-                                    });
-                                  },
-                                ),
-                                Text('Female.',
-                                    style:
-                                        TextStyle(fontWeight: FontWeight.bold)),
-                              ],
-                            ),
-                          ),
-                        ),
-                        SizedBox(
-                          height: 20,
-                        ),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.start,
                           children: [
@@ -3460,7 +4860,7 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
 
                                 value: selectedCountryCode,
                                 iconSize: 0.0,
-// Array list of items
+                                // Array list of items
                                 items: countryCodes.map((String code) {
                                   return DropdownMenuItem<String>(
                                     value: code,
@@ -3476,11 +4876,10 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                               ),
                             ),
                             Padding(
-                              padding:
-                                  const EdgeInsets.only(right: 10, left: 10),
+                              padding: EdgeInsets.only(right: 10, left: 10),
                               child: Container(
-                                width: 260,
                                 height: 50,
+                                width: 290,
                                 child: TextFormField(
                                   keyboardType: TextInputType.number,
                                   controller: contactMobileController,
@@ -3519,9 +4918,8 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                           height: 20,
                         ),
                         Padding(
-                          padding: const EdgeInsets.only(right: 10, left: 10),
+                          padding: EdgeInsets.only(right: 10, left: 10),
                           child: Container(
-                            width: 310,
                             height: 50,
                             child: TextFormField(
                               textCapitalization: TextCapitalization.words,
@@ -3559,9 +4957,8 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                           height: 20,
                         ),
                         Padding(
-                          padding: const EdgeInsets.only(right: 10, left: 10),
+                          padding: EdgeInsets.only(right: 10, left: 10),
                           child: Container(
-                            width: 310,
                             height: 50,
                             child: TextFormField(
                               textCapitalization: TextCapitalization.words,
@@ -3599,12 +4996,12 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                           height: 20,
                         ),
                         Padding(
-                          padding: const EdgeInsets.only(right: 10, left: 10),
+                          padding: EdgeInsets.only(right: 10, left: 10),
                           child: Container(
-                            width: 310,
                             height: 50,
                             child: TextFormField(
                               textCapitalization: TextCapitalization.words,
+                              controller: CountryController,
                               decoration: InputDecoration(
                                 label: const Text('Country'),
                                 hintText: 'Country',
@@ -3640,6 +5037,9 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                       ],
                     ),
                   ),
+                  SizedBox(
+                    height: 20,
+                  ),
                   Material(
                     elevation: 0,
                     child: Column(
@@ -3648,7 +5048,7 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                           height: 20,
                         ),
                         Padding(
-                          padding: const EdgeInsets.only(right: 5, left: 5),
+                          padding: const EdgeInsets.only(right: 10, left: 10),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
@@ -3684,7 +5084,7 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                                 ),
                               ),
                               Text(
-                                'INR ${widget.price}',
+                                Currency + " " + widget.price.toString(),
                                 style: TextStyle(
                                   fontWeight: FontWeight.w500,
                                   fontSize: 16,
@@ -3698,12 +5098,65 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                         ),
                       ],
                     ),
-                  )
+                  ),
+                  Material(
+                    elevation: 10,
+                    child: Container(
+                      padding: EdgeInsets.fromLTRB(10, 10, 20, 10),
+                      color: Colors.white,
+                      child: Padding(
+                        padding: const EdgeInsets.only(
+                          right: 10,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  Currency + " " + widget.price.toString(),
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18,
+                                  ),
+                                ),
+                                Text('Inclusive of all taxes')
+                              ],
+                            ),
+                            Material(
+                              elevation: 10,
+                              borderRadius: BorderRadius.circular(10),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                    color: Colors.orange,
+                                    borderRadius: BorderRadius.circular(10)),
+                                padding: EdgeInsets.fromLTRB(20, 10, 20, 10),
+                                child: Center(
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      bookTour();
+                                    },
+                                    child: Text(
+                                      'Continue',
+                                      style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            )
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
           ),
-          Material(
+          /*  Material(
             elevation: 10,
             child: Container(
               padding: EdgeInsets.fromLTRB(10, 10, 20, 10),
@@ -3753,7 +5206,7 @@ class _HotelDescriptionState extends State<HolidayReviewBooking> {
                 ),
               ),
             ),
-          ),
+          ),*/
         ],
       ),
     );

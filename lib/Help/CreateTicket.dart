@@ -257,12 +257,10 @@ class _MyRechargePageState extends State<CreateTicket> {
                       ElevatedButton(
                         onPressed: () {},
                         style: ElevatedButton.styleFrom(
-                          shape: RoundedRectangleBorder(
+                          foregroundColor: Colors.white, backgroundColor: Colors.orange, shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(
                                 10), // Adjust the radius as needed
-                          ),
-                          primary: Colors.orange, // Button color
-                          onPrimary: Colors.white, // Text color
+                          ), // Text color
                         ),
                         child: SizedBox(
                             width: 290,

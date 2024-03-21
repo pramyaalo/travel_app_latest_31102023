@@ -7,12 +7,17 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:http/http.dart' as http;
 
+import '../Finance/InvoiceFlightListReceipt.dart';
+import '../Finance/InvoiceHotelReceipt.dart';
+import '../Finance/VouchersFlightReceipt.dart';
+import '../Finance/VouchersHotelReceipt.dart';
 import '../Models/BusTermsandConditionsModels.dart';
 import '../Models/CarBreakDownModel.dart';
 import '../Models/HolidayFareBreakdownModel.dart';
 import '../Models/HolidayPassengerModel.dart';
 import '../Models/HotelFareBreakDownModel.dart';
 import '../Models/HotelPassengerModel.dart';
+import '../Receipt/FlightInvoice.dart';
 import '../Receipt/InvoiceReceipt.dart';
 import '../utils/response_handler.dart';
 import 'BookedItemViewModel.dart';
@@ -29,8 +34,8 @@ import 'HotelRoomDetailsModel.dart';
 import 'PassengerModel.dart';
 
 class BookedItemDetail extends StatefulWidget {
-  final String? id;
-  BookedItemDetail({required this.id});
+  final id;
+  BookedItemDetail({super.key, required this.id});
 
   @override
   State<BookedItemDetail> createState() => _BookedItemDetailState();
@@ -98,8 +103,8 @@ class _BookedItemDetailState extends State<BookedItemDetail> {
 
   Future<String?> getLabels() async {
     Future<http.Response>? futureLabels = ResponseHandler.performPost(
-        "BookingCardViewGet", 'BookFlightId=${savedId}&StaffId=0');
-    print('abi' + savedId);
+        "BookingCardViewGet", 'BookFlightId=${widget.id}&StaffId=0');
+    print('abi' + widget.id.toString());
     return await futureLabels.then((value) {
       String jsonResponse = ResponseHandler.parseData(value.body);
       Map<String, dynamic> map = json.decode(jsonResponse);
@@ -382,7 +387,6 @@ class _BookedItemDetailState extends State<BookedItemDetail> {
                       'Flight Invoice',
                       'Flight Voucher',
                       'Flight Receipt',
-                      'Flight Itinerary',
                     ];
                   if (tableData[0].bookingType == "Hotel".toString())
                     accountTypes = [
@@ -488,28 +492,16 @@ class _BookedItemDetailState extends State<BookedItemDetail> {
                                                 crossAxisAlignment:
                                                     CrossAxisAlignment.start,
                                                 children: [
-                                                  Text(
-                                                    "${tableData[index].agencyBranchName}",
-
-                                                    //m0.agencyBranchName,
-                                                    style: const TextStyle(
-                                                        fontSize: 17,
-                                                        fontWeight:
-                                                            FontWeight.bold),
-                                                  ),
-                                                  const SizedBox(
-                                                    height: 5,
-                                                  ),
                                                   Row(
                                                     children: [
                                                       Text(
-                                                        "Id: ",
+                                                        "Booking Id: ",
                                                         style: TextStyle(
                                                             fontWeight:
-                                                                FontWeight.w500,
+                                                                FontWeight.bold,
                                                             fontFamily:
                                                                 "Montserrat",
-                                                            fontSize: 15),
+                                                            fontSize: 17),
                                                       ),
                                                       Container(
                                                         child: Text(
@@ -517,10 +509,10 @@ class _BookedItemDetailState extends State<BookedItemDetail> {
                                                           style: const TextStyle(
                                                               fontFamily:
                                                                   "Montserrat",
-                                                              fontSize: 15,
+                                                              fontSize: 17,
                                                               fontWeight:
                                                                   FontWeight
-                                                                      .w500),
+                                                                      .bold),
                                                         ),
                                                       ),
                                                     ],
@@ -536,7 +528,8 @@ class _BookedItemDetailState extends State<BookedItemDetail> {
                                                       Row(
                                                         children: [
                                                           Text(
-                                                            "${tableData[index].bookingType}",
+                                                            "Booking Type: " +
+                                                                "${tableData[index].bookingType}",
                                                             // m0.bookingType,
                                                             style: const TextStyle(
                                                                 fontWeight:
@@ -551,22 +544,10 @@ class _BookedItemDetailState extends State<BookedItemDetail> {
                                                 ],
                                               ),
                                               Spacer(),
-                                              /* SizedBox(
-                                                  width: 200,
-                                                  child: Container(
-                                                    child: Text(
-                                                      "Room 1, King Bed, Accessible, Non SmokingM",
-                                                      style: const TextStyle(
-                                                          fontSize: 15,
-                                                          fontWeight:
-                                                              FontWeight.w500),
-                                                    ),
-                                                  ),
-                                                )*/
                                             ],
                                           ),
                                           const SizedBox(
-                                            height: 0,
+                                            height: 5,
                                           ),
                                           Row(
                                             mainAxisAlignment:
@@ -593,13 +574,15 @@ class _BookedItemDetailState extends State<BookedItemDetail> {
                                                               5.0),
                                                     ),
                                                     child: Text(
-                                                      "${tableData[index].documentStatus}",
+                                                      "${tableData[index].bookingStatus}",
 
                                                       //  m0.documentStatus,
                                                       style: const TextStyle(
                                                           fontFamily:
                                                               "Montserrat",
                                                           fontSize: 15,
+                                                          fontWeight:
+                                                              FontWeight.w500,
                                                           color: Colors.white),
                                                     ),
                                                   ),
@@ -630,33 +613,6 @@ class _BookedItemDetailState extends State<BookedItemDetail> {
                                                             fontSize: 15,
                                                             color: Colors.blue),
                                                       ),
-                                                    ],
-                                                  ),
-                                                  const SizedBox(
-                                                    height: 5,
-                                                  ),
-                                                  Row(
-                                                    children: [
-                                                      const Image(
-                                                        image: AssetImage(
-                                                            'assets/images/tickiconpng.png'),
-                                                        width: 16,
-                                                        color: Colors.blue,
-                                                        height: 16,
-                                                      ),
-                                                      Text(
-                                                        "Booking Status: " +
-                                                            "${tableData[index].bookingStatus}",
-//m0.bookingStatus,
-                                                        style: const TextStyle(
-                                                          fontFamily:
-                                                              "Montserrat",
-                                                          fontWeight:
-                                                              FontWeight.w500,
-                                                          fontSize: 15,
-                                                          color: Colors.blue,
-                                                        ),
-                                                      )
                                                     ],
                                                   ),
                                                 ],
@@ -695,67 +651,208 @@ class _BookedItemDetailState extends State<BookedItemDetail> {
                                                   MainAxisAlignment
                                                       .spaceBetween,
                                               children: [
-                                                Row(
-                                                  children: [
-                                                    SizedBox(
-                                                      height: 45,
-                                                      width: 170,
-                                                      child:
-                                                          DropdownButtonFormField<
-                                                              String>(
-                                                        decoration:
-                                                            InputDecoration(
-                                                          border:
-                                                              OutlineInputBorder(),
-                                                          hintText:
-                                                              'Select Document',
-                                                          contentPadding:
-                                                              EdgeInsets.only(
-                                                                  bottom: 5),
-                                                        ),
-                                                        value:
-                                                            selectedAccountType,
-                                                        items: accountTypes.map<
-                                                            DropdownMenuItem<
-                                                                String>>((String
-                                                            value) {
-                                                          return DropdownMenuItem<
-                                                              String>(
-                                                            value: value,
-                                                            child: Text(
-                                                                "   " + value),
-                                                          );
-                                                        }).toList(),
-                                                        onChanged:
-                                                            (String? newValue) {
-                                                          setState(() {
-                                                            selectedAccountType =
-                                                                newValue!;
-                                                          });
-
-                                                          // Check if a value is selected and navigate to the next page
-                                                          if (newValue !=
-                                                                  null &&
-                                                              newValue
-                                                                  .isNotEmpty) {
-                                                            // You can replace 'NextPage()' with the actual route you want to navigate to
-                                                            Navigator.push(
-                                                              context,
-                                                              MaterialPageRoute(
-                                                                builder:
-                                                                    (context) =>
-                                                                        Receipt(),
-                                                              ),
+                                                if (tableData[0].bookingType ==
+                                                    "Flight")
+                                                  // If booking type is Flight, display DropdownButtonFormField
+                                                  Row(
+                                                    children: [
+                                                      SizedBox(
+                                                        height: 45,
+                                                        width: 170,
+                                                        child:
+                                                            DropdownButtonFormField<
+                                                                String>(
+                                                          decoration:
+                                                              InputDecoration(
+                                                            border:
+                                                                OutlineInputBorder(),
+                                                            hintText:
+                                                                'Select Document',
+                                                            contentPadding:
+                                                                EdgeInsets.only(
+                                                                    bottom: 5),
+                                                          ),
+                                                          value:
+                                                              selectedAccountType,
+                                                          items: accountTypes.map<
+                                                              DropdownMenuItem<
+                                                                  String>>((String
+                                                              value) {
+                                                            return DropdownMenuItem<
+                                                                String>(
+                                                              value: value,
+                                                              child: Text(
+                                                                  "   " +
+                                                                      value),
                                                             );
-                                                          }
-                                                        },
+                                                          }).toList(),
+                                                          onChanged: (String?
+                                                              newValue) {
+                                                            setState(() {
+                                                              selectedAccountType =
+                                                                  newValue!;
+                                                            });
+
+                                                            // Check if a value is selected and navigate to the next page
+                                                            if (newValue !=
+                                                                    null &&
+                                                                newValue
+                                                                    .isNotEmpty) {
+                                                              if (newValue ==
+                                                                  'Flight Invoice') {
+                                                                Navigator.push(
+                                                                  context,
+                                                                  MaterialPageRoute(
+                                                                    builder:
+                                                                        (context) =>
+                                                                            InvoiceListReceipt(
+                                                                      Id: tableData[
+                                                                              index]
+                                                                          .bookFlightId,
+                                                                    ),
+                                                                  ),
+                                                                );
+                                                              } else if (newValue ==
+                                                                  'Flight Receipt') {
+                                                                Navigator.push(
+                                                                  context,
+                                                                  MaterialPageRoute(
+                                                                    builder:
+                                                                        (context) =>
+                                                                            InvoiceListReceipt(
+                                                                      Id: tableData[
+                                                                              index]
+                                                                          .bookFlightId,
+                                                                    ),
+                                                                  ),
+                                                                );
+                                                              } else if (newValue ==
+                                                                  'Flight Voucher') {
+                                                                Navigator.push(
+                                                                  context,
+                                                                  MaterialPageRoute(
+                                                                    builder:
+                                                                        (context) =>
+                                                                            VouchersReceipt(
+                                                                      Id: tableData[
+                                                                              index]
+                                                                          .bookFlightId,
+                                                                    ),
+                                                                  ),
+                                                                );
+                                                              }
+                                                              //VouchersReceipt
+                                                            }
+                                                          },
+                                                        ),
                                                       ),
-                                                    ),
-                                                    const SizedBox(
-                                                      width: 5,
-                                                    ),
-                                                  ],
-                                                ),
+                                                      const SizedBox(
+                                                        width: 5,
+                                                      ),
+                                                    ],
+                                                  ),
+                                                if (tableData[0].bookingType ==
+                                                    "Hotel")
+                                                  Row(
+                                                    children: [
+                                                      SizedBox(
+                                                        height: 45,
+                                                        width: 170,
+                                                        child:
+                                                            DropdownButtonFormField<
+                                                                String>(
+                                                          decoration:
+                                                              InputDecoration(
+                                                            border:
+                                                                OutlineInputBorder(),
+                                                            hintText:
+                                                                'Select Document',
+                                                            contentPadding:
+                                                                EdgeInsets.only(
+                                                                    bottom: 5),
+                                                          ),
+                                                          value:
+                                                              selectedAccountType,
+                                                          items: accountTypes.map<
+                                                              DropdownMenuItem<
+                                                                  String>>((String
+                                                              value) {
+                                                            return DropdownMenuItem<
+                                                                String>(
+                                                              value: value,
+                                                              child: Text(
+                                                                  "   " +
+                                                                      value),
+                                                            );
+                                                          }).toList(),
+                                                          onChanged: (String?
+                                                              newValue) {
+                                                            setState(() {
+                                                              selectedAccountType =
+                                                                  newValue!;
+                                                            });
+
+                                                            // Check if a value is selected and navigate to the next page
+                                                            if (newValue !=
+                                                                    null &&
+                                                                newValue
+                                                                    .isNotEmpty) {
+                                                              if (newValue ==
+                                                                  'Hotel Invoice') {
+                                                                Navigator.push(
+                                                                  context,
+                                                                  MaterialPageRoute(
+                                                                    builder:
+                                                                        (context) =>
+                                                                            InvoiceHotelReceipt(
+                                                                      Id: tableData[
+                                                                              index]
+                                                                          .bookFlightId,
+                                                                    ),
+                                                                  ),
+                                                                );
+                                                              } else if (newValue ==
+                                                                  'Hotel Receipt') {
+                                                                Navigator.push(
+                                                                  context,
+                                                                  MaterialPageRoute(
+                                                                    builder:
+                                                                        (context) =>
+                                                                            InvoiceHotelReceipt(
+                                                                      Id: tableData[
+                                                                              index]
+                                                                          .bookFlightId,
+                                                                    ),
+                                                                  ),
+                                                                );
+                                                              } else if (newValue ==
+                                                                  'Hotel Voucher') {
+                                                                Navigator.push(
+                                                                  context,
+                                                                  MaterialPageRoute(
+                                                                    builder:
+                                                                        (context) =>
+                                                                            VouchersHotelReceipt(
+                                                                      Id: tableData[
+                                                                              index]
+                                                                          .bookFlightId,
+                                                                    ),
+                                                                  ),
+                                                                );
+                                                              }
+                                                              //VouchersReceipt
+                                                            }
+                                                          },
+                                                        ),
+                                                      ),
+                                                      const SizedBox(
+                                                        width: 5,
+                                                      ),
+                                                    ],
+                                                  ),
+                                                // If booking type is Hotel, display something else
+                                                // You can add the widget for Hotel booking here
+
                                                 Text(
                                                   "${tableData[index].bookingTotalAmount}",
                                                   //m0.bookingTotalAmount,

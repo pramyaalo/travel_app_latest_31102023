@@ -91,40 +91,42 @@ class _MyRechargePageState extends State<ViewCreditRequestReceipt> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          automaticallyImplyLeading: false,
-          titleSpacing: 1,
-          title: Row(
-            children: [
-              IconButton(
-                icon: Icon(
-                 Icons.arrow_back,
-                  color: Colors.black,
-                  size: 27,
+            automaticallyImplyLeading: false,
+            titleSpacing: 1,
+            title: Row(
+              children: [
+                IconButton(
+                  icon: Icon(
+                    Icons.arrow_back,
+                    color: Colors.black,
+                    size: 27,
+                  ),
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
                 ),
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-              ),
 
-              SizedBox(width: 1), // Set the desired width
-              Text(
-                "View Request Receipt",
-                style: TextStyle( color: Colors.black,fontFamily: "Montserrat", fontSize: 19),
-              ),
-            ],
-          ),
-          actions: [
-            Image.asset(
-              'assets/images/logo.png',
-               width: 120,
-              height: 50,
+                SizedBox(width: 1), // Set the desired width
+                Text(
+                  "View Receipt",
+                  style: TextStyle(
+                      color: Colors.black,
+                      fontFamily: "Montserrat",
+                      fontSize: 19),
+                ),
+              ],
             ),
-            SizedBox(
-              width: 10,
-            )
-          ],
-         backgroundColor: Colors.white
-        ),
+            actions: [
+              Image.asset(
+                'assets/images/logo.png',
+                width: 120,
+                height: 50,
+              ),
+              SizedBox(
+                width: 10,
+              )
+            ],
+            backgroundColor: Colors.white),
         body: Center(
           child: FutureBuilder<List<ViewCreditRequestReceiptModel>?>(
               future: getFlightTicketOrderQueue(),

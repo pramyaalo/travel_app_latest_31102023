@@ -7,20 +7,40 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/response_handler.dart';
 import 'package:http/http.dart' as http;
 
+import '../utils/shared_preferences.dart';
 import 'ViewBookingDetails.dart';
 
 class BookingCard extends StatefulWidget {
+  const BookingCard({Key? key}) : super(key: key);
   @override
   _BookingCardsState createState() => _BookingCardsState();
 }
 
 class _BookingCardsState extends State<BookingCard> {
+  static late String userTypeID;
+  static late String userID;
+  @override
+  void initState() {
+    super.initState();
+    _retrieveSavedValues();
+  }
+
+  Future<void> _retrieveSavedValues() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      userTypeID = prefs.getString(Prefs.PREFS_USER_TYPE_ID) ?? '';
+      userID = prefs.getString(Prefs.PREFS_USER_ID) ?? '';
+      print("userTypeID" + userTypeID);
+      print("userID" + userID);
+    });
+  }
+
   static String? Id;
   static Future<List<BookingCardModel>?> getLabels() async {
     List<BookingCardModel> bookingCardData = [];
     Future<http.Response>? __futureLabels = ResponseHandler.performPost(
         "BookingCardListGet",
-        "UserTypeId=2&UserId=1107&StaffId=0&BookingNo=&BookingType=&Bookingdt=");
+        "UserTypeId=$userTypeID&UserId=$userID&StaffId=0&BookingNo=&BookingType=&Bookingdt=");
 
     return await __futureLabels?.then((value) {
       String jsonResponse = ResponseHandler.parseData(value.body);
@@ -41,52 +61,52 @@ class _BookingCardsState extends State<BookingCard> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-          appBar: AppBar(
-            automaticallyImplyLeading: false,
-            titleSpacing: 1,
-            title: Row(
-              children: [
-                IconButton(
-                  icon: Icon(
-                    Icons.arrow_back,
-                    color: Colors.black,
-                    size: 27,
-                  ),
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
+    return Scaffold(
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          titleSpacing: 1,
+          title: Row(
+            children: [
+              IconButton(
+                icon: Icon(
+                  Icons.arrow_back,
+                  color: Colors.black,
+                  size: 27,
                 ),
-
-                SizedBox(width: 1), // Set the desired width
-                Text(
-                  "Booking Card",
-                  style: TextStyle(
-                      color: Colors.black,
-                      fontFamily: "Montserrat",
-                      fontSize: 19),
-                ),
-              ],
-            ),
-            actions: [
-              Image.asset(
-                'assets/images/logo.png',
-                width: 120,
-                height: 50,
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
               ),
-              SizedBox(
-                width: 10,
-              )
+
+              SizedBox(width: 1), // Set the desired width
+              Text(
+                "Booking Card",
+                style: TextStyle(
+                    color: Colors.black,
+                    fontFamily: "Montserrat",
+                    fontSize: 19),
+              ),
             ],
-            backgroundColor: Colors.white,
           ),
-          body: Center(
-            child: FutureBuilder<List<BookingCardModel>?>(
-                future: getLabels(),
-                builder: (context, snapshot) {
-                  if (snapshot.hasData &&
-                      snapshot.connectionState == ConnectionState.done) {
+          actions: [
+            Image.asset(
+              'assets/images/logo.png',
+              width: 120,
+              height: 50,
+            ),
+            SizedBox(
+              width: 10,
+            )
+          ],
+          backgroundColor: Colors.white,
+        ),
+        body: Center(
+          child: FutureBuilder<List<BookingCardModel>?>(
+              future: getLabels(),
+              builder: (context, snapshot) {
+                if (snapshot.hasData &&
+                    snapshot.connectionState == ConnectionState.done) {
+                  if (snapshot.data!.length > 0) {
                     return ListView.builder(
                         itemCount: snapshot.data!.length,
                         itemBuilder: (context, index) {
@@ -120,10 +140,34 @@ class _BookingCardsState extends State<BookingCard> {
                                                               .bookingId ??
                                                       "",
                                                   style: TextStyle(
-                                                      fontFamily: "Montserrat",
-                                                      fontSize: 17,
+                                                      fontSize: 16,
                                                       fontWeight:
                                                           FontWeight.bold),
+                                                ),
+                                              ],
+                                            ),
+                                            SizedBox(
+                                              height: 3,
+                                            ),
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Row(
+                                                  children: [
+                                                    Container(
+                                                      width: 320,
+                                                      child: Text(
+                                                        snapshot.data![index]
+                                                            .bookCardPassenger,
+                                                        style: TextStyle(
+                                                            fontWeight:
+                                                                FontWeight.w500,
+                                                            fontSize: 15),
+                                                      ),
+                                                    ),
+                                                  ],
                                                 ),
                                               ],
                                             ),
@@ -137,30 +181,112 @@ class _BookingCardsState extends State<BookingCard> {
                                               children: [
                                                 Row(
                                                   children: [
-                                                    Icon(
-                                                      const IconData(0xe19f,
-                                                          fontFamily:
-                                                              'MaterialIcons'),
-                                                      size: 15,
-                                                    ),
-                                                    SizedBox(
-                                                      width: 5,
-                                                    ),
-                                                    Text(
-                                                      "Passengers: Chandan Misra",
-                                                      style: TextStyle(
-                                                          fontFamily:
-                                                              "Montserrat",
-                                                          fontWeight:
-                                                              FontWeight.w500,
-                                                          fontSize: 15),
+                                                    Container(
+                                                      width: 320,
+                                                      child: Text(
+                                                        snapshot.data![index]
+                                                            .bookCardDescription,
+                                                        style: TextStyle(
+                                                            fontFamily:
+                                                                "Montserrat",
+                                                            fontWeight:
+                                                                FontWeight.w500,
+                                                            fontSize: 15),
+                                                      ),
                                                     ),
                                                   ],
                                                 ),
                                               ],
                                             ),
                                             SizedBox(
-                                              height: 4,
+                                              height: 2,
+                                            ),
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.end,
+                                                  children: [
+                                                    const Image(
+                                                      image: AssetImage(
+                                                          'assets/images/tickiconpng.png'),
+                                                      width: 16,
+                                                      height: 16,
+                                                      color: Colors.blue,
+                                                    ),
+                                                    Text(
+                                                      snapshot.data![index]
+                                                          .bookedOnDt,
+                                                      style: const TextStyle(
+                                                          fontFamily:
+                                                              "Montserrat",
+                                                          fontWeight:
+                                                              FontWeight.w500,
+                                                          fontSize: 15,
+                                                          color: Colors.blue),
+                                                    ),
+                                                  ],
+                                                ),
+                                                SizedBox(
+                                                  height: 8,
+                                                ),
+                                                InkWell(
+                                                  onTap: () async {
+                                                    await saveIdToPreferences(
+                                                        snapshot.data![index]
+                                                            .bookFlightId);
+                                                    print('prami' +
+                                                        snapshot.data![index]
+                                                            .bookFlightId);
+                                                    Navigator.push(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                        builder: (context) =>
+                                                            ViewBookingDetails(
+                                                                id: snapshot
+                                                                    .data![
+                                                                        index]
+                                                                    .bookFlightId),
+                                                      ),
+                                                    );
+                                                  },
+                                                  child: Material(
+                                                    elevation: 5,
+                                                    child: Container(
+                                                      padding: const EdgeInsets
+                                                          .fromLTRB(
+                                                          5.0, 2, 5, 2),
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.orange,
+                                                        border: Border.all(
+                                                            width: 0.1,
+                                                            color: Colors
+                                                                .blue), //https://stackoverflow.com/a/67395539/16076689
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(5.0),
+                                                      ),
+                                                      child: Text(
+                                                        "view",
+                                                        style: const TextStyle(
+                                                            fontFamily:
+                                                                "Montserrat",
+                                                            fontSize: 15,
+                                                            fontWeight:
+                                                                FontWeight.w500,
+                                                            color:
+                                                                Colors.white),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            SizedBox(
+                                              height: 0,
                                             ),
                                             Row(
                                               mainAxisAlignment:
@@ -190,8 +316,20 @@ class _BookingCardsState extends State<BookingCard> {
                                                                 .circular(5.0),
                                                       ),
                                                       child: Text(
-                                                        snapshot.data![index]
-                                                            .bookingStatus,
+                                                        snapshot
+                                                                    .data![
+                                                                        index]
+                                                                    .bookingStatus
+                                                                    .isEmpty ||
+                                                                snapshot
+                                                                        .data![
+                                                                            index]
+                                                                        .bookingStatus ==
+                                                                    null
+                                                            ? "Null"
+                                                            : snapshot
+                                                                .data![index]
+                                                                .bookingStatus,
                                                         style: const TextStyle(
                                                             fontFamily:
                                                                 "Montserrat",
@@ -204,69 +342,7 @@ class _BookingCardsState extends State<BookingCard> {
                                                     ),
                                                   ],
                                                 ),
-                                                Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.end,
-                                                  children: [
-                                                    Row(
-                                                      children: [
-                                                        const Image(
-                                                          image: AssetImage(
-                                                              'assets/images/tickiconpng.png'),
-                                                          width: 16,
-                                                          height: 16,
-                                                          color: Colors.blue,
-                                                        ),
-                                                        Text(
-                                                          snapshot.data![index]
-                                                              .bookedOnDt,
-                                                          style: const TextStyle(
-                                                              fontFamily:
-                                                                  "Montserrat",
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w500,
-                                                              fontSize: 15,
-                                                              color:
-                                                                  Colors.blue),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                    const SizedBox(
-                                                      height: 3,
-                                                    ),
-                                                    Row(
-                                                      children: [
-                                                        const Image(
-                                                          image: AssetImage(
-                                                              'assets/images/tickiconpng.png'),
-                                                          width: 16,
-                                                          height: 16,
-                                                          color: Colors.blue,
-                                                        ),
-                                                        Text(
-                                                          "Paymode: " +
-                                                              snapshot
-                                                                  .data![index]
-                                                                  .payMode,
-                                                          style: const TextStyle(
-                                                              fontFamily:
-                                                                  "Montserrat",
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w500,
-                                                              fontSize: 15,
-                                                              color:
-                                                                  Colors.blue),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ],
-                                                )
                                               ],
-                                            ),
-                                            SizedBox(
-                                              height: 0,
                                             ),
                                             Row(
                                               mainAxisAlignment:
@@ -305,7 +381,10 @@ class _BookingCardsState extends State<BookingCard> {
                                                   context,
                                                   MaterialPageRoute(
                                                     builder: (context) =>
-                                                        ViewBookingDetails(),
+                                                        ViewBookingDetails(
+                                                            id: snapshot
+                                                                .data![index]
+                                                                .bookFlightId),
                                                   ),
                                                 );
                                               },
@@ -318,50 +397,34 @@ class _BookingCardsState extends State<BookingCard> {
                                                   children: [
                                                     Row(
                                                       children: [
-                                                        Container(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .fromLTRB(
-                                                                  10.0,
-                                                                  5,
-                                                                  10,
-                                                                  5),
-                                                          decoration:
-                                                              BoxDecoration(
-                                                            color:
-                                                                Colors.orange,
-                                                            border: Border.all(
-                                                                width: 0.1,
-                                                                color: Colors
-                                                                    .blue), //https://stackoverflow.com/a/67395539/16076689
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                                        5.0),
-                                                          ),
-                                                          child: Text(
-                                                            "view",
-                                                            style: const TextStyle(
-                                                                fontFamily:
-                                                                    "Montserrat",
-                                                                fontSize: 15,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w500,
-                                                                color: Colors
-                                                                    .white),
-                                                          ),
+                                                        Icon(
+                                                          Icons.book_outlined,
+                                                          size: 14,
+                                                        ),
+                                                        Text(
+                                                          "Booking Type: " +
+                                                              snapshot
+                                                                  .data![index]
+                                                                  .bookingType,
+                                                          style: const TextStyle(
+                                                              fontFamily:
+                                                                  "Montserrat",
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w500,
+                                                              fontSize: 15,
+                                                              color:
+                                                                  Colors.black),
                                                         ),
                                                       ],
                                                     ),
                                                     Text(
-                                                      " Amount: " +
-                                                          snapshot.data![index]
-                                                              .bookingAmount,
+                                                      snapshot.data![index]
+                                                          .bookingAmount,
                                                       style: TextStyle(
                                                           fontFamily:
                                                               "Montserrat",
-                                                          fontSize: 15,
+                                                          fontSize: 18,
                                                           fontWeight:
                                                               FontWeight.bold),
                                                     )
@@ -389,11 +452,18 @@ class _BookingCardsState extends State<BookingCard> {
                           );
                         });
                   } else {
-                    return CircularProgressIndicator();
+                    return Center(
+                      child: Text(
+                        'No data found',
+                        style: TextStyle(fontSize: 18),
+                      ),
+                    );
                   }
-                }),
-          )),
-    );
+                } else {
+                  return CircularProgressIndicator();
+                }
+              }),
+        ));
   }
 }
 
@@ -410,8 +480,10 @@ Color _getBackgroundColor(String bookingStatus) {
     return Colors.orange;
   } else if (bookingStatus == 'No') {
     return Color(0xFFFF7588);
+  } else if (bookingStatus == 'Null') {
+    return Color(0xFFFF7588);
   } else {
-    return Colors.black;
+    return Color(0xFFFF7588);
   }
 }
 

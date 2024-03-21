@@ -2,8 +2,12 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
+import '../Finance/Add_AssetEntry.dart';
 import '../utils/response_handler.dart';
+import '../utils/shared_preferences.dart';
+import 'AddCreditBalanceRequest.dart';
 import 'CreditBalanceRequestModel.dart';
 import 'ViewCreditBalanceRequest.dart';
 
@@ -15,13 +19,33 @@ class CreditBalanceRequest extends StatefulWidget {
 }
 
 class _WalletStatementReportState extends State<CreditBalanceRequest> {
+  static late String userTypeID;
+  static late String userID;
+  @override
+  void initState() {
+    super.initState();
+    _retrieveSavedValues();
+  }
+
+  Future<void> _retrieveSavedValues() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      userTypeID = prefs.getString(Prefs.PREFS_USER_TYPE_ID) ?? '';
+      userID = prefs.getString(Prefs.PREFS_USER_ID) ?? '';
+      print("userTypeID" + userTypeID);
+      print("userID" + userID);
+    });
+  }
+
   static Future<List<CreditBalanceRequestModel>?> getLabels() async {
     List<CreditBalanceRequestModel> labelData = [];
     Future<http.Response>? futureLabels = ResponseHandler.performPost(
-        "CreditBalanceGet", "UserId=1107&UserTypeId=2&TransactionNo=0");
-
+        "CreditBalanceGet",
+        "UserId=$userID&UserTypeId=$userTypeID&TransactionNo=0");
+    print("userID" + userID);
     return await futureLabels.then((value) {
       String jsonResponse = ResponseHandler.parseData(value.body);
+      print("jsonResponse" + jsonResponse);
       try {
         Map<String, dynamic> map = json.decode(jsonResponse);
         List<dynamic> list = map["Table"];
@@ -37,355 +61,240 @@ class _WalletStatementReportState extends State<CreditBalanceRequest> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-        child: Scaffold(
-            appBar: AppBar(
-              automaticallyImplyLeading: false,
-              titleSpacing: 1,
-              title: Row(
-                children: [
-                  IconButton(
-                    icon: Icon(
-                      Icons.arrow_back,
-                      color: Colors.black,
-                      size: 27,
-                    ),
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                  ),
-
-                  SizedBox(width: 1), // Set the desired width
-                  Text(
-                    "Credit Balance Request",
-                    style: TextStyle(
-                        color: Colors.black,
-                        fontFamily: "Montserrat",
-                        fontSize: 16),
-                  ),
-                ],
-              ),
-              actions: [
-                Image.asset(
-                  'assets/images/logo.png',
-                  width: 120,
-                  height: 50,
+    return Scaffold(
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          titleSpacing: 1,
+          title: Row(
+            children: [
+              IconButton(
+                icon: Icon(
+                  Icons.arrow_back,
+                  color: Colors.black,
+                  size: 27,
                 ),
-                SizedBox(
-                  width: 10,
-                )
-              ],
-              backgroundColor: Colors.white,
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+              ),
+
+              SizedBox(width: 1), // Set the desired width
+              Text(
+                "Credit Balance Request",
+                style: TextStyle(
+                    color: Colors.black,
+                    fontFamily: "Montserrat",
+                    fontSize: 16),
+              ),
+            ],
+          ),
+          actions: [
+            Image.asset(
+              'assets/images/logo.png',
+              width: 120,
+              height: 50,
             ),
-            body: Center(
-              child: FutureBuilder<List<CreditBalanceRequestModel>?>(
-                  future: getLabels(),
-                  builder: (context, snapshot) {
-                    if (snapshot.hasData &&
-                        snapshot.connectionState == ConnectionState.done) {
-                      return ListView.builder(
-                          itemCount: snapshot.data!.length,
-                          itemBuilder: (context, index) {
-                            return SingleChildScrollView(
-                              child: Column(
+            SizedBox(
+              width: 10,
+            )
+          ],
+          backgroundColor: Colors.white,
+        ),
+        floatingActionButton: FloatingActionButton(
+          backgroundColor: Colors.orange,
+          onPressed: () {
+            // Navigate to another screen when FAB is clicked
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => AddCreditBalanceRequest()),
+            );
+          },
+          child: Icon(Icons.add),
+        ),
+        body: Center(
+          child: FutureBuilder<List<CreditBalanceRequestModel>?>(
+              future: getLabels(),
+              builder: (context, snapshot) {
+                if (snapshot.hasData &&
+                    snapshot.connectionState == ConnectionState.done) {
+                  return ListView.builder(
+                    itemCount: snapshot.data!.length,
+                    itemBuilder: (context, index) {
+                      return Padding(
+                        padding: const EdgeInsets.all(1.0),
+                        child: Card(
+                          margin: EdgeInsets.only(right: 10, left: 10, top: 15),
+                          elevation: 5,
+                          color: Colors.white,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                padding: EdgeInsets.all(7),
+                                child: Row(
+                                  children: [
+                                    Image(
+                                      image: AssetImage(
+                                          "assets/images/orderpng2.webp"),
+                                      width: 70,
+                                      height: 80,
+                                      color: Color(0xffd473d4),
+                                    ),
+                                    SizedBox(
+                                        width:
+                                            10), // Add SizedBox to create space between the image and text
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            snapshot.data![index].name,
+                                            style: TextStyle(
+                                              fontSize: 17,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          SizedBox(height: 4),
+                                          Row(
+                                            children: [
+                                              Text(
+                                                "Transaction No: " +
+                                                    snapshot.data![index]
+                                                        .transactionNo,
+                                                style: TextStyle(
+                                                  fontSize: 15,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          SizedBox(height: 4.5),
+                                          Row(
+                                            children: [
+                                              Text(
+                                                "Received Date: ${snapshot.data![index].paymentDate}",
+                                                style: TextStyle(
+                                                  fontSize: 15,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Container(
-                                    margin: const EdgeInsets.fromLTRB(
-                                        10, 10, 10, 0),
-                                    child: PhysicalModel(
-                                      color: Colors.white,
-                                      elevation: 8,
-                                      shadowColor: const Color(0xff9a9ce3),
-                                      borderRadius: BorderRadius.circular(4),
-                                      child: Container(
-                                        padding: const EdgeInsets.all(10),
+                                  SizedBox(
+                                    width: 250,
+                                    height: 1,
+                                    child: DecoratedBox(
+                                      decoration: const BoxDecoration(
+                                          color: Color(0xffededed)),
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.only(right: 4),
+                                    child: Text(
+                                      "Price(Incl. Tax)",
+                                      style: TextStyle(
+                                          fontFamily: "Montserrat",
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500),
+                                    ),
+                                  )
+                                ],
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 5, horizontal: 5),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Icon(
+                                      Icons.book_outlined,
+                                      size: 14,
+                                    ),
+                                    Text(
+                                      'ID: ${snapshot.data![index].manageDepositId}',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.w500,
+                                          fontSize: 15),
+                                    ),
+                                    Spacer(),
+                                    GestureDetector(
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                ViewCreditBalanceRequest(
+                                                    Id: snapshot.data![index]
+                                                        .manageDepositId),
+                                          ),
+                                        );
+                                      },
+                                      child: Padding(
+                                        padding:
+                                            const EdgeInsets.only(left: 10),
                                         child: Column(
                                           children: [
-                                            Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
-                                              children: [
-                                                Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.start,
-                                                  children: [
-                                                    Text(
-                                                        snapshot
-                                                            .data![index].name,
-                                                        style: TextStyle(
-                                                            fontSize: 15,
-                                                            fontFamily:
-                                                                "Montserrat",
-                                                            fontWeight:
-                                                                FontWeight
-                                                                    .bold)),
-                                                    /*  Text(
-                                      " 14 January 2023",
-                                      style: const TextStyle(
-                                          fontSize: 15,
-                                          fontFamily: "Montserrat",
-                                          fontWeight: FontWeight.w500),
-                                    ),*/
-                                                  ],
-                                                ),
-                                                const SizedBox(
-                                                  height: 10,
-                                                ),
-                                                Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.start,
-                                                  children: [
-                                                    Text(
-                                                        "Authorized Name: " +
-                                                            snapshot
-                                                                .data![index]
-                                                                .authorizedName,
-                                                        style: TextStyle(
-                                                            fontSize: 15,
-                                                            fontFamily:
-                                                                "Montserrat",
-                                                            fontWeight:
-                                                                FontWeight
-                                                                    .bold)),
-                                                    /*  Text(
-                                      " 14 January 2023",
-                                      style: const TextStyle(
-                                          fontSize: 15,
-                                          fontFamily: "Montserrat",
-                                          fontWeight: FontWeight.w500),
-                                    ),*/
-                                                  ],
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(
-                                              height: 5,
-                                            ),
-                                            Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
-                                              children: [
-                                                Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.start,
-                                                  children: [
-                                                    Text(
-                                                        "Type: " +
-                                                            snapshot
-                                                                .data![index]
-                                                                .userType,
-                                                        style: TextStyle(
-                                                            fontSize: 15,
-                                                            fontFamily:
-                                                                "Montserrat",
-                                                            fontWeight:
-                                                                FontWeight
-                                                                    .bold)),
-                                                    /*  Text(
-                                      " 14 January 2023",
-                                      style: const TextStyle(
-                                          fontSize: 15,
-                                          fontFamily: "Montserrat",
-                                          fontWeight: FontWeight.w500),
-                                    ),*/
-                                                  ],
-                                                ),
-                                                const SizedBox(
-                                                  height: 10,
-                                                ),
-                                                Padding(
-                                                  padding:
-                                                      const EdgeInsets.only(
-                                                          right: 20),
-                                                  child: Column(
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment.end,
-                                                    children: [
-                                                      Row(
-                                                        children: [
-                                                          Padding(
-                                                            padding:
-                                                                const EdgeInsets
-                                                                    .only(
-                                                                    bottom: 0),
-                                                            child: Image(
-                                                              image: AssetImage(
-                                                                  'assets/images/tickiconpng.png'),
-                                                              color:
-                                                                  Colors.blue,
-                                                              width: 16,
-                                                              height: 16,
-                                                            ),
-                                                          ),
-                                                          Padding(
-                                                            padding:
-                                                                const EdgeInsets
-                                                                    .only(
-                                                                    bottom: 0),
-                                                            child: Text(
-                                                              "Date: " +
-                                                                  snapshot
-                                                                      .data![
-                                                                          index]
-                                                                      .paymentDate,
-                                                              style: TextStyle(
-                                                                  fontFamily:
-                                                                      "Montserrat",
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .w500,
-                                                                  fontSize: 15,
-                                                                  color: Colors
-                                                                      .blue),
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(
-                                              height: 5,
-                                            ),
-                                            Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
-                                              children: [
-                                                GestureDetector(
-                                                  onTap: () {
-                                                    Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                        builder: (context) =>
-                                                            ViewCreditBalanceRequest(
-                                                                Id: snapshot
-                                                                    .data![
-                                                                        index]
-                                                                    .manageDepositId),
-                                                      ),
-                                                    );
-                                                  },
-                                                  child: Padding(
-                                                    padding:
-                                                        const EdgeInsets.only(
-                                                            right: 10, top: 0),
-                                                    child: Row(
-                                                      children: [
-                                                        Container(
-                                                          padding: EdgeInsets
-                                                              .fromLTRB(10.0, 5,
-                                                                  10, 5),
-                                                          decoration:
-                                                              BoxDecoration(
-                                                            color:
-                                                                Colors.orange,
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                                        15.0),
-                                                            boxShadow: [
-                                                              BoxShadow(
-                                                                color: Colors
-                                                                    .grey
-                                                                    .withOpacity(
-                                                                        0.5),
-                                                                spreadRadius: 2,
-                                                                blurRadius: 5,
-                                                                offset: Offset(
-                                                                    0,
-                                                                    2), // changes position of shadow
-                                                              ),
-                                                            ],
-                                                          ),
-                                                          child: Text(
-                                                            "View",
-                                                            style: TextStyle(
-                                                              fontFamily:
-                                                                  "Montserrat",
-                                                              fontSize: 15,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w500,
-                                                              color:
-                                                                  Colors.white,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                ),
-                                                Padding(
-                                                  padding:
-                                                      const EdgeInsets.only(
-                                                          right: 20),
-                                                  child: Column(
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment.end,
-                                                    children: [
-                                                      Row(
-                                                        children: [
-                                                          Padding(
-                                                            padding:
-                                                                const EdgeInsets
-                                                                    .only(
-                                                                    bottom: 15),
-                                                            child: Image(
-                                                              image: AssetImage(
-                                                                  'assets/images/tickiconpng.png'),
-                                                              color:
-                                                                  Colors.blue,
-                                                              width: 16,
-                                                              height: 16,
-                                                            ),
-                                                          ),
-                                                          Padding(
-                                                            padding:
-                                                                const EdgeInsets
-                                                                    .only(
-                                                                    bottom: 15),
-                                                            child: Text(
-                                                              "Deposit Amount: " +
-                                                                  snapshot
-                                                                      .data![
-                                                                          index]
-                                                                      .depositAmount,
-                                                              style: TextStyle(
-                                                                  fontFamily:
-                                                                      "Montserrat",
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .w500,
-                                                                  fontSize: 15,
-                                                                  color: Colors
-                                                                      .blue),
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ],
+                                            Container(
+                                              padding: EdgeInsets.fromLTRB(
+                                                  10.0, 5, 10, 5),
+                                              decoration: BoxDecoration(
+                                                color: Colors.orange,
+                                                border: Border.all(
+                                                    width: 0.1,
+                                                    color: Colors
+                                                        .blue), //https://stackoverflow.com/a/67395539/16076689
+                                                borderRadius:
+                                                    new BorderRadius.circular(
+                                                        5.0),
+                                              ),
+                                              child: Text(
+                                                "View",
+                                                //snapshot.data![index].paidStatus,
+                                                style: TextStyle(
+                                                    fontFamily: "Montserrat",
+                                                    fontSize: 15,
+                                                    fontWeight: FontWeight.w500,
+                                                    color: Colors.white),
+                                              ),
                                             ),
                                           ],
                                         ),
                                       ),
                                     ),
-                                  ),
-                                ],
+                                    Spacer(),
+                                    Text(
+                                      snapshot.data![index].currencyCode +
+                                          snapshot.data![index].depositAmount,
+                                      style: TextStyle(
+                                          fontSize: 17,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            );
-                          });
-                    } else {
-                      return CircularProgressIndicator();
-                    }
-                  }),
-            )));
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                } else {
+                  return CircularProgressIndicator();
+                }
+              }),
+        ));
   }
 }

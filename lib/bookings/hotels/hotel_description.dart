@@ -1,11 +1,14 @@
 import 'dart:convert';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'dart:developer' as developer;
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../utils/response_handler.dart';
+import '../../utils/shared_preferences.dart';
 import 'HotelReviewBooking.dart';
 
 class HotelDescription extends StatefulWidget {
@@ -18,7 +21,11 @@ class HotelDescription extends StatefulWidget {
       adultCount,
       childrenCount,
       Checkindate,
-      CheckoutDate;
+      CheckoutDate,
+      hotelname,
+      hoteladdress,
+      imageurl,
+      totaldays;
   const HotelDescription(
       {super.key,
       required this.hotelDetail,
@@ -30,7 +37,11 @@ class HotelDescription extends StatefulWidget {
       required this.adultCount,
       required this.childrenCount,
       required this.Checkindate,
-      required this.CheckoutDate});
+      required this.CheckoutDate,
+      required this.hotelname,
+      required this.hoteladdress,
+      required this.imageurl,
+      required this.totaldays});
 
   @override
   State<HotelDescription> createState() => _HotelDescriptionState();
@@ -40,20 +51,34 @@ class _HotelDescriptionState extends State<HotelDescription> {
   bool isDetailsLoading = false;
   bool isRoomDetailsLoading = false;
   var hotelResult = [];
+  List<String> images = [];
   var RoomResult = [];
-// Method to get hotel details
-  // Call both API methods in sequence
-  void loadData() async {
-    try {
-      print('object');
-      await getHotelDetailsByHotelID();
-      await getRoomDetails();
-    } catch (error) {
-      // Handle errors if any
-      print('Error loading data: $error');
-    }
+  List<String> imageUrls = [];
+  late String userTypeID = '';
+  late String userID = '';
+  late String Currency = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _retrieveSavedValues();
   }
 
+  Future<void> _retrieveSavedValues() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      userTypeID = prefs.getString(Prefs.PREFS_USER_TYPE_ID) ?? '';
+      userID = prefs.getString(Prefs.PREFS_USER_ID) ?? '';
+      Currency = prefs.getString(Prefs.PREFS_CURRENCY) ?? '';
+      print('Currency: $Currency');
+      // Call sendFlightSearchRequest() here after SharedPreferences values are retrieved
+      getHotelDetailsByHotelID();
+    });
+  }
+
+// Method to get hotel details
+  // Call both API methods in sequence
+  List<Map<String, dynamic>> roomDetails = [];
   Future<void> getHotelDetailsByHotelID() async {
     final url = Uri.parse(
         'https://traveldemo.org/travelapp/b2capi.asmx/AdivahaHotelGetDetailsByHotelID');
@@ -62,6 +87,7 @@ class _HotelDescriptionState extends State<HotelDescription> {
         'HotelID=${widget.hotelid}&ResultIndex=${widget.resultindex}&TraceId=${widget.traceid}';
     print('HotelID' + widget.hotelid);
     print('resultIndex' + widget.resultindex);
+    print('resultIndex' + widget.traceid);
 
     try {
       setState(() {
@@ -84,7 +110,12 @@ class _HotelDescriptionState extends State<HotelDescription> {
         var jsonResult = json.decode(ResponseHandler.parseData(response.body));
         setState(() {
           hotelResult = jsonResult;
+          String Imageurl = hotelResult[0]['HotelImages'].toString();
+          images = Imageurl.split("||")
+              .where((element) => element.isNotEmpty)
+              .toList();
         });
+
         // Call the second API after receiving the response from the first API
         getRoomDetails();
         print('hotelResult length ${hotelResult.length}');
@@ -98,13 +129,19 @@ class _HotelDescriptionState extends State<HotelDescription> {
     }
   }
 
-// Method to get room details
   Future<void> getRoomDetails() async {
     final url = Uri.parse(
         'https://traveldemo.org/travelapp/b2capi.asmx/AdivahaHotelGetRoomTypesByHotelID');
+
     final headers = {'Content-Type': 'application/x-www-form-urlencoded'};
-    final body =
-        'HotelID=${widget.hotelid}&ResultIndex=${widget.resultindex}&TraceId=${widget.traceid}';
+    final requestBody = {
+      'HotelID': widget.hotelid.toString(),
+      'ResultIndex': widget.resultindex.toString(),
+      'TraceId': widget.traceid.toString(),
+      'UserID': userID.toString(),
+      'UserTypeID': userTypeID.toString(),
+      'DefaultCurrency': Currency.toString(),
+    };
 
     try {
       setState(() {
@@ -113,22 +150,21 @@ class _HotelDescriptionState extends State<HotelDescription> {
       final response = await http.post(
         url,
         headers: headers,
-        body: body,
+        body: requestBody,
       );
       setState(() {
         isRoomDetailsLoading = false;
       });
-
       if (response.statusCode == 200) {
         // Handle the successful response here
-        print('Request successfasdweul!');
+        print('Request successful! Response:');
         developer.log(response.body);
         var jsonResult = json.decode(ResponseHandler.parseData(response.body));
         setState(() {
           RoomResult = jsonResult;
         });
 
-        print('RoomResult length ${RoomResult.length}');
+        print('hotelResult length ${RoomResult.length}');
       } else {
         // Handle the failure scenario
         print('Request failed with status: ${response.statusCode}');
@@ -142,14 +178,6 @@ class _HotelDescriptionState extends State<HotelDescription> {
   void navigate(Widget screen) {
     Navigator.push(
         context, MaterialPageRoute(builder: (BuildContext context) => screen));
-  }
-
-  @override
-  void initState() {
-    // TODO: implement initState
-    loadData();
-
-    super.initState();
   }
 
   @override
@@ -207,16 +235,57 @@ class _HotelDescriptionState extends State<HotelDescription> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       SizedBox(
-                          width: double.infinity,
-                          height: 200,
-                          child: CarouselSlider(
+                        width: double.infinity,
+                        height: 200,
+                        child: CarouselSlider(
+                          items: images.map((imageUrl) {
+                            return Builder(
+                              builder: (BuildContext context) {
+                                return Image.network(
+                                  imageUrl,
+                                  fit: BoxFit.fill,
+                                );
+                              },
+                            );
+                          }).toList(),
+                          options: CarouselOptions(
+                            aspectRatio: 16 / 9,
+                            viewportFraction: 0.8,
+                            autoPlay: true,
+                            autoPlayInterval: Duration(seconds: 3),
+                            autoPlayAnimationDuration:
+                                Duration(milliseconds: 800),
+                            autoPlayCurve: Curves.fastOutSlowIn,
+                            pauseAutoPlayOnTouch: true,
+                            enlargeCenterPage: true,
+                            onPageChanged: (index, reason) {
+                              // Handle page change
+                            },
+                          ),
+                        ),
+                      ),
+                      /* CarouselSlider(
                             items: [
-                              Image.asset(
-                                "assets/images/hotel2.jpg",
+                              CachedNetworkImage(
+                                imageUrl: widget.imageurl,
+                                placeholder: (context, url) => const Center(
+                                    child: SizedBox(
+                                        height: 30,
+                                        width: 35,
+                                        child: CircularProgressIndicator())),
+                                errorWidget: (context, url, error) =>
+                                    const Icon(Icons.error),
                                 fit: BoxFit.cover,
                               ),
-                              Image.asset(
-                                "assets/images/hotel2.jpg",
+                              CachedNetworkImage(
+                                imageUrl: hotelResult[index]['HotelImages'],
+                                placeholder: (context, url) => const Center(
+                                    child: SizedBox(
+                                        height: 30,
+                                        width: 35,
+                                        child: CircularProgressIndicator())),
+                                errorWidget: (context, url, error) =>
+                                    const Icon(Icons.error),
                                 fit: BoxFit.cover,
                               ),
                               Image.asset(
@@ -229,7 +298,8 @@ class _HotelDescriptionState extends State<HotelDescription> {
                               viewportFraction: 1,
                               enlargeCenterPage: false,
                             ),
-                          )),
+                          )),*/
+
                       Container(
                         padding: EdgeInsets.all(20),
                         child: Column(
@@ -377,7 +447,7 @@ class _HotelDescriptionState extends State<HotelDescription> {
                               shrinkWrap: true,
                               physics: NeverScrollableScrollPhysics(),
                               itemCount: RoomResult.length,
-                              itemBuilder: (BuildContext context, index) {
+                              itemBuilder: (context, index) {
                                 return Container(
                                   decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(10),
@@ -432,38 +502,136 @@ class _HotelDescriptionState extends State<HotelDescription> {
                                           ),
                                           GestureDetector(
                                             onTap: () {
-                                              String HotelName =
-                                                  hotelResult[index]
-                                                          ['HotelName']
-                                                      .toString();
-                                              String HotelAddress =
-                                                  hotelResult[index]
-                                                          ['HotelAddress']
-                                                      .toString();
-                                              String RoomTypeName =
-                                                  RoomResult[index]
-                                                          ['RoomTypeName']
-                                                      .toString();
-                                              String RoomPrice =
-                                                  RoomResult[index]['RoomPrice']
-                                                      .toString();
-                                              navigate(HotelReviewBooking(
-                                                hotelDetail: hotelResult[index],
-                                                RoomDetail: RoomResult[index],
-                                                Roomtypename: RoomTypeName,
-                                                Roomprice: RoomPrice,
-                                                hotelname: HotelName,
-                                                hoteladdress: HotelAddress,
-                                                RoomCount: widget.RoomCount,
-                                                adultCount: widget.adultCount,
-                                                childrenCount:
-                                                    widget.childrenCount,
-                                                Checkindate: widget.Checkindate,
-                                                CheckoutDate:
-                                                    widget.CheckoutDate,
-                                                Starcategory:
-                                                    widget.Starcategory,
-                                              ));
+                                              // Check if the index is within the range of RoomResult list
+
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder:
+                                                      (BuildContext context) =>
+                                                          HotelReviewBooking(
+                                                    RoomDetail:
+                                                        RoomResult[index],
+                                                    Roomtypename:
+                                                        RoomResult[index]
+                                                                ['RoomTypeName']
+                                                            .toString(),
+                                                    Roomprice: RoomResult[index]
+                                                            ['RoomPrice']
+                                                        .toString(),
+                                                    adultCount:
+                                                        widget.adultCount,
+                                                    RoomCount: widget.RoomCount,
+                                                    Starcategory:
+                                                        widget.Starcategory,
+                                                    childrenCount:
+                                                        widget.childrenCount,
+                                                    Checkindate:
+                                                        widget.Checkindate,
+                                                    CheckoutDate:
+                                                        widget.CheckoutDate,
+                                                    hotelname: widget.hotelname,
+                                                    hoteladdress:
+                                                        widget.hoteladdress,
+                                                    hotelid: widget.hotelid,
+                                                    resultindex:
+                                                        widget.resultindex,
+                                                    traceid: widget.traceid,
+                                                    roomindex: RoomResult[index]
+                                                            ['RoomIndex']
+                                                        .toString(),
+                                                    roomtypecode:
+                                                        RoomResult[index]
+                                                                ['RoomTypeCode']
+                                                            .toString(),
+                                                    imageurl: widget.imageurl,
+                                                    totaldays: widget.totaldays,
+
+                                                    /*
+                                                    RoomDetail:
+                                                        RoomResult[index],
+
+
+
+
+
+
+
+                                                  */
+                                                  ),
+                                                ),
+                                              );
+                                              print(
+                                                  'Invaasdflid index: $index');
+                                            },
+                                            child: Container(
+                                              decoration: BoxDecoration(
+                                                  color: Color(0xff3093c7),
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                          10)),
+                                              padding: EdgeInsets.symmetric(
+                                                  vertical: 10, horizontal: 20),
+                                              child: Center(
+                                                child: Text(
+                                                  'Book Now',
+                                                  style: TextStyle(
+                                                      color: Colors.white),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+
+                                          /*  GestureDetector(
+                                            onTap: () {
+                                              Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                      builder: (BuildContext
+                                                              context) =>
+                                                          HotelReviewBooking(
+                                                            hotelDetail:
+                                                                hotelResult[
+                                                                    index],
+                                                            RoomDetail:
+                                                                RoomResult[
+                                                                    index],
+                                                            hotelid:
+                                                                widget.hotelid,
+                                                            Roomtypename:
+                                                                RoomResult[index]
+                                                                        [
+                                                                        'RoomTypeName']
+                                                                    .toString(),
+                                                            Roomprice: RoomResult[
+                                                                        index][
+                                                                    'RoomPrice']
+                                                                .toString(),
+                                                            hotelname: hotelResult[
+                                                                        index][
+                                                                    'HotelName']
+                                                                .toString(),
+                                                            hoteladdress:
+                                                                hotelResult[index]
+                                                                        [
+                                                                        'HotelAddress']
+                                                                    .toString(),
+                                                            RoomCount: widget
+                                                                .RoomCount,
+                                                            adultCount: widget
+                                                                .adultCount,
+                                                            childrenCount: widget
+                                                                .childrenCount,
+                                                            Checkindate: widget
+                                                                .Checkindate,
+                                                            CheckoutDate: widget
+                                                                .CheckoutDate,
+                                                            Starcategory: widget
+                                                                .Starcategory,
+                                                          )));
+
+                                              print(
+                                                  RoomResult[index].toString());
                                               print('Container tapped!');
                                             },
                                             child: Container(
@@ -482,7 +650,7 @@ class _HotelDescriptionState extends State<HotelDescription> {
                                                 ),
                                               ),
                                             ),
-                                          )
+                                          )*/
                                         ],
                                       )
                                     ],

@@ -7,29 +7,32 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import '../../utils/response_handler.dart';
 import 'HolidayReviewBooking.dart';
+import 'package:carousel_slider/carousel_slider.dart';
 
 class HolidayDescription extends StatefulWidget {
   final dynamic holidayList,
+      Tourcode,
+      SightSeeingMarkup,
+      defaultCurrency,
+      DefaultyCurrencyvalue,
       RoomCount,
       adultCount,
       childrenCount,
       Checkindate,
-      Tourcode,
-      SightSeeingMarkup,
-      defaultCurrency,
-      DefaultyCurrencyvalue;
+      imageUrl;
 
   const HolidayDescription({
     super.key,
     required this.holidayList,
-    required this.RoomCount,
-    required this.adultCount,
-    required this.childrenCount,
-    required this.Checkindate,
     required this.Tourcode,
     required this.SightSeeingMarkup,
     required this.defaultCurrency,
     required this.DefaultyCurrencyvalue,
+    required this.RoomCount,
+    required this.adultCount,
+    required this.childrenCount,
+    required this.Checkindate,
+    required this.imageUrl,
   });
 
   @override
@@ -37,6 +40,7 @@ class HolidayDescription extends StatefulWidget {
 }
 
 class _HotelDescriptionState extends State<HolidayDescription> {
+  List<String> images = [];
   String featuresInclusion = '';
   String featuresExclusion = '';
   bool isDetailsLoading = false;
@@ -50,10 +54,10 @@ class _HotelDescriptionState extends State<HolidayDescription> {
         'https://traveldemo.org/travelapp/b2capi.asmx/TourGetDetails');
     final headers = {'Content-Type': 'application/x-www-form-urlencoded'};
     final body =
-        'TourCode=${widget.Tourcode.toString()}&FromDate=${finDate.toString()}&ToDate=2024-02-12&AdultCount=${widget.adultCount.toString()}'
+        'TourCode=${widget.Tourcode.toString()}&FromDate=${finDate.toString()}&ToDate=${finDate.toString()}&AdultCount=${widget.adultCount.toString()}'
         '&ChildCount=${widget.childrenCount.toString()}&UserId=1107&SightSeeingMarkup=${widget.SightSeeingMarkup.toString()}'
         '&DefaultCurrency=${widget.defaultCurrency.toString()}&DefaultCurrencyValue=${widget.DefaultyCurrencyvalue.toString()}';
-
+    print(body);
     setState(() {
       isDetailsLoading = true;
     });
@@ -83,7 +87,11 @@ class _HotelDescriptionState extends State<HolidayDescription> {
             hotelResult = firstJsonArray;
             featuresInclusion = hotelResult[0]['featuresInclusion'].toString();
             featuresExclusion = hotelResult[0]['featuresExclusion'].toString();
-            print('hotelResult');
+            String Imageurl = hotelResult[0]['BigImages'].toString();
+            images = Imageurl.split("||")
+                .where((element) => element.isNotEmpty)
+                .toList();
+            print('featuresInchjtlusion' + featuresInclusion);
             var secondJsonArray = json.decode(secondArrayData);
             RoomResult = secondJsonArray;
             print(secondJsonArray);
@@ -120,7 +128,7 @@ class _HotelDescriptionState extends State<HolidayDescription> {
     for (String word in words) {
       icons.add(Row(
         children: [
-          Icon(Icons.check),
+          Icon(Icons.check, color: Colors.green),
           Container(
               width: 148,
               child: Text(
@@ -135,22 +143,26 @@ class _HotelDescriptionState extends State<HolidayDescription> {
 
   List<Widget> createIconsForWords1(String features) {
     List<String> words = features.split(",");
+    print("words: " + words.toString());
     List<Widget> icons = [];
-    for (String word in words) {
-      icons.add(Row(
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
+
+    // Conditionally add the icon and text based on whether words array is empty or not
+    icons.add(
+      Row(
         children: [
-          Icon(Icons.check),
-          Container(
+          if (words.isNotEmpty) Icon(Icons.check, color: Colors.red),
+          if (words.isNotEmpty)
+            Container(
               width: 148,
               child: Text(
-                word,
+                words.first,
                 style: TextStyle(color: Colors.red),
-              )),
+              ),
+            ),
         ],
-      ));
-    }
+      ),
+    );
+
     return icons;
   }
 
@@ -180,7 +192,7 @@ class _HotelDescriptionState extends State<HolidayDescription> {
               ),
               SizedBox(width: 1),
               Text(
-                "Holiday Description",
+                "Holiday",
                 style: TextStyle(
                     color: Colors.black,
                     fontFamily: "Montserrat",
@@ -205,31 +217,36 @@ class _HotelDescriptionState extends State<HolidayDescription> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SizedBox(
-                  width: double.infinity,
-                  height: 200,
-                  child: CarouselSlider(
-                    items: [
-                      Image.asset(
-                        "assets/images/hotel2.jpg",
-                        fit: BoxFit.cover,
-                      ),
-                      Image.asset(
-                        "assets/images/hotel2.jpg",
-                        fit: BoxFit.cover,
-                      ),
-                      Image.asset(
-                        "assets/images/hotel2.jpg",
-                        fit: BoxFit.fill,
-                      ),
-                    ],
-                    options: CarouselOptions(
-                      autoPlay: true,
-                      viewportFraction: 1,
-                      enlargeCenterPage: false,
-                    ),
-                  )),
+                width: double.infinity,
+                height: 200,
+                child: CarouselSlider(
+                  items: images.map((imageUrl) {
+                    return Builder(
+                      builder: (BuildContext context) {
+                        return Image.network(
+                          imageUrl,
+                          fit: BoxFit.fill,
+                        );
+                      },
+                    );
+                  }).toList(),
+                  options: CarouselOptions(
+                    aspectRatio: 16 / 9,
+                    viewportFraction: 0.8,
+                    autoPlay: true,
+                    autoPlayInterval: Duration(seconds: 3),
+                    autoPlayAnimationDuration: Duration(milliseconds: 800),
+                    autoPlayCurve: Curves.fastOutSlowIn,
+                    pauseAutoPlayOnTouch: true,
+                    enlargeCenterPage: true,
+                    onPageChanged: (index, reason) {
+                      // Handle page change
+                    },
+                  ),
+                ),
+              ),
               Container(
-                padding: EdgeInsets.all(20),
+                padding: EdgeInsets.only(right: 10, top: 10, left: 10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -251,9 +268,6 @@ class _HotelDescriptionState extends State<HolidayDescription> {
                           fontWeight: FontWeight.w500,
                           color: Colors.black,
                           fontSize: 17),
-                    ),
-                    SizedBox(
-                      height: 5,
                     ),
                   ],
                 ),
@@ -282,7 +296,11 @@ class _HotelDescriptionState extends State<HolidayDescription> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(widget.Checkindate.toString().substring(0, 10),
-                            style: TextStyle(fontWeight: FontWeight.w500)),
+                            style: TextStyle(
+                                fontSize: 15, fontWeight: FontWeight.w500)),
+                        Text(widget.Checkindate.toString().substring(0, 10),
+                            style: TextStyle(
+                                fontSize: 15, fontWeight: FontWeight.w500)),
                       ],
                     ),
                   ],
@@ -403,10 +421,11 @@ class _HotelDescriptionState extends State<HolidayDescription> {
               Padding(
                 padding: const EdgeInsets.only(right: 10, left: 15, top: 8),
                 child: Text(
-                  'Inclusion& Exclusion',
+                  'Inclusion & Exclusion',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
                 ),
               ),
+              Divider(),
               Padding(
                 padding: const EdgeInsets.only(left: 15, right: 10, top: 6),
                 child: Row(
@@ -417,15 +436,9 @@ class _HotelDescriptionState extends State<HolidayDescription> {
                       style:
                           TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
                     ),
-                    Text(
-                      'Exclusions',
-                      style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
-                    ),
                   ],
                 ),
               ),
-              Divider(),
               Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -437,12 +450,22 @@ class _HotelDescriptionState extends State<HolidayDescription> {
                       children: iconsForFeaturesInclusion,
                     ),
                   ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: iconsForFeaturesExclusion,
-                  ),
                 ],
+              ),
+              Padding(
+                padding: const EdgeInsets.only(left: 15, right: 10, top: 6),
+                child: Text(
+                  'Exclusions',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(left: 15, top: 6),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: iconsForFeaturesExclusion,
+                ),
               ),
               Column(
                 children: [
@@ -526,25 +549,28 @@ class _HotelDescriptionState extends State<HolidayDescription> {
                                   GestureDetector(
                                     onTap: () {
                                       navigate(HolidayReviewBooking(
-                                        holidayName: hotelResult[0]['tourname'],
-                                        touraddress: hotelResult[0]
-                                                ['destinationname'] +
-                                            "," +
-                                            hotelResult[0]['countryname'],
-                                        CheckinDate:
-                                            widget.Checkindate.toString()
-                                                .substring(0, 10),
-                                        RoomCount: widget.RoomCount,
-                                        adultCount: widget.adultCount,
-                                        Tourcode: widget.Tourcode,
-                                        featuresInclusion: featuresInclusion,
-                                        featuresExclusion: featuresExclusion,
-                                        price: RoomResult[index]
-                                            ['modalities_rate'],
-                                        modalities_rateKey: RoomResult[index]
-                                            ['modalities_rateKey'],
-                                        childrenCount: 0,
-                                      ));
+                                          holidayName: hotelResult[0]
+                                              ['tourname'],
+                                          touraddress: hotelResult[0]
+                                                  ['destinationname'] +
+                                              "," +
+                                              hotelResult[0]['countryname'],
+                                          CheckinDate:
+                                              widget.Checkindate.toString()
+                                                  .substring(0, 10),
+                                          RoomCount: widget.RoomCount,
+                                          adultCount: widget.adultCount,
+                                          Tourcode: widget.Tourcode,
+                                          featuresInclusion: featuresInclusion,
+                                          featuresExclusion: featuresExclusion,
+                                          price: RoomResult[index]
+                                              ['modalities_rate'],
+                                          modalities_rateKey: RoomResult[index]
+                                              ['modalities_rateKey'],
+                                          ModalitiesCode: RoomResult[index]
+                                              ['modalities_code'],
+                                          childrenCount: 0,
+                                          imageurl: widget.imageUrl));
                                       print('Container tapped!');
                                     },
                                     child: Container(
@@ -593,11 +619,11 @@ class _HotelDescriptionState extends State<HolidayDescription> {
               ),
               SizedBox(width: 1),
               Text(
-                "Holiday Description",
+                "Holiday",
                 style: TextStyle(
                     color: Colors.black,
                     fontFamily: "Montserrat",
-                    fontSize: 17),
+                    fontSize: 18),
               ),
             ],
           ),

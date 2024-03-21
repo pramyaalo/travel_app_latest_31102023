@@ -3,8 +3,10 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../utils/response_handler.dart';
+import '../utils/shared_preferences.dart';
 import 'ApproveRefundOnHoldModel.dart';
 
 class ApproveRefundQueue extends StatefulWidget {
@@ -15,12 +17,31 @@ class ApproveRefundQueue extends StatefulWidget {
 }
 
 class _BookingCardGeneralDetailsState extends State<ApproveRefundQueue> {
+  static late String userTypeID;
+  static late String userID;
+  @override
+  void initState() {
+    super.initState();
+    _retrieveSavedValues();
+  }
+
+  Future<void> _retrieveSavedValues() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      userTypeID = prefs.getString(Prefs.PREFS_USER_TYPE_ID) ?? '';
+      userID = prefs.getString(Prefs.PREFS_USER_ID) ?? '';
+      print("userTypeID" + userTypeID);
+      print("userID" + userID);
+    });
+  }
+
   Future<http.Response>? __futureLogin;
   static Future<List<ApproveRefundOnHoldModel>?>
       getFlightTicketOrderQueue() async {
     List<ApproveRefundOnHoldModel> bookingCardData = [];
     Future<http.Response>? __futureLabels = ResponseHandler.performPost(
-        "ApproveRefundOnHoldQueueGet", "UserTypeId=2&UserId=1107&BookingType=");
+        "ApproveRefundOnHoldQueueGet",
+        "UserTypeId=$userTypeID&UserId=$userID&BookingType=");
 
     return await __futureLabels?.then((value) {
       String jsonResponse = ResponseHandler.parseData(value.body);
@@ -80,52 +101,50 @@ class _BookingCardGeneralDetailsState extends State<ApproveRefundQueue> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        appBar: AppBar(
-          automaticallyImplyLeading: false,
-          titleSpacing: 1,
-          title: Row(
-            children: [
-              IconButton(
-                icon: Icon(
-                  Icons.arrow_back,
-                  color: Colors.black,
-                  size: 27,
-                ),
-                onPressed: () {
-                  Navigator.pop(context);
-                },
+    return Scaffold(
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        titleSpacing: 1,
+        title: Row(
+          children: [
+            IconButton(
+              icon: Icon(
+                Icons.arrow_back,
+                color: Colors.black,
+                size: 27,
               ),
-
-              SizedBox(width: 1), // Set the desired width
-              Text(
-                "Approve Refund Queue",
-                style: TextStyle(
-                    color: Colors.black,
-                    fontFamily: "Montserrat",
-                    fontSize: 17),
-              ),
-            ],
-          ),
-          actions: [
-            Image.asset(
-              'assets/images/logo.png',
-              width: 120,
-              height: 50,
+              onPressed: () {
+                Navigator.pop(context);
+              },
             ),
-            SizedBox(
-              width: 10,
-            )
+
+            SizedBox(width: 1), // Set the desired width
+            Text(
+              "Approve Refund Queue",
+              style: TextStyle(
+                  color: Colors.black, fontFamily: "Montserrat", fontSize: 17),
+            ),
           ],
-          backgroundColor: Colors.white,
         ),
-        body: Center(
-          child: FutureBuilder<List<ApproveRefundOnHoldModel>?>(
-              future: getFlightTicketOrderQueue(),
-              builder: (context, snapshot) {
-                if (snapshot.hasData &&
-                    snapshot.connectionState == ConnectionState.done) {
+        actions: [
+          Image.asset(
+            'assets/images/logo.png',
+            width: 120,
+            height: 50,
+          ),
+          SizedBox(
+            width: 10,
+          )
+        ],
+        backgroundColor: Colors.white,
+      ),
+      body: Center(
+        child: FutureBuilder<List<ApproveRefundOnHoldModel>?>(
+            future: getFlightTicketOrderQueue(),
+            builder: (context, snapshot) {
+              if (snapshot.hasData &&
+                  snapshot.connectionState == ConnectionState.done) {
+                if (snapshot.data!.length > 0) {
                   return ListView.builder(
                       itemCount: snapshot.data!.length,
                       itemBuilder: (context, index) {
@@ -417,7 +436,7 @@ class _BookingCardGeneralDetailsState extends State<ApproveRefundQueue> {
                                           children: [
                                             Padding(
                                               padding: const EdgeInsets.only(
-                                                  left: 0),
+                                                  left: 8, bottom: 10),
                                               child: Row(
                                                 mainAxisAlignment:
                                                     MainAxisAlignment.start,
@@ -475,7 +494,7 @@ class _BookingCardGeneralDetailsState extends State<ApproveRefundQueue> {
                                               },
                                               child: Padding(
                                                 padding: const EdgeInsets.only(
-                                                    left: 0),
+                                                    left: 0, bottom: 5),
                                                 child: Row(
                                                   children: [
                                                     Container(
@@ -483,7 +502,7 @@ class _BookingCardGeneralDetailsState extends State<ApproveRefundQueue> {
                                                           EdgeInsets.fromLTRB(
                                                               10.0, 5, 10, 5),
                                                       decoration: BoxDecoration(
-                                                        color: Colors.blue,
+                                                        color: Colors.teal,
                                                         border: Border.all(
                                                             width: 0.1,
                                                             color: Colors.blue),
@@ -509,7 +528,7 @@ class _BookingCardGeneralDetailsState extends State<ApproveRefundQueue> {
                                             ),
                                             Padding(
                                               padding: const EdgeInsets.only(
-                                                  left: 0),
+                                                  right: 5, bottom: 10),
                                               child: Text(
                                                 snapshot
                                                     .data![index].paidAmount,
@@ -533,10 +552,17 @@ class _BookingCardGeneralDetailsState extends State<ApproveRefundQueue> {
                             ])));
                       });
                 } else {
-                  return CircularProgressIndicator();
+                  return Center(
+                    child: Text(
+                      'No data found',
+                      style: TextStyle(fontSize: 18),
+                    ),
+                  );
                 }
-              }),
-        ),
+              } else {
+                return CircularProgressIndicator();
+              }
+            }),
       ),
     );
   }

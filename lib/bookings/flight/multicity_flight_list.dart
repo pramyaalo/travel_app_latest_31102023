@@ -2,11 +2,14 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shimmer/shimmer.dart';
 
 import 'dart:developer' as developer;
 
 import '../../Booking/CommonUtils.dart';
 import '../../utils/response_handler.dart';
+import '../../utils/shared_preferences.dart';
 import 'multicity_booking.dart';
 
 class MultiCityFlightsList extends StatefulWidget {
@@ -15,6 +18,10 @@ class MultiCityFlightsList extends StatefulWidget {
       destination,
       orgin1,
       destination1,
+      orgin2,
+      destination2,
+      orgin3,
+      destination3,
       departDate,
       returnDate,
       children,
@@ -26,6 +33,10 @@ class MultiCityFlightsList extends StatefulWidget {
     required this.destination,
     required this.orgin1,
     required this.destination1,
+    required this.orgin2,
+    required this.destination2,
+    required this.orgin3,
+    required this.destination3,
     required this.departDate,
     required this.returnDate,
     required this.children,
@@ -37,6 +48,28 @@ class MultiCityFlightsList extends StatefulWidget {
 }
 
 class _MultiCityFlightsListState extends State<MultiCityFlightsList> {
+  late String userTypeID = '';
+  late String userID = '';
+  late String Currency = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _retrieveSavedValues();
+  }
+
+  Future<void> _retrieveSavedValues() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      userTypeID = prefs.getString(Prefs.PREFS_USER_TYPE_ID) ?? '';
+      userID = prefs.getString(Prefs.PREFS_USER_ID) ?? '';
+      Currency = prefs.getString(Prefs.PREFS_CURRENCY) ?? '';
+      print('Currency: $Currency');
+      // Call sendFlightSearchRequest() here after SharedPreferences values are retrieved
+      sendMultiWayFlightSearchRequest();
+    });
+  }
+
   var myResult = [];
   bool isLoading = false;
 
@@ -46,28 +79,24 @@ class _MultiCityFlightsListState extends State<MultiCityFlightsList> {
     String fin_date1 =
         widget.returnDate.toString().split(' ')[0].replaceAll('-', '/');
     var requestBody = {
-      'OriginFirst': widget.orgin, // Replace with your actual origin
-      'DestinationFirst':
-          widget.destination, // Replace with your actual destination
-      'OriginSecond': widget.orgin1, // Replace with your actual second origin
-      'DestinationSecond':
-          widget.destination1, // Replace with your actual second destination
-      'DepartDateFirst':
-          fin_date, // Replace with your actual first departure date
-      'DepartDateSecond':
-          fin_date1, // Replace with your actual second departure date
-      'OriginThird': '', // Replace with your actual third origin
-      'DestinationThird': '', // Replace with your actual third destination
-      'DepartDateThird': '', // Replace with your actual third departure date
-      'OriginFourth': '', // Replace with your actual fourth origin
-      'DestinationFourth': '', // Replace with your actual fourth destination
-      'DepartDateFourth':
-          '', // Replace with your actual fourth departure date  //varala
+      'OriginFirst': widget.orgin,
+      'DestinationFirst': widget.destination,
+      'OriginSecond': widget.orgin1,
+      'DestinationSecond': widget.destination1,
+      'DepartDateFirst': fin_date,
+      'DepartDateSecond': fin_date1,
+      'OriginThird': '',
+      'DestinationThird': '',
+      'DepartDateThird': '',
+      'OriginFourth': '',
+      'DestinationFourth': '',
+      'DepartDateFourth': '',
       'AdultCount': widget.adult,
       'ChildrenCount': widget.children,
       'InfantCount': widget.infants,
-      'Class': '1',
-      'DefaultCurrency': 'INR'
+      'Class': '3',
+      'DefaultCurrency': Currency,
+      'UserID': userID,
     };
     print('OriginFirst: ${widget.orgin}');
     print('DestinationFirst: ${widget.destination}');
@@ -84,11 +113,11 @@ class _MultiCityFlightsListState extends State<MultiCityFlightsList> {
     print('AdultCount: ${widget.adult}');
     print('ChildrenCount: ${widget.children}');
     print('InfantCount: ${widget.infants}');
-    print('Class: 1');
-    print('DefaultCurrency: INR');
+    print('Class: 3');
+    print('DefaultCurrency: $Currency');
 
     final url = Uri.parse(
-        'https://traveldemo.org/travelapp/b2capi.asmx/AdivahaSearchFlightMultiWay'); //Arivu  sorry
+        'https://traveldemo.org/travelapp/b2capi.asmx/AdivahaSearchFlightMultiWay');
     final headers = {'Content-Type': 'application/x-www-form-urlencoded'};
 
     final body = Uri(queryParameters: requestBody).query;
@@ -178,9 +207,47 @@ class _MultiCityFlightsListState extends State<MultiCityFlightsList> {
         backgroundColor: Colors.white,
       ),
       body: isLoading
-          ? Center(
-              child: CircularProgressIndicator(),
-            )
+          ? ListView.builder(
+              itemCount: 10, // Number of skeleton items
+              itemBuilder: (context, index) {
+                return Shimmer.fromColors(
+                  baseColor: Colors.grey[300]!,
+                  highlightColor: Colors.grey[100]!,
+                  child: ListTile(
+                    leading: Container(
+                      width: 64.0,
+                      height: 64.0,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white,
+                      ),
+                    ),
+                    title: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: double.infinity,
+                          height: 16.0,
+                          margin: EdgeInsets.symmetric(vertical: 4.0),
+                          color: Colors.white,
+                        ),
+                        Container(
+                          width: double.infinity,
+                          height: 12.0,
+                          margin: EdgeInsets.symmetric(vertical: 4.0),
+                          color: Colors.white,
+                        ),
+                        Container(
+                          width: double.infinity,
+                          height: 12.0,
+                          margin: EdgeInsets.symmetric(vertical: 4.0),
+                          color: Colors.white,
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              })
           : ListView.builder(
               itemCount: myResult.length,
               itemBuilder: (BuildContext context, index) {
@@ -728,15 +795,4 @@ class _MultiCityFlightsListState extends State<MultiCityFlightsList> {
               }),
     );
   }
-
-//length bvarudhu aana enaku wait screenshot podure
-//Entha line la antha error?....hello????
-  @override
-  void initState() {
-    // TODO: implement initState
-    sendMultiWayFlightSearchRequest();
-    super.initState();
-  }
 }
-//vanthu vanthu aana inum iruku Intha error nalae .toString podunga...ini marakathinga...ithoda100000000000 times solliyachu....musari sari ine maraka maten ine sli tharathenga intha error vantha
-//Goof paapom...ana nambika illa ha haa tata...nila ila inum iruku whatsup parunha

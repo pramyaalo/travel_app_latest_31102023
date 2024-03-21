@@ -139,7 +139,7 @@ class _MyRechargePageState extends State<DebitUserFund> {
                                   // Add your recharge logic here
                                 },
                                 style: ElevatedButton.styleFrom(
-                                  primary: Colors.orange, // Set button color
+                                  backgroundColor: Colors.orange, // Set button color
                                 ),
                                 child: Text(
                                   'Check Balance',
@@ -254,7 +254,7 @@ class _MyRechargePageState extends State<DebitUserFund> {
                               // Add your recharge logic here
                             },
                             style: ElevatedButton.styleFrom(
-                              primary: Colors.yellow, // Set button color
+                              backgroundColor: Colors.yellow, // Set button color
                             ),
                             child: Text(
                               'Debit Fund To Users',

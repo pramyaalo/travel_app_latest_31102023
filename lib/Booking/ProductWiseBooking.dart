@@ -4,9 +4,11 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../Models/ProductwiseBookingListModel.dart';
 import '../utils/response_handler.dart';
+import '../utils/shared_preferences.dart';
 
 class AllProductWiseBooking extends StatefulWidget {
   const AllProductWiseBooking({Key? key}) : super(key: key);
@@ -17,11 +19,29 @@ class AllProductWiseBooking extends StatefulWidget {
 }
 
 class _BookingCardGeneralDetailsState extends State<AllProductWiseBooking> {
+  static late String userTypeID;
+  static late String userID;
+  @override
+  void initState() {
+    super.initState();
+    _retrieveSavedValues();
+  }
+
+  Future<void> _retrieveSavedValues() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      userTypeID = prefs.getString(Prefs.PREFS_USER_TYPE_ID) ?? '';
+      userID = prefs.getString(Prefs.PREFS_USER_ID) ?? '';
+      print("userTypeID" + userTypeID);
+      print("userID" + userID);
+    });
+  }
+
   static Future<List<ProductwiseBookingListModel>?> getPartPaymentData() async {
     List<ProductwiseBookingListModel> bookingCardData = [];
     Future<http.Response>? __futureLabels = ResponseHandler.performPost(
         "AllProductwiseBookingListGet",
-        "UserTypeId=2&UserId=1107&AgencyId=1107&BookingType=");
+        "UserTypeId=$userTypeID&UserId=$userID&AgencyId=$userID&BookingType=");
 
     return await __futureLabels?.then((value) {
       String jsonResponse = ResponseHandler.parseData(value.body);
@@ -41,8 +61,7 @@ class _BookingCardGeneralDetailsState extends State<AllProductWiseBooking> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-        child: Scaffold(
+    return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
         titleSpacing: 1,
@@ -51,7 +70,7 @@ class _BookingCardGeneralDetailsState extends State<AllProductWiseBooking> {
             IconButton(
               icon: Icon(
                 Icons.arrow_back,
-                color: Colors.white,
+                color: Colors.black,
                 size: 27,
               ),
               onPressed: () {
@@ -62,7 +81,8 @@ class _BookingCardGeneralDetailsState extends State<AllProductWiseBooking> {
             SizedBox(width: 1), // Set the desired width
             Text(
               "ProductWise Booking",
-              style: TextStyle( color: Colors.black,fontFamily: "Montserrat", fontSize: 19),
+              style: TextStyle(
+                  color: Colors.black, fontFamily: "Montserrat", fontSize: 17),
             ),
           ],
         ),
@@ -106,21 +126,27 @@ class _BookingCardGeneralDetailsState extends State<AllProductWiseBooking> {
                                         Row(
                                           mainAxisAlignment:
                                               MainAxisAlignment.spaceBetween,
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
                                           children: [
-                                            Text(
-                                              snapshot.data![index].passenger,
-                                              style: TextStyle(
-                                                  fontFamily: "Montserrat",
-                                                  fontSize: 17,
-                                                  fontWeight: FontWeight.bold),
+                                            Row(
+                                              children: [
+                                                Text(
+                                                  "Booking ID: " +
+                                                      snapshot.data![index]
+                                                          .bookingId,
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontFamily: "Montserrat",
+                                                      fontSize: 17),
+                                                ),
+                                              ],
                                             ),
-                                            SizedBox(
-                                              height: 5,
-                                            ),
-                                            SizedBox(
-                                              width: 50,
+                                            Row(
+                                              children: [
+                                                SizedBox(
+                                                  width: 5,
+                                                ),
+                                              ],
                                             ),
                                           ],
                                         ),
@@ -130,46 +156,24 @@ class _BookingCardGeneralDetailsState extends State<AllProductWiseBooking> {
                                         Row(
                                           mainAxisAlignment:
                                               MainAxisAlignment.spaceBetween,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
-                                            Row(
-                                              children: [
-                                                Icon(
-                                                  const IconData(0xe19f,
-                                                      fontFamily:
-                                                          'MaterialIcons'),
-                                                  size: 15,
-                                                ),
-                                                SizedBox(
-                                                  width: 5,
-                                                ),
-                                                Text(
-                                                  "Product: " +
-                                                      snapshot.data![index]
-                                                          .bookedProduct,
-                                                  style: TextStyle(
-                                                      fontFamily: "Montserrat",
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                      fontSize: 15),
-                                                ),
-                                              ],
+                                            Text(
+                                              snapshot.data![index].passenger,
+                                              style: TextStyle(
+                                                  fontFamily: "Montserrat",
+                                                  fontSize: 15,
+                                                  fontWeight: FontWeight.w500),
                                             ),
-                                            Row(
-                                              children: [
-                                                SizedBox(
-                                                  width: 5,
-                                                ),
-                                                Text(
-                                                  "TripDate: " +
-                                                      snapshot.data![index]
-                                                          .tripDate,
-                                                  style: TextStyle(
-                                                      fontFamily: "Montserrat",
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                      fontSize: 15),
-                                                ),
-                                              ],
+                                            Text(
+                                              "TripDate: " +
+                                                  snapshot
+                                                      .data![index].tripDate,
+                                              style: TextStyle(
+                                                  fontFamily: "Montserrat",
+                                                  fontWeight: FontWeight.w500,
+                                                  fontSize: 15),
                                             ),
                                           ],
                                         ),
@@ -207,7 +211,7 @@ class _BookingCardGeneralDetailsState extends State<AllProductWiseBooking> {
                                                     style: const TextStyle(
                                                         fontFamily:
                                                             "Montserrat",
-                                                        fontSize: 15,
+                                                        fontSize: 14,
                                                         fontWeight:
                                                             FontWeight.w500,
                                                         color: Colors.white),
@@ -305,32 +309,18 @@ class _BookingCardGeneralDetailsState extends State<AllProductWiseBooking> {
                                                 children: [
                                                   Icon(
                                                     Icons.book_outlined,
-                                                    size: 12,
-                                                  ),
-                                                  SizedBox(
-                                                    width: 5,
+                                                    size: 14,
                                                   ),
                                                   Text(
-                                                    "Booking ID: ",
+                                                    "Product: " +
+                                                        snapshot.data![index]
+                                                            .bookedProduct,
                                                     style: TextStyle(
-                                                        fontWeight:
-                                                            FontWeight.w500,
                                                         fontFamily:
                                                             "Montserrat",
+                                                        fontWeight:
+                                                            FontWeight.w500,
                                                         fontSize: 15),
-                                                  ),
-                                                  Container(
-                                                    width: 105,
-                                                    child: Text(
-                                                      snapshot.data![index]
-                                                          .bookingId,
-                                                      style: TextStyle(
-                                                          fontFamily:
-                                                              "Montserrat",
-                                                          fontSize: 15,
-                                                          fontWeight:
-                                                              FontWeight.bold),
-                                                    ),
                                                   ),
                                                 ],
                                               ),
@@ -368,7 +358,7 @@ class _BookingCardGeneralDetailsState extends State<AllProductWiseBooking> {
                   return CircularProgressIndicator();
                 }
               })),
-    ));
+    );
   }
 }
 
@@ -381,11 +371,15 @@ Color _getBackgroundColor(String bookingStatus) {
     return Color(0xFFFF7588);
   } else if (bookingStatus == 'Confirmed') {
     return Colors.greenAccent;
+  } else if (bookingStatus == 'CONFIRMED') {
+    return Colors.greenAccent;
   } else if (bookingStatus == 'Reserved') {
     return Colors.orange;
   } else if (bookingStatus == 'No') {
     return Color(0xFFFF7588);
+  } else if (bookingStatus == 'BOOKED') {
+    return Color(0xFFFF7588);
   } else {
-    return Colors.black;
+    return Color(0xFFFF7588);
   }
 }

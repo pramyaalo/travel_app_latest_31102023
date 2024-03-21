@@ -94,7 +94,7 @@ class _MyRechargePageState extends State<ViewJournalEntry> {
             children: [
               IconButton(
                 icon: Icon(
-                 Icons.arrow_back,
+                  Icons.arrow_back,
                   color: Colors.black,
                   size: 27,
                 ),
@@ -105,8 +105,11 @@ class _MyRechargePageState extends State<ViewJournalEntry> {
 
               SizedBox(width: 1), // Set the desired width
               Text(
-                "View Journal Entry Details",
-                style: TextStyle( color: Colors.black,fontFamily: "Montserrat", fontSize: 19),
+                "View Journal",
+                style: TextStyle(
+                    color: Colors.black,
+                    fontFamily: "Montserrat",
+                    fontSize: 19),
               ),
             ],
           ),
@@ -120,7 +123,7 @@ class _MyRechargePageState extends State<ViewJournalEntry> {
               width: 10,
             )
           ],
-         backgroundColor: Colors.white,
+          backgroundColor: Colors.white,
         ),
         body: Center(
           child: FutureBuilder<List<ViewJournalEntryModel>?>(

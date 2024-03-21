@@ -2,21 +2,24 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:developer' as developer;
 
 import '../../utils/response_handler.dart';
 import '../bookings/flight/FlightBookNow.dart';
 import '../bookings/flight/RoundTripBookNowFlight.dart';
 import '../utils/commonutils.dart';
+import '../utils/shared_preferences.dart';
 
 class TwoWayBooking extends StatefulWidget {
-  final dynamic flightDetails, adultCount, childrenCount, infantCount;
+  final dynamic flightDetails, adultCount, childrenCount, infantCount,departdate;
   const TwoWayBooking(
       {super.key,
       required this.flightDetails,
       required this.infantCount,
       required this.childrenCount,
-      required this.adultCount});
+      required this.adultCount,
+      required this.departdate,});
 
   @override
   State<TwoWayBooking> createState() => _TwoWayBookingState();
@@ -260,6 +263,28 @@ class _TwoWayBookingState extends State<TwoWayBooking> {
     }
   }
 
+  late String userTypeID = '';
+  late String userID = '';
+  late String Currency = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _retrieveSavedValues();
+  }
+
+  Future<void> _retrieveSavedValues() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      userTypeID = prefs.getString(Prefs.PREFS_USER_TYPE_ID) ?? '';
+      userID = prefs.getString(Prefs.PREFS_USER_ID) ?? '';
+      Currency = prefs.getString(Prefs.PREFS_CURRENCY) ?? '';
+      print('Currency: $Currency');
+      // Call sendFlightSearchRequest() here after SharedPreferences values are retrieved
+      getAdivahaFlightDetails();
+    });
+  }
+
   Future<void> getAdivahaFlightDetails() async {
     final url = Uri.parse(
         'https://traveldemo.org/travelapp/b2capi.asmx/AdivahaFlightDetailsGet');
@@ -281,7 +306,9 @@ class _TwoWayBookingState extends State<TwoWayBooking> {
         body: {
           'ResultIndex': resultIndex,
           'TraceId': traceId,
-          'TripType': 'RoundTrip'
+          'TripType': 'RoundTrip',
+          'UserID': userID,
+          'DefaultCurrency': Currency
         },
       );
       setState(() {
@@ -878,10 +905,11 @@ class _TwoWayBookingState extends State<TwoWayBooking> {
                                         adultCount: widget.adultCount,
                                         childrenCount: widget.childrenCount,
                                         infantCount: widget.infantCount,
+                                        departdate:widget.departdate,
                                       )));
                         },
                         style: ElevatedButton.styleFrom(
-                          primary: Color(0xff74206b),
+                          backgroundColor: Color(0xff74206b),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(
                                 10.0), // Adjust the radius as needed
@@ -906,11 +934,5 @@ class _TwoWayBookingState extends State<TwoWayBooking> {
               ),
             ),
     );
-  }
-
-  @override
-  void initState() {
-    getAdivahaFlightDetails();
-    super.initState();
   }
 }
